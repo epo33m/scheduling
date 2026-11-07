@@ -1,0 +1,1 @@
+A collection of Markdown-based agent skills that enforce anti-AI-slop rules for UI, copywriting, code comments, accessibility, mobile layout, and general web quality.

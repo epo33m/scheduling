@@ -1,0 +1,1 @@
+Markdown-based skill manifests with YAML metadata (`agents/openai.yaml`); the diagnosing-bugs skill includes a Bash HITL loop template; the improve-codebase-architecture skill generates HTML reports styled with Tailwind CDN and diagrams via Mermaid CDN.

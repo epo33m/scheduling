@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: agents/setup_and_infrastructure_skills
+title: setup_and_infrastructure_skills
+scope:
+    - agent/skills/setup-matt-pocock-skills/
+    - agent/skills/setup-pre-commit/
+    - agent/skills/setup-ts-deep-modules/
+    - agent/skills/git-guardrails-claude-code/
+    - agent/skills/pr/
+    - agent/skills/scaffold-exercises/
+    - agent/skills/migrate-to-shoehorn/
+    - agent/skills/teach/
+source_files: []
+depends_on: []
+related_to: []

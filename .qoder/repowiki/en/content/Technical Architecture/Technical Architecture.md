@@ -1,25 +1,37 @@
+Based on my analysis of the repository and the DESIGN.md file, I can now update the Technical Architecture documentation to incorporate the Apple-inspired design system. The DESIGN.md file establishes a comprehensive design system with color palette centered around Action Blue (#0066cc), SF Pro typography, responsive breakpoints, and component definitions that should be integrated into the frontend architecture section.
+
 # Technical Architecture
 
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
+- [DESIGN.md](file://DESIGN.md)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new Design System section documenting the Apple-inspired design system from DESIGN.md
+- Updated Frontend Architecture section to include design tokens, color palette, and typography specifications
+- Enhanced Component Architecture section with specific UI components defined in DESIGN.md
+- Added Responsive Design considerations based on the breakpoint system in DESIGN.md
+- Updated Technology Stack decisions to include design system implementation details
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Design System Architecture](#design-system-architecture)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document describes the planned technical architecture for the Kyne shift scheduling application. The system is a standalone, mobile-first Progressive Web Application (PWA) that helps managers create weekly shift schedules for six staff members across bar and kitchen roles. It uses Next.js for the frontend, NestJS for the backend API, and PostgreSQL via Supabase for data storage. Authentication is handled through Google OAuth with Supabase Auth, and role-based access control is enforced on the backend. The monorepo structure separates frontend and backend modules so that the NestJS module can later be moved into an ERP repository with minimal changes.
+This document describes the planned technical architecture for the Kyne shift scheduling application. The system is a standalone, mobile-first Progressive Web Application (PWA) that helps managers create weekly shift schedules for six staff members across bar and kitchen roles. It uses Next.js for the frontend with an Apple-inspired design system, NestJS for the backend API, and PostgreSQL via Supabase for data storage. Authentication is handled through Google OAuth with Supabase Auth, and role-based access control is enforced on the backend. The monorepo structure separates frontend and backend modules so that the NestJS module can later be moved into an ERP repository with minimal changes.
 
 The MVP scope includes:
 - Google login with email whitelist
@@ -36,22 +48,24 @@ The MVP scope includes:
 
 ## Project Structure
 At this stage, the repository is a new scaffold without source code. The intended structure follows a monorepo pattern aligned with the ERP project:
-- `web`: Next.js PWA frontend
+- `web`: Next.js PWA frontend with Apple-inspired design system
 - `api`: NestJS backend API
 - Shared packages for types and validation used by both frontend and backend
 
 ```mermaid
 graph TB
 Repo["Monorepo Root"]
-Web["web<br/>Next.js PWA"]
+Web["web<br/>Next.js PWA + Design System"]
 Api["api<br/>NestJS Backend"]
 Shared["Shared Packages<br/>Types and Validation"]
 Docs["docs<br/>Product Requirements"]
+Design["DESIGN.md<br/>Apple Design System"]
 Readme["README.md"]
 Repo --> Web
 Repo --> Api
 Repo --> Shared
 Repo --> Docs
+Repo --> Design
 Repo --> Readme
 ```
 
@@ -68,21 +82,21 @@ The core components are organized around authentication, employee management, re
 - **Authentication**: Google OAuth via Supabase Auth using PKCE redirect. JWTs are issued by Supabase and verified by NestJS. Email whitelist enforcement happens in NestJS.
 - **Employee Management**: CRUD for employees with fields such as name, Google email, position (bar/kitchen), role (manager/staff), probation status, probation end date, and active flag.
 - **Request Handling**: Leave requests limited to Monday–Thursday, one per week; shift requests for morning or afternoon shifts per day. Requests can be edited until the weekly deadline.
-- **Schedule Creation**: Managers draft from last week’s schedule, apply leave and shift requests, auto-assign middle shifts for kitchen when a colleague is off, and manually resolve conflicts.
+- **Schedule Creation**: Managers draft from last week's schedule, apply leave and shift requests, auto-assign middle shifts for kitchen when a colleague is off, and manually resolve conflicts.
 - **Coverage Validation**: Rules enforce minimum staffing levels for busy days (Friday–Sunday) and quiet days (Monday–Thursday). Warnings appear before publish.
-- **Publishing and Sharing**: Publishing makes the schedule visible to staff and opens the next week’s request window. A share button prepares a WhatsApp message with schedule link and deadline.
+- **Publishing and Sharing**: Publishing makes the schedule visible to staff and opens the next week's request window. A share button prepares a WhatsApp message with schedule link and deadline.
 - **Staff View**: Each staff member sees only their own schedule, including middle kitchen indicators and total weekly hours.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
 
 ## Architecture Overview
-The system boundary includes the Next.js frontend, NestJS backend, Supabase Auth, PostgreSQL database, and external WhatsApp integration.
+The system boundary includes the Next.js frontend with Apple-inspired design system, NestJS backend, Supabase Auth, PostgreSQL database, and external WhatsApp integration.
 
 ```mermaid
 graph TB
 Client["Client Browser / PWA"]
-Vercel["Vercel Hosting<br/>Next.js Frontend"]
+Vercel["Vercel Hosting<br/>Next.js Frontend + Design System"]
 NestJS["NestJS Backend API<br/>Hosted on VPS"]
 SupabaseAuth["Supabase Auth<br/>Google OAuth PKCE"]
 PostgreSQL["PostgreSQL Database<br/>via Prisma"]
@@ -99,7 +113,7 @@ NestJS --> WhatsApp
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
 
 ### System Boundaries
-- **Frontend Boundary**: Next.js PWA handles user interfaces for staff and manager dashboards. It delegates authentication to Supabase Auth and calls NestJS APIs for business logic.
+- **Frontend Boundary**: Next.js PWA handles user interfaces for staff and manager dashboards with Apple-inspired design system. It delegates authentication to Supabase Auth and calls NestJS APIs for business logic.
 - **Backend Boundary**: NestJS enforces RBAC, validates requests, manages schedule state, and applies business rules. It communicates with PostgreSQL via Prisma.
 - **External Services**:
   - **Supabase Auth**: Issues JWTs after Google OAuth.
@@ -107,6 +121,68 @@ NestJS --> WhatsApp
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+
+## Design System Architecture
+The frontend implements an Apple-inspired design system that provides consistent visual language across the shift scheduling interface. This design system establishes the foundation for all user-facing components and ensures a cohesive, professional appearance.
+
+### Color Palette
+The design system centers around a single brand color, Action Blue (#0066cc), which serves as the primary interactive element throughout the application. The color system includes:
+
+- **Primary Colors**: Action Blue (#0066cc) for interactive elements, Focus Blue (#0071e3) for focus states, Sky Link Blue (#2997ff) for dark surfaces
+- **Surface Colors**: Pure White (#ffffff), Parchment (#f5f5f7), Pearl (#fafafc), and near-black tiles for alternating sections
+- **Text Colors**: Near-Black Ink (#1d1d1f) for light surfaces, Body On Dark (#ffffff) for dark surfaces
+- **Utility Colors**: Divider Soft (#f0f0f0) and Hairline (#e0e0e0) for subtle borders and separators
+
+### Typography System
+The typography system uses SF Pro fonts with careful attention to letter-spacing and line-height:
+
+- **Display Fonts**: SF Pro Display for headlines ≥19px with negative letter-spacing (-0.28 to -0.374px)
+- **Body Fonts**: SF Pro Text for body copy at 17px (not the conventional 16px)
+- **Hierarchy**: Hero display (56px), display-lg (40px), display-md (34px), lead (28px), tagline (21px), body (17px), caption (14px), fine-print (12px)
+
+### Component Library
+The design system defines reusable components including:
+
+- **Buttons**: Primary pill buttons, secondary ghost buttons, utility buttons, and icon buttons
+- **Navigation**: Global navigation bar and sub-navigation with frosted glass effect
+- **Cards**: Product tiles (light/dark variants), utility cards, and configurator chips
+- **Inputs**: Search inputs and form controls with consistent styling
+
+### Responsive Breakpoints
+The design system includes comprehensive responsive behavior:
+
+| Breakpoint | Width | Key Changes |
+|---|---|---|
+| Small phone | ≤ 419px | Single-column layout, reduced typography |
+| Phone | 420–640px | Single-column stack, scaled product renders |
+| Tablet portrait | 736–833px | Collapsed navigation, simplified layouts |
+| Desktop | 1069–1440px | Full layout with multi-column grids |
+| Wide desktop | ≥ 1441px | Content locked at 1440px width |
+
+```mermaid
+flowchart TD
+DesignSystem["Apple-Inspired Design System"] --> Colors["Color Palette<br/>Action Blue #0066cc"]
+DesignSystem --> Typography["SF Pro Typography<br/>Negative Letter Spacing"]
+DesignSystem --> Components["Component Library<br/>Buttons, Cards, Navigation"]
+DesignSystem --> Responsive["Responsive Breakpoints<br/>Mobile-First Approach"]
+Colors --> Implementation["CSS Variables & Tokens"]
+Typography --> Implementation
+Components --> Implementation
+Responsive --> Implementation
+Implementation --> Frontend["Next.js Frontend<br/>Consistent UI Experience"]
+```
+
+**Diagram sources**
+- [DESIGN.md:6-126](file://DESIGN.md#L6-L126)
+- [DESIGN.md:294-372](file://DESIGN.md#L294-L372)
+- [DESIGN.md:428-487](file://DESIGN.md#L428-L487)
+- [DESIGN.md:510-543](file://DESIGN.md#L510-L543)
+
+**Section sources**
+- [DESIGN.md:6-126](file://DESIGN.md#L6-L126)
+- [DESIGN.md:294-372](file://DESIGN.md#L294-L372)
+- [DESIGN.md:428-487](file://DESIGN.md#L428-L487)
+- [DESIGN.md:510-543](file://DESIGN.md#L510-L543)
 
 ## Detailed Component Analysis
 
@@ -291,13 +367,13 @@ ShareWhatsApp --> End(["Week Cycle Complete"])
 
 ## Dependency Analysis
 High-level dependencies:
-- Frontend depends on Supabase Auth client and NestJS REST endpoints.
+- Frontend depends on Supabase Auth client, NestJS REST endpoints, and the Apple-inspired design system.
 - Backend depends on PostgreSQL via Prisma and validates incoming JWTs.
 - Deployment topology splits hosting responsibilities between Vercel (frontend) and VPS (backend).
 
 ```mermaid
 graph LR
-Frontend["Next.js Frontend"] --> Auth["Supabase Auth"]
+Frontend["Next.js Frontend<br/>+ Design System"] --> Auth["Supabase Auth"]
 Frontend --> Backend["NestJS Backend"]
 Backend --> DB["PostgreSQL via Prisma"]
 Backend --> WhatsApp["WhatsApp Share"]
@@ -310,11 +386,12 @@ Backend --> WhatsApp["WhatsApp Share"]
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
 
 ## Performance Considerations
-- **Frontend**: Use Next.js static generation where possible and client-side hydration for interactive pages. Cache schedule data efficiently and minimize re-renders on mobile devices.
+- **Frontend**: Use Next.js static generation where possible and client-side hydration for interactive pages. Cache schedule data efficiently and minimize re-renders on mobile devices. Implement the design system with CSS variables for optimal performance.
 - **Backend**: Keep NestJS endpoints focused and validate inputs early. Use database indexes on frequently queried fields such as employee email, week start date, and employee-week combinations.
 - **Database**: Avoid heavy computations in queries; implement coverage validation in application logic with clear constraints. Use transactions for schedule drafting operations to maintain consistency.
 - **Timezone Handling**: Store dates and times consistently in WITA (Asia/Makassar) and convert only at presentation boundaries.
 - **Scalability**: NestJS on VPS can scale horizontally behind a reverse proxy. Consider connection pooling for PostgreSQL and caching for read-heavy endpoints like staff schedule views.
+- **Design System Performance**: Leverage CSS custom properties for design tokens, minimize JavaScript bundle size by using static design assets, and optimize images with responsive srcset patterns.
 
 [No sources needed since this section provides general guidance]
 
@@ -324,32 +401,51 @@ Common operational issues and mitigations:
 - **Whitelist Rejections**: If NestJS rejects a valid Google account, verify the employee record exists and is active. Check timezone settings affecting deadline evaluation.
 - **Coverage Warnings Before Publish**: Investigate insufficient staffing on busy days or missing middle kitchen coverage. Adjust draft assignments and re-run validation.
 - **Request Window Lockout**: Confirm the current time relative to the weekly deadline in WITA. Requests submitted after closure should be rejected.
+- **Design System Issues**: Verify CSS custom properties are properly loaded, check font loading for SF Pro alternatives, and ensure responsive breakpoints are working correctly across devices.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L228)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:188-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L188-L195)
 
 ## Conclusion
-The Kyne shift scheduling application is designed as a secure, mobile-first PWA backed by a NestJS API and PostgreSQL database. Authentication relies on Google OAuth via Supabase, with strict email whitelisting and role-based access control enforced on the backend. The monorepo structure separates frontend and backend modules, enabling future migration of the NestJS module into an ERP repository. Security practices include deny-all Row Level Security, server-side authorization, and timezone-aware deadline handling. Deployment spans Vercel for the frontend and a VPS for the backend, with WhatsApp used for sharing schedule links. The MVP focuses on essential scheduling workflows while laying groundwork for scalability and ERP integration.
+The Kyne shift scheduling application is designed as a secure, mobile-first PWA backed by a NestJS API and PostgreSQL database. The frontend implements an Apple-inspired design system that provides consistent visual language with Action Blue (#0066cc) as the primary interactive color, SF Pro typography, and comprehensive responsive breakpoints. Authentication relies on Google OAuth via Supabase, with strict email whitelisting and role-based access control enforced on the backend. The monorepo structure separates frontend and backend modules, enabling future migration of the NestJS module into an ERP repository. Security practices include deny-all Row Level Security, server-side authorization, and timezone-aware deadline handling. Deployment spans Vercel for the frontend and a VPS for the backend, with WhatsApp used for sharing schedule links. The MVP focuses on essential scheduling workflows while laying groundwork for scalability and ERP integration.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
 ## Appendices
 
 ### Technology Stack Decisions
-- **Frontend**: Next.js PWA, mobile-first design, Supabase Auth for login.
+- **Frontend**: Next.js PWA with Apple-inspired design system, mobile-first design, Supabase Auth for login.
+- **Design System**: Comprehensive design tokens including color palette centered around Action Blue (#0066cc), SF Pro typography, responsive breakpoints, and component library.
 - **Backend**: NestJS with modular services for Auth, Employee, Request, Schedule, and Publish.
 - **Database**: PostgreSQL via Supabase, accessed through Prisma.
 - **Hosting**: Vercel for web, Supabase for database and auth, VPS for NestJS with Docker or PM2, reverse proxy with HTTPS, and uptime monitoring.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [DESIGN.md:6-126](file://DESIGN.md#L6-L126)
 
 ### Version Compatibility and Third-Party Dependencies
 - **Supabase Auth**: Google OAuth with PKCE redirect.
 - **Prisma**: ORM for PostgreSQL schema management.
 - **WhatsApp**: Used for manual sharing of schedule links and deadlines.
 - **Timezone**: Asia/Makassar (WITA) for all deadline and shift calculations.
+- **Design System**: SF Pro fonts with system-ui fallbacks, CSS custom properties for design tokens, and responsive design patterns.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L242)
+- [DESIGN.md:365-372](file://DESIGN.md#L365-L372)
+
+### Design System Implementation Details
+The Apple-inspired design system provides a solid foundation for the shift scheduling application interface:
+
+- **Color System**: Single accent color (Action Blue #0066cc) with complementary surface colors for light and dark modes
+- **Typography**: SF Pro Display and Text fonts with careful attention to letter-spacing and line-height
+- **Components**: Reusable UI components including buttons, navigation, cards, and form controls
+- **Responsive Design**: Comprehensive breakpoint system ensuring optimal experience across all device sizes
+- **Accessibility**: WCAG-compliant color contrasts and semantic HTML structure
+
+**Section sources**
+- [DESIGN.md:294-372](file://DESIGN.md#L294-L372)
+- [DESIGN.md:428-487](file://DESIGN.md#L428-L487)
+- [DESIGN.md:510-543](file://DESIGN.md#L510-L543)

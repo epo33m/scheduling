@@ -1,0 +1,108 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-11-07T19:57:41Z"
+modules:
+    agents:
+        dir_name: agents
+        title: agents
+        scope:
+            - .agents/
+            - .claude/skills/
+            - agent/
+            - DESIGN.md
+        source_files: []
+        children:
+            - agents/antislop_skills
+            - agents/dev_workflow_skills
+            - agents/orchestration_handoff_skills
+            - agents/setup_and_infrastructure_skills
+            - agents/writing_skills
+        depends_on: []
+        related_to: []
+    agents/antislop_skills:
+        dir_name: Anti-Slop Agent Skills (Core + Specializations)
+        title: Anti-Slop Agent Skills (Core + Specializations)
+        scope:
+            - agent/skills/antislop/
+            - agent/skills/antislop-code/
+            - agent/skills/antislop-copywriting/
+            - agent/skills/antislop-human/
+            - agent/skills/antislop-layoutmobile/
+            - agent/skills/antislop-ui/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    agents/dev_workflow_skills:
+        dir_name: Developer Workflow Skills
+        title: Developer Workflow Skills
+        scope:
+            - agent/skills/tdd/
+            - agent/skills/code-review/
+            - agent/skills/triage/
+            - agent/skills/retro/
+            - agent/skills/research/
+            - agent/skills/prototype/
+            - agent/skills/implement/
+            - agent/skills/implement-spec/
+            - agent/skills/to-spec/
+            - agent/skills/to-tickets/
+            - agent/skills/to-questionnaire/
+            - agent/skills/domain-modeling/
+            - agent/skills/codebase-design/
+            - agent/skills/improve-codebase-architecture/
+            - agent/skills/diagnosing-bugs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    agents/orchestration_handoff_skills:
+        dir_name: Agent Orchestration & Handoff Skills
+        title: Agent Orchestration & Handoff Skills
+        scope:
+            - agent/skills/handoff/
+            - agent/skills/claude-handoff/
+            - agent/skills/chief-of-staff/
+            - agent/skills/ask-matt/
+            - agent/skills/grill-me/
+            - agent/skills/grill-with-docs/
+            - agent/skills/grilling/
+            - agent/skills/loop-me/
+            - agent/skills/wait-what/
+            - agent/skills/wayfinder/
+            - agent/skills/wizard/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    agents/setup_and_infrastructure_skills:
+        dir_name: setup_and_infrastructure_skills
+        title: setup_and_infrastructure_skills
+        scope:
+            - agent/skills/setup-matt-pocock-skills/
+            - agent/skills/setup-pre-commit/
+            - agent/skills/setup-ts-deep-modules/
+            - agent/skills/git-guardrails-claude-code/
+            - agent/skills/pr/
+            - agent/skills/scaffold-exercises/
+            - agent/skills/migrate-to-shoehorn/
+            - agent/skills/teach/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    agents/writing_skills:
+        dir_name: Writing Skills Toolkit
+        title: Writing Skills Toolkit
+        scope:
+            - agent/skills/writing-beats/
+            - agent/skills/writing-for-agents/
+            - agent/skills/writing-fragments/
+            - agent/skills/writing-shape/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

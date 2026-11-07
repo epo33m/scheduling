@@ -4,7 +4,18 @@
 **Referenced Files in This Document**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
 - [README.md](file://README.md)
+- [DESIGN.md](file://DESIGN.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced business problem statement with specific operational challenges at Kyne café
+- Expanded MVP scope with detailed functional requirements for all 7 modules
+- Added comprehensive user roles and permissions system with probationary staff considerations
+- Detailed functional requirements breakdown including authentication, employee management, request handling, schedule generation, and publishing workflow
+- Updated success metrics, timeline milestones, and acceptance criteria based on comprehensive PRD specifications
+- Added technical constraints and business rules governing scheduling logic
+- Enhanced architecture overview with PWA-based system specifications
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -21,7 +32,7 @@
 ## Introduction
 This document defines the product requirements for the Kyne café shift scheduling application MVP. It captures the business problem, scope, user roles, functional modules, business rules, data model, technical constraints, success metrics, timeline milestones, and acceptance criteria. The goal is to replace manual, chat-based scheduling with a structured weekly process: staff submit leave and shift preference requests; the manager builds a draft schedule from the previous week; automated middle-kitchen logic applies; coverage validation runs; and the manager publishes the schedule for staff to view on mobile devices.
 
-The repository is currently a scaffold without implementation code. All specifications below are derived from the project’s PRD and initial README.
+The repository is currently a scaffold without implementation code. All specifications below are derived from the project's comprehensive PRD and initial README.
 
 **Section sources**
 - [README.md:1-25](file://README.md#L1-L25)
@@ -29,14 +40,16 @@ The repository is currently a scaffold without implementation code. All specific
 
 ## Project Structure
 At this stage, the repository contains:
-- A documentation folder with the Kyne shift scheduling PRD.
+- A documentation folder with the comprehensive Kyne shift scheduling PRD detailing PWA-based specifications.
 - A root README indicating that the repository is new and scaffolding has not yet been defined.
+- Design specifications for Apple-inspired UI patterns (though not directly applicable to this project).
 
 ```mermaid
 graph TB
 Repo["Repository Root"] --> Docs["docs/"]
 Docs --> PRD["PRD-Aplikasi-Penjadwalan-Shift-Kyne.md"]
 Repo --> Readme["README.md"]
+Repo --> Design["DESIGN.md"]
 ```
 
 **Diagram sources**
@@ -47,44 +60,44 @@ Repo --> Readme["README.md"]
 - [README.md:1-25](file://README.md#L1-L25)
 
 ## Core Components
-The MVP centers around seven functional modules:
-- Authentication via Google OAuth with email whitelist enforcement.
-- Employee management (CRUD) for manager-only operations.
-- Leave request handling (one day per week, Monday–Thursday).
-- Shift preference requests (morning or afternoon, any day).
-- Manager dashboard showing all requests, conflicts, and missing requests.
+The MVP centers around seven functional modules designed as a PWA for mobile-first experience:
+- Authentication via Google OAuth with email whitelist enforcement and PKCE redirect flow.
+- Employee management (CRUD) for manager-only operations with probation tracking.
+- Leave request handling (one day per week, Monday–Thursday only).
+- Shift preference requests (morning or afternoon, any day, advisory basis).
+- Manager dashboard showing all requests, conflicts, and missing requests with conflict detection.
 - Weekly schedule creation engine with copy-from-last-week automation, middle-kitchen logic, and manual adjustments.
-- Publishing workflow with WhatsApp sharing and staff-facing schedule views.
+- Publishing workflow with WhatsApp sharing and staff-facing schedule views with total hours calculation.
 
-Success metrics include publishing deadlines, weekend coverage guarantees, and adoption of the app for requests.
+Success metrics include publishing deadlines by Sunday 18:00 WITA, weekend coverage guarantees, and adoption of the app for all non-probationary staff requests.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:21-25](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L21-L25)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
 
 ## Architecture Overview
-The system follows a monorepo structure aligned with an ERP stack:
-- Frontend: Next.js PWA for mobile-first staff experience and manager dashboard.
-- Backend: NestJS API implementing business rules, RBAC, and validations.
-- Database: PostgreSQL via Supabase, accessed through Prisma.
-- Auth: Supabase Auth with Google OAuth using PKCE redirect.
+The system follows a monorepo structure aligned with an ERP stack, designed as a PWA for mobile-first staff experience:
+- Frontend: Next.js PWA for mobile-first staff experience and manager dashboard, installable on home screen.
+- Backend: NestJS API implementing business rules, RBAC, and validations with Docker/PM2 deployment.
+- Database: PostgreSQL via Supabase, accessed through Prisma ORM with UUID identifiers.
+- Auth: Supabase Auth with Google OAuth using PKCE redirect flow.
 - Hosting: Vercel for web, Supabase for database and auth, VPS for NestJS with HTTPS and auto-restart.
 
 ```mermaid
 graph TB
 subgraph "Frontend"
-Web["Next.js PWA<br/>Staff + Manager UI"]
+Web["Next.js PWA<br/>Staff + Manager UI<br/>Mobile-first design"]
 end
 subgraph "Backend"
-API["NestJS API<br/>Auth, Employee, Request, Schedule, Publish"]
+API["NestJS API<br/>Auth, Employee, Request, Schedule, Publish<br/>Business Rules & RBAC"]
 end
 subgraph "Data & Auth"
-DB["PostgreSQL (Supabase)<br/>Prisma ORM"]
-Auth["Supabase Auth<br/>Google OAuth (PKCE)"]
+DB["PostgreSQL (Supabase)<br/>Prisma ORM<br/>UUID Identifiers"]
+Auth["Supabase Auth<br/>Google OAuth (PKCE Redirect)"]
 end
 subgraph "Hosting"
-Vercel["Vercel"]
-VPS["VPS (NestJS)"]
+Vercel["Vercel<br/>Web Hosting"]
+VPS["VPS (NestJS)<br/>Docker/PM2<br/>HTTPS Auto-restart"]
 end
 Web --> API
 API --> DB
@@ -103,23 +116,24 @@ API -.-> VPS
 ## Detailed Component Analysis
 
 ### Authentication (F1)
-- Google OAuth login with PKCE redirect.
+- Google OAuth login with PKCE redirect flow (not popup) to avoid iPhone standalone mode issues.
 - Email whitelist enforced at the backend; unauthorized emails receive a registration message.
-- Session persistence for 30 days.
-- Post-login redirection preserves the original link target.
+- Session persistence for 30 days with proper token handling.
+- Post-login redirection preserves the original link target for seamless user experience.
+- In-app browser compatibility handling for WhatsApp links on Android and iPhone.
 
 ```mermaid
 sequenceDiagram
-participant Staff as "Staff Browser"
+participant Staff as "Staff Browser/PWA"
 participant Web as "Next.js PWA"
 participant Auth as "Supabase Auth"
 participant API as "NestJS API"
-Staff->>Web : Open scheduled link
-Web->>Auth : Redirect to Google OAuth (PKCE)
-Auth-->>Web : Callback with token
+Staff->>Web : Open scheduled link (WhatsApp/Chrome/Safari)
+Web->>Auth : Redirect to Google OAuth (PKCE flow)
+Auth-->>Web : Callback with JWT token
 Web->>API : Validate JWT and check email whitelist
-API-->>Web : Allow or deny access
-Web-->>Staff : Redirect to intended page or error
+API-->>Web : Allow or deny access (403 if unauthorized)
+Web-->>Staff : Redirect to intended page or error message
 ```
 
 **Diagram sources**
@@ -132,8 +146,9 @@ Web-->>Staff : Redirect to intended page or error
 
 ### Employee Management (F2)
 - Manager-only CRUD for employees: add, deactivate, set position (bar/kitchen), set probation status and end date, toggle active/inactive.
-- Inactive employees cannot log in but retain historical schedule records.
+- Inactive employees cannot log in but retain historical schedule records for audit purposes.
 - Probation status automatically transitions to permanent after the end date passes.
+- Employee data includes name, Google email, position, role, status, probation_end_date, and is_active flags.
 
 ```mermaid
 flowchart TD
@@ -154,11 +169,11 @@ KeepStatus --> End
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-120](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L120)
 
 ### Leave and Shift Preference Requests (F3)
-- Leave requests: one day per week, only Monday–Thursday.
-- Shift preference requests: morning or afternoon, any day, optional.
-- Requests editable until the weekly deadline (Sunday 12:00 WITA), then locked.
-- Staff can see their own request statuses.
-- Probationary staff do not see the request menu.
+- Leave requests: one day per week, only Monday–Thursday, maximum one bar and one kitchen leave per day.
+- Shift preference requests: morning or afternoon, any day, optional and advisory basis.
+- Requests editable until the weekly deadline (Sunday 12:00 WITA), then locked automatically.
+- Staff can see their own request statuses with clear indicators like "Libur: Selasa".
+- Probationary staff do not see the request menu and cannot submit requests.
 
 ```mermaid
 flowchart TD
@@ -182,9 +197,10 @@ AllowEdit --> End
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:122-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L122-L131)
 
 ### Manager Dashboard (F4)
-- Displays all leave and shift requests for the upcoming week.
+- Displays all leave and shift requests for the upcoming week in a unified interface.
 - Highlights conflicts: same-position leave overlaps and shift preferences exceeding slots.
-- Lists non-probationary staff who have not submitted requests.
+- Lists non-probationary staff who have not submitted requests for follow-up.
+- Provides decision-making interface for resolving conflicts between competing requests.
 
 ```mermaid
 flowchart TD
@@ -202,10 +218,10 @@ Review --> End(["Proceed to schedule drafting"])
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
 
 ### Weekly Schedule Creation Engine (F5)
-- Draft generation copies last week’s schedule, removes prior leaves, fills empty days with most frequent shifts, applies approved leaves, applies shift preferences, and auto-applies middle kitchen when a kitchen colleague is off.
-- Manager can manually adjust each employee’s daily assignment (morning, afternoon, middle, or off).
-- Coverage validation runs on every change and is visible only to managers.
-- Drafts remain hidden from staff until published.
+- Draft generation copies last week's schedule, removes prior leaves, fills empty days with most frequent shifts, applies approved leaves, applies shift preferences, and auto-applies middle kitchen when a kitchen colleague is off.
+- Manager can manually adjust each employee's daily assignment (morning, afternoon, middle, or off).
+- Coverage validation runs on every change and is visible only to managers with detailed warnings.
+- Drafts remain hidden from staff until published with proper visibility controls.
 
 ```mermaid
 flowchart TD
@@ -229,9 +245,10 @@ ValidateCoverage --> End(["Draft ready for review"])
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:77-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L77-L90)
 
 ### Publishing Workflow (F6)
-- Publishing makes the schedule visible to staff and opens the next week’s request window.
+- Publishing makes the schedule visible to staff and opens the next week's request window automatically.
 - Sharing generates a pre-filled WhatsApp message including the schedule period, link, and next request deadline.
-- Managers may still edit schedules after publishing.
+- Managers may still edit schedules after publishing with proper change tracking.
+- Request window timing is controlled by system deadlines rather than manual intervention.
 
 ```mermaid
 sequenceDiagram
@@ -253,9 +270,10 @@ Note over Manager,API : Manager retains ability to edit post-publish
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
 
 ### Staff Schedule View (F7)
-- Staff see only their own schedule: day, shift, hours.
-- On middle-kitchen days, a notice indicates kitchen closure windows.
-- Weekly total working hours are displayed.
+- Staff see only their own schedule: day, shift, hours with proper data filtering.
+- On middle-kitchen days, a notice indicates kitchen closure windows (07.30–11.00 & 19.00–23.00).
+- Weekly total working hours are displayed with accurate calculations.
+- Mobile-optimized interface for easy viewing on smartphones.
 
 ```mermaid
 flowchart TD
@@ -276,22 +294,22 @@ TotalHours --> End(["View complete"])
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:157-163](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L157-L163)
 
 ## Dependency Analysis
-Key dependencies across components:
-- Authentication depends on Supabase Auth and backend whitelist checks.
-- Employee management depends on the employee entity and role resolution.
-- Request handling depends on weekly deadlines and conflict detection.
-- Schedule creation depends on copying previous weeks, applying requests, and middle-kitchen automation.
-- Publishing depends on visibility toggles and WhatsApp sharing.
-- Staff view depends on filtering by employee identity and computing totals.
+Key dependencies across components with clear separation of concerns:
+- Authentication depends on Supabase Auth and backend whitelist checks with proper JWT validation.
+- Employee management depends on the employee entity and role resolution from database tables.
+- Request handling depends on weekly deadlines and conflict detection algorithms.
+- Schedule creation depends on copying previous weeks, applying requests, and middle-kitchen automation logic.
+- Publishing depends on visibility toggles and WhatsApp sharing integration.
+- Staff view depends on filtering by employee identity and computing totals accurately.
 
 ```mermaid
 graph LR
-Auth["Authentication"] --> Emp["Employee Management"]
-Auth --> Req["Leave & Shift Requests"]
-Emp --> Sched["Schedule Creation"]
+Auth["Authentication<br/>JWT + Whitelist"] --> Emp["Employee Management<br/>CRUD Operations"]
+Auth --> Req["Leave & Shift Requests<br/>Validation & Conflict Detection"]
+Emp --> Sched["Schedule Creation<br/>Automation & Manual Adjustments"]
 Req --> Sched
-Sched --> Pub["Publishing"]
-Pub --> View["Staff Schedule View"]
+Sched --> Pub["Publishing<br/>Visibility & Sharing"]
+Pub --> View["Staff Schedule View<br/>Personalized Display"]
 ```
 
 **Diagram sources**
@@ -301,53 +319,56 @@ Pub --> View["Staff Schedule View"]
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
 
 ## Performance Considerations
-- Mobile-first PWA ensures responsive performance on Android and iPhone.
+- Mobile-first PWA ensures responsive performance on Android and iPhone with proper caching strategies.
 - Avoid heavy client-side processing; perform validations and calculations server-side in NestJS.
-- Use efficient queries for weekly schedule generation and conflict detection.
+- Use efficient queries for weekly schedule generation and conflict detection with proper indexing.
 - Minimize network calls by batching data retrieval for dashboards and schedule views.
 - Ensure timezone handling uses WITA consistently to avoid scheduling miscalculations.
+- Implement proper error handling for in-app browser limitations and Google OAuth edge cases.
 
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
-Common issues and mitigations:
+Common issues and mitigations with specific solutions:
 - Google login blocked in in-app browsers: instruct users to open links in Chrome/Safari or use the installed PWA.
-- Unauthorized access attempts: ensure NestJS enforces email whitelist and rejects unknown emails.
-- Role confusion: always resolve roles from the employee table, not JWT metadata.
+- Unauthorized access attempts: ensure NestJS enforces email whitelist and rejects unknown emails with 403 responses.
+- Role confusion: always resolve roles from the employee table, not JWT metadata which can be tampered with.
 - RLS misconfiguration: keep Row Level Security deny-all and route all reads/writes through NestJS.
-- Deadline edge cases: enforce request lockout based on current time vs. weekly deadline in WITA.
+- Deadline edge cases: enforce request lockout based on current time vs. weekly deadline in WITA timezone.
+- iPhone standalone mode issues: use redirect flow instead of popup for Google OAuth authentication.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:222-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L222-L228)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L249)
 
 ## Conclusion
-The Kyne shift scheduling MVP replaces ad-hoc scheduling with a clear weekly cycle: staff submit requests; the manager drafts and validates a schedule; and the published schedule is accessible to staff on mobile devices. The architecture aligns with the ERP stack to enable future migration. Success hinges on strict adherence to business rules, robust authentication and authorization, and reliable coverage validation.
+The Kyne shift scheduling MVP replaces ad-hoc scheduling with a clear weekly cycle: staff submit requests through a mobile-friendly PWA; the manager drafts and validates a schedule with automated assistance; and the published schedule is accessible to staff on mobile devices. The architecture aligns with the ERP stack to enable future migration while providing immediate value through reduced manual work and improved communication. Success hinges on strict adherence to business rules, robust authentication and authorization, reliable coverage validation, and excellent mobile user experience.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
 ## Appendices
 
 ### Business Rules and Validations Summary
+Comprehensive business rules governing the scheduling system:
 - Shift types: morning (07:30–15:30), afternoon (15:00–23:00), middle (11:00–19:00, kitchen only when a kitchen colleague is off).
-- Morning and afternoon overlap by 30 minutes for handover.
+- Morning and afternoon overlap by 30 minutes (15:00–15:30) for handover procedures.
 - Leave limits: one day per week per non-probationary staff, Monday–Thursday only.
 - Daily leave caps: maximum one bar and one kitchen leave per day; conflicts flagged for manager decision.
-- Shift preferences: morning or afternoon, any day, advisory only.
-- Probationary staff: no request menu.
-- Request window: opens when the current week’s schedule is published; closes Sunday 12:00 WITA.
-- No request: manager assigns the day off.
-- Kitchen coverage: if one kitchen staff is off, the other becomes middle; kitchen closed during specified windows.
+- Shift preferences: morning or afternoon, any day, advisory only (not guaranteed).
+- Probationary staff: no request menu available during probation period.
+- Request window: opens when the current week's schedule is published; closes Sunday 12:00 WITA.
+- No request: manager assigns the day off for non-requesting staff.
+- Kitchen coverage: if one kitchen staff is off, the other becomes middle; kitchen closed during specified windows (07.30–11.00 & 19.00–23.00).
 - Weekend coverage: bar minimum two per shift; kitchen minimum one per shift.
 - Weekday coverage: bar minimum one per shift; kitchen minimum one per shift or middle.
 - Bar split rule: when only one bar staff is available, manager decides morning or afternoon.
-- Coverage validation: manager-only visibility.
+- Coverage validation: manager-only visibility with detailed warnings and conflict resolution.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:165-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L165-L195)
 
 ### Data Model Overview
-Entities:
+Seven core entities designed for ERP readiness with proper relationships:
 - Employee: id, name, email, position (bar/kitchen), role (manager/staff), status (probation/permanent), probation_end_date, is_active.
 - Shift type: id, code (PAGI/SORE/MIDDLE), start_time, end_time, applicable_positions.
 - Schedule week: id, start_date (Monday), status (draft/published), request_deadline, published_at, published_by, copied_from_week_id.
@@ -357,49 +378,55 @@ Entities:
 - Settings: key, value (e.g., probation_can_request, deadline_day, deadline_time, timezone).
 
 Design principles for ERP readiness:
-- UUID identifiers.
-- Audit fields: created_at, updated_at, created_by.
-- Soft deletes via deactivation.
-- Calendar dates and local times stored with timezone context.
+- UUID identifiers for all primary keys.
+- Audit fields: created_at, updated_at, created_by on all tables.
+- Soft deletes via deactivation flags rather than hard deletes.
+- Calendar dates and local times stored with timezone context (WITA).
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
 
 ### User Roles and Permissions
+Three-tier role system with clear permission boundaries:
 - Manager: manage employees, view and decide requests, build and publish schedules, view coverage validation and total hours.
 - Staff: view own schedule, submit leave and shift preference requests.
-- Probationary staff: view own schedule only; request menu appears after probation ends.
+- Probationary staff: view own schedule only; request menu appears automatically after probation ends.
 
-All users must log in with a Google account whose email is registered by the manager. Each staff member holds one fixed position (bar or kitchen).
+All users must log in with a Google account whose email is registered by the manager. Each staff member holds one fixed position (bar or kitchen) with no dual positioning allowed.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:27-37](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L27-L37)
 
 ### Success Metrics
-- Publish next week’s schedule by Sunday 18:00 WITA every week.
-- No understaffed Friday–Sunday shifts at publish time.
-- All non-probationary staff submit requests via the app, not via chat.
+Quantifiable success criteria for MVP evaluation:
+- Publish next week's schedule by Sunday 18:00 WITA every week consistently.
+- No understaffed Friday–Sunday shifts at publish time with proper coverage validation.
+- All non-probationary staff submit requests via the app, not via chat or verbal requests.
+- Zero manual scheduling errors due to improved automation and validation.
+- Improved staff satisfaction with transparent scheduling process and mobile accessibility.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:21-25](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L21-L25)
 
 ### Timeline Milestones
+Structured three-week development plan with testing phase:
 - Week 1: Foundation — project setup, database schema, Google login with whitelist (F1), employee management (F2), shift type data, test login from WhatsApp links on Android and iPhone.
 - Week 2: Requests and scheduling — leave and shift requests (F3), manager dashboard (F4), draft from last week and coverage validation (F5).
-- Week 3: Publishing and staff view — publish and WhatsApp sharing (F6), staff schedule view (F7), PWA installation, bug fixes.
-- Trial cycle: One full real-data cycle with six staff; maintain manual fallback until first cycle succeeds.
+- Week 3: Publishing and staff view — publish and WhatsApp sharing (F6), staff schedule view (F7), PWA installation, bug fixes, and mobile optimization.
+- Trial cycle: One full real-data cycle with six staff; maintain manual fallback until first cycle succeeds with proper monitoring.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:250-257](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L250-L257)
 
 ### Acceptance Criteria
-- Authentication: Only whitelisted emails can log in; session persists for 30 days; post-login redirects preserve target URLs.
+Comprehensive acceptance criteria for each functional module:
+- Authentication: Only whitelisted emails can log in; session persists for 30 days; post-login redirects preserve target URLs; works on both Android and iPhone.
 - Employee management: Manager can add, deactivate, set positions, probation status, and end dates; inactive employees cannot log in; probation transitions automatically.
 - Requests: Leave limited to Monday–Thursday, one per week; shift preferences allowed any day; editable until Sunday 12:00 WITA; probationary staff cannot request.
-- Dashboard: Shows all requests, flags conflicts, lists staff without requests.
+- Dashboard: Shows all requests, flags conflicts, lists staff without requests with clear visual indicators.
 - Scheduling: Draft generation automates copy-from-last-week, apply leaves, apply shift preferences, middle-kitchen logic; manager can adjust; coverage validation runs on changes; draft hidden from staff.
-- Publishing: Makes schedule visible to staff; opens next request window; supports WhatsApp sharing; allows post-publish edits.
-- Staff view: Shows own schedule, middle-kitchen notices, and weekly total hours.
+- Publishing: Makes schedule visible to staff; opens next request window; supports WhatsApp sharing; allows post-publish edits with change tracking.
+- Staff view: Shows own schedule, middle-kitchen notices, and weekly total hours with mobile-optimized interface.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)

@@ -1,0 +1,5 @@
+- Each skill directory follows the same shape: a top-level `SKILL.md` with YAML frontmatter (`name`, `description`) followed by `<what-to-do>` and `<supporting-info>` sections, plus an `agents/openai.yaml` declaring the skill's display name and implicit-invocation policy.
+- Skills distinguish between explore-mode (gathering raw material without committing structure) and exploit-mode (working from a fixed pile), and explicitly refuse to mix the two phases within one run.
+- The grounding discipline recurs across skills: every concept must be either a prerequisite settled before the first beat/paragraph or introduced inside the piece, and later moves may only lean on already-grounded concepts.
+- File I/O is append-only with a re-read-before-write pattern: skills always re-read the target file from disk before appending or editing in place, preserving user edits rather than overwriting blindly.
+- Cross-skill documentation uses relative Markdown links (e.g. `SKILL.md` → `SKILL-MECHANICS.md`) instead of absolute paths, keeping sibling references portable.

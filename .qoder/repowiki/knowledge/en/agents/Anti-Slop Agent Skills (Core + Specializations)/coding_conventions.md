@@ -1,0 +1,6 @@
+- Every skill file begins with a YAML front-matter block declaring `name` and `description`, followed by a top-level heading and an introductory paragraph that states it is part of the antislop system and must be read together with `antislop.md`.
+- Specialization skills follow a uniform entry shape per pattern: **Tell** (the slop pattern), **Why** (why it reads as AI), **Fix** (what to do instead), with the governing core rule cited as `R-XX`.
+- Rules are numbered once in the core (`R-01`..`R-40`) and referenced by number from every specialization without renumbering or duplicating definitions.
+- Each skill ends with a checklist section (e.g. 'Code Comment Checklist', 'Copywriting Skill Checklist', 'Human Skill Checklist', 'Layoutmobile Skill Checklist', 'UI Skill Checklist') that mirrors the core Delivery Gate with skill-specific items.
+- Patterns are framed as diagnostic tells rather than absolute bans: a technique is allowed when it serves a stated purpose and the reason is written down, with dose caps applied where excessive use is called out.
+- Reference material is kept under a `references/` subdirectory within the skill (e.g. `WCAG.md`, `A11Y-PATTERNS.md`, `CORE-WEB-VITALS.md`, `WEB-BASELINE.md`) and linked from the skill's narrative rather than inlined.
