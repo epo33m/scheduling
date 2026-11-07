@@ -3,14 +3,25 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-11-07T19:57:41Z"
+exported_at: "2026-11-07T20:44:02Z"
 modules:
+    "":
+        dir_name: Shift Scheduling App (Pre-Implementation Scaffold)
+        title: Shift Scheduling App (Pre-Implementation Scaffold)
+        scope:
+            - README.md
+            - .gitignore
+            - docs/
+        source_files: []
+        children:
+            - agents
+        depends_on: []
+        related_to: []
     agents:
-        dir_name: agents
-        title: agents
+        dir_name: Agent Skills Registry
+        title: Agent Skills Registry
         scope:
             - .agents/
-            - .claude/skills/
             - agent/
             - DESIGN.md
         source_files: []
@@ -58,7 +69,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: agents/orchestration_handoff_skills
+            - path: agents/setup_and_infrastructure_skills
+            - path: agents/writing_skills
     agents/orchestration_handoff_skills:
         dir_name: Agent Orchestration & Handoff Skills
         title: Agent Orchestration & Handoff Skills
@@ -77,10 +91,11 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: agents/dev_workflow_skills
     agents/setup_and_infrastructure_skills:
-        dir_name: setup_and_infrastructure_skills
-        title: setup_and_infrastructure_skills
+        dir_name: Agent Setup, Guardrails & Workflow Skills
+        title: Agent Setup, Guardrails & Workflow Skills
         scope:
             - agent/skills/setup-matt-pocock-skills/
             - agent/skills/setup-pre-commit/
@@ -93,7 +108,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: agents/dev_workflow_skills
     agents/writing_skills:
         dir_name: Writing Skills Toolkit
         title: Writing Skills Toolkit
@@ -105,4 +121,5 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: agents/dev_workflow_skills

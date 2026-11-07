@@ -1,0 +1,1 @@
+A flat registry of Markdown-based agent skills, each a self-contained directory with SKILL.md and an agents/openai.yaml profile, consumed by the parent project's AI workflow.

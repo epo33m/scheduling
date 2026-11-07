@@ -19,4 +19,7 @@ scope:
     - agent/skills/diagnosing-bugs/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: agents/orchestration_handoff_skills
+    - path: agents/setup_and_infrastructure_skills
+    - path: agents/writing_skills

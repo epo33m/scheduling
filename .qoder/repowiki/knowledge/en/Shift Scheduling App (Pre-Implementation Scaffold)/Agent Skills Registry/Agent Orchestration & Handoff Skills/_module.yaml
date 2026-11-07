@@ -15,4 +15,5 @@ scope:
     - agent/skills/wizard/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: agents/dev_workflow_skills

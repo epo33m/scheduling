@@ -1,0 +1,3 @@
+- Each skill lives in its own directory under `agent/skills/<name>/` with a top-level `SKILL.md` describing the prompt behavior.
+- Skills that target a specific LLM include an `agents/openai.yaml` file declaring model parameters alongside the skill definition.
+- Cross-session orchestration skills expose their prompts via `SKILL.md` and rely on handoff skills to pass context between separate agent runs instead of sharing state.

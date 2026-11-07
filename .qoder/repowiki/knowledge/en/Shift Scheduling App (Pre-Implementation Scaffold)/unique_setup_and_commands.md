@@ -1,0 +1,1 @@
+None — README explicitly defers install/run/test instructions until the project stack and tooling are selected.

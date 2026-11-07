@@ -1,9 +1,8 @@
 schema_version: 1
 module_path: agents
-title: agents
+title: Agent Skills Registry
 scope:
     - .agents/
-    - .claude/skills/
     - agent/
     - DESIGN.md
 source_files: []

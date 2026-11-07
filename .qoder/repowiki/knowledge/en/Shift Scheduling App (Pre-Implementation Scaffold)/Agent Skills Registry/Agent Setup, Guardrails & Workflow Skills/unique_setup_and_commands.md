@@ -1,0 +1,1 @@
+Each skill is invoked as a prompt-driven agent task rather than a CLI command; the only executable artifact is `git-guardrails-claude-code/scripts/block-dangerous-git.sh`, which is copied into `.claude/hooks/` and verified via `echo '{"tool_input":{"command":"git push origin main"}}' | <path>` expecting exit code 2.

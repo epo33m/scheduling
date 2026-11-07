@@ -34,3 +34,11 @@ Strict and non-negotiable for every agent working in this repo:
 3. **Conflict order**: DESIGN.md wins on concrete visual values; antislop R-XX wins on process and AI-slop patterns. Both must be satisfied — surface conflicts, never silently break one.
 
 Full rule text: `.qoder/rules/antislop-design-mandatory.md`.
+
+## Ponytail — default-on overlay
+
+Ponytail is a session-scoped minimizer, **default ON** for logic / bug-fix / refactor work — assume lazy mode from the first prompt, no `/ponytail` needed. It shrinks the diff; it never overrides the mandatory rules above. Say "stop ponytail" / "normal mode" to opt out. It is suspended automatically for UI/UX (see #2).
+
+1. **Precedence when they conflict**: (1) graphify + antislop + DESIGN.md are non-negotiable → (2) whatever the user explicitly asked for → (3) everything else (internals, extras, abstractions, dependencies) ponytail minimizes. Be lazy about internals, never about user-facing quality, accessibility, security, or validation.
+2. **Auto-OFF for UI/UX work**: the moment a task touches interface, layout, styling, components, or user-facing prose, ponytail is suspended for that work — antislop + DESIGN.md govern it. It resumes on its own for the next logic/bug-fix/refactor pass; no need to re-invoke `/ponytail`.
+3. **Scope is not laziness**: ponytail must still run the graphify blast-radius query and finish every caller/test/fixture a change touches. It cuts speculative code, not required coverage.

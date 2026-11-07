@@ -1,0 +1,1 @@
+Markdown-based agent skills managed via a skills-lock.json manifest, with per-skill agents/openai.yaml profiles consumed by an OpenAI-compatible agent runner.

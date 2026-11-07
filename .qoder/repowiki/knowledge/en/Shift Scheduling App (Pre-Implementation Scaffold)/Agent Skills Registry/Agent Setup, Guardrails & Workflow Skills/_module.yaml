@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: agents/setup_and_infrastructure_skills
-title: setup_and_infrastructure_skills
+title: Agent Setup, Guardrails & Workflow Skills
 scope:
     - agent/skills/setup-matt-pocock-skills/
     - agent/skills/setup-pre-commit/
@@ -12,4 +12,5 @@ scope:
     - agent/skills/teach/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: agents/dev_workflow_skills

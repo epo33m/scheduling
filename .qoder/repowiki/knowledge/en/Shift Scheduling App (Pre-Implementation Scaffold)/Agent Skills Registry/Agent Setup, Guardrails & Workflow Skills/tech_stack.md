@@ -1,0 +1,1 @@
+Skills target Claude Code (`.claude/settings.json`, PreToolUse hooks) and OpenAI-compatible agents (`agents/openai.yaml`). Runtime helpers include a Bash script (`block-dangerous-git.sh`) and a Dependency Cruiser config (`dependency-cruiser.config.cjs`); npm/pnpm/yarn/bun lockfiles are auto-detected for pre-commit setup.
