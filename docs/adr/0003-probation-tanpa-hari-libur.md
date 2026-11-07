@@ -1,0 +1,3 @@
+# Probation tanpa hari libur
+
+Owner mengonfirmasi kebijakan bahwa staf selama masa probation tidak mendapat hari libur: mereka dijadwalkan masuk setiap hari sampai `probation_end_date` lewat, dan tidak melihat menu request libur maupun request shift. Alternatif "manager tetap menentukan hari libur staf probation" (yang juga menghilangkan risiko UU Cipta Kerja soal istirahat mingguan) ditolak karena kebijakan owner eksplisit. Risiko hukum dicatat di PRD: tidak ditemukan pengecualian masa percobaan atas kewajiban istirahat mingguan minimal 1 hari untuk 6 hari kerja — diterima sadar. Jangan "memperbaiki" ini di kode tanpa persetujuan owner.

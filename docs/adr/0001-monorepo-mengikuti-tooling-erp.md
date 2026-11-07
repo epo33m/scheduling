@@ -1,0 +1,3 @@
+# Monorepo: tooling ERP, nama direktori per tabel stack PRD
+
+PRD menetapkan monorepo "mengikuti struktur dan tool monorepo ERP" supaya modul NestJS bisa dipindah hampir utuh ke repo ERP. Hasil inspeksi `/Users/voldys/project/erp` untuk tooling: Bun workspaces (`packageManager: bun@1.4.0`) + Turborepo; client Next.js memakai `@supabase/ssr` + TanStack Query + vitest; server NestJS dengan vitest (unit) + jest (api/integration); paket bersama untuk tipe dan validasi. Nama direktori mengikuti tabel stack PRD, bukan nama aktual ERP: `web` (Next.js PWA), `api` (NestJS), plus paket bersama `packages/types` dan `packages/validators`. Tabel PRD jadi sumber kebenaran nama; tabel ini juga menjawab ambiguitas "web/api vs client/server" yang muncul saat porting ke ERP.

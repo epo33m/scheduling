@@ -27,6 +27,9 @@ pnpm-debug.log*
 
 # editors / OS
 .DS_Store
+
+# graphify generated knowledge graph
+graphify-out/
 .idea/
 .vscode/
 *.swp
