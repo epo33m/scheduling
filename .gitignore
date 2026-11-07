@@ -1,0 +1,33 @@
+# Stack belum ditetapkan, jadi ignore ditulis agnostik — hapus blok yang tidak terpakai
+# setelah tooling proyek dipilih.
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# dependencies
+node_modules/
+vendor/
+.venv/
+venv/
+
+# build output
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# logs / debug
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.pem
