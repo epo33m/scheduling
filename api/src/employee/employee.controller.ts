@@ -42,12 +42,18 @@ export class EmployeeController {
   }
 
   @Patch(':id/deactivate')
-  deactivate(@Param('id') id: string): Promise<ManagedEmployee> {
-    return this.employees.setActive(id, false);
+  deactivate(
+    @Param('id') id: string,
+    @CurrentEmployee() actor: SessionEmployee,
+  ): Promise<ManagedEmployee> {
+    return this.employees.setActive(id, false, actor.id);
   }
 
   @Patch(':id/reactivate')
-  reactivate(@Param('id') id: string): Promise<ManagedEmployee> {
-    return this.employees.setActive(id, true);
+  reactivate(
+    @Param('id') id: string,
+    @CurrentEmployee() actor: SessionEmployee,
+  ): Promise<ManagedEmployee> {
+    return this.employees.setActive(id, true, actor.id);
   }
 }

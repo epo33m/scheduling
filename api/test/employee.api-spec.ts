@@ -295,6 +295,16 @@ describe('employee management over HTTP', () => {
         .expect(200);
     });
 
+    it('refuses a manager deactivating their own account', async () => {
+      await request(app.getHttpServer())
+        .patch('/employees/m1/deactivate')
+        .set('Authorization', `Bearer ${await asManager()}`)
+        .expect(400);
+
+      // The actor stays active, so the manager surface is never locked out.
+      expect(findRow(managerEmail)?.isActive).toBe(true);
+    });
+
     it('returns 404 when the id is unknown', async () => {
       await request(app.getHttpServer())
         .patch('/employees/does-not-exist/deactivate')

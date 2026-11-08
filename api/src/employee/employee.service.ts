@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -78,7 +79,9 @@ export class EmployeeService {
       where: { email: input.email },
     });
     if (existing) {
-      throw new ConflictException('Email itu sudah terdaftar sebagai staf.');
+      throw new ConflictException(
+        'Email itu sudah terdaftar. Kalau stafnya pernah nonaktif, aktifkan lagi dari daftar staf.',
+      );
     }
 
     const row = await this.prisma.employee.create({
@@ -102,11 +105,25 @@ export class EmployeeService {
   /**
    * Toggle a staff member on or off. Reactivation reuses the existing row, so
    * it never mints a new id: the person's history is the same history.
+   *
+   * A manager cannot switch off their own account. That single action would
+   * leave no active manager to open Kelola staf again, locking the whole
+   * screen (and every reactivation) out with no way back.
    */
-  async setActive(id: string, isActive: boolean): Promise<ManagedEmployee> {
+  async setActive(
+    id: string,
+    isActive: boolean,
+    actorId: string,
+  ): Promise<ManagedEmployee> {
     const existing = await this.prisma.employee.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException('Staf tidak ditemukan.');
+    }
+
+    if (!isActive && id === actorId) {
+      throw new BadRequestException(
+        'Anda tidak bisa menonaktifkan akun sendiri.',
+      );
     }
 
     const row = await this.prisma.employee.update({
