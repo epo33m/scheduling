@@ -155,10 +155,6 @@
   gap: var(--spacing-sm);
 }
 
-.decideRow button {
-  min-width: 104px;
-}
-
 .notice {
   margin: var(--spacing-sm) 0 0;
   font-size: var(--text-caption-size);

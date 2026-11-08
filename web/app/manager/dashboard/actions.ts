@@ -42,9 +42,12 @@ export async function decideAction(
           ? error.message
           : 'Gagal menyimpan keputusan. Coba lagi.',
     };
+  } finally {
+    // Revalidate on success and failure alike: the row must snap back to the
+    // server's truth, never stay stuck on a button that only seemed to work.
+    revalidatePath(DASHBOARD_PATH);
   }
 
-  revalidatePath(DASHBOARD_PATH);
   return {
     ok: true,
     message: decision === 'approve' ? 'Request disetujui.' : 'Request ditolak.',

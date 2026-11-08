@@ -27,7 +27,7 @@ export function DecideControls({ kind, id }: Props) {
   );
 
   return (
-    <form action={formAction} className={styles.decide}>
+    <form action={formAction}>
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
       <div

@@ -1,7 +1,7 @@
 import type {
   ManagedEmployee,
   OffRequestView,
-  RequestStatus,
+  RequestDecisionResult,
   RequestsDashboard,
   ShiftRequestView,
   StaffRequests,
@@ -165,10 +165,10 @@ export function decideRequest(
   kind: 'off' | 'shift',
   id: string,
   decision: 'approve' | 'reject',
-): Promise<{ id: string; status: RequestStatus }> {
+): Promise<RequestDecisionResult> {
   return authorizedFetch(`/dashboard/requests/${kind}/${id}`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ decision }),
-  }).then((r) => r.json() as Promise<{ id: string; status: RequestStatus }>);
+  }).then((r) => r.json() as Promise<RequestDecisionResult>);
 }
