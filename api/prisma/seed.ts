@@ -1,3 +1,4 @@
+import '../src/env';
 import { SHIFT_TYPE_CATALOG } from '@repo/types';
 import { shiftTypeSeedSchema } from '@repo/validators';
 import { PrismaPg } from '@prisma/adapter-pg';

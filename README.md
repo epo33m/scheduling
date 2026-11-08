@@ -20,16 +20,19 @@ Monorepo Bun workspaces + Turborepo (ADR 0001).
 
 ## Getting started
 
-Butuh Bun 1.4.3 dan database Postgres (Supabase).
+Butuh Bun 1.4.3, Docker (OrbStack), dan Supabase CLI.
 
 ```sh
 bun install
-cp .env.example .env      # isi DATABASE_URL (pooled) dan DIRECT_URL (direct)
+bun run db:start          # Supabase lokal: Postgres di 127.0.0.1:54422
+cp .env.example .env      # sudah berisi URL Supabase lokal; ganti untuk Supabase cloud
 bun run db:generate       # generate Prisma client ke api/src/generated
 bun run db:migrate        # terapkan migrasi, termasuk RLS deny-all
 bun run db:seed           # seed shift_type PAGI/SORE/MIDDLE
 bun run dev               # web :3000, api :3001
 ```
+
+Port Supabase lokal digeser ke 5442x (`supabase/config.toml`) supaya bisa jalan bersamaan dengan stack lokal repo lain di mesin yang sama. Untuk Supabase cloud, isi `DATABASE_URL` (pooled) dan `DIRECT_URL` (direct) dari dashboard.
 
 ## Perintah
 
@@ -40,6 +43,9 @@ bun run dev               # web :3000, api :3001
 | `bun run typecheck` | `tsc --noEmit` di semua paket |
 | `bun run test` | unit test (vitest) |
 | `bun run test:api` | integration test api (jest) |
+| `bun run db:start` / `db:stop` | Supabase lokal hidup / mati |
+| `bun run db:migrate` | terapkan migrasi Prisma |
+| `bun run db:seed` | seed `shift_type` dari PRD |
 | `bun run format` | prettier |
 
 `GET http://localhost:3001/health` mengembalikan `{"status":"ok"}`. Endpoint ini cek liveness saja, belum menyentuh database.
