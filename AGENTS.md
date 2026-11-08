@@ -14,6 +14,18 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+## Clean Working Tree — MANDATORY
+
+A task is not finished while the tree is dirty:
+
+1. **Commit everything that is not gitignored** before reporting done — code, tests, docs, regenerated `.qoder/repowiki/` docs included.
+2. **One concern per commit**, conventional prefix (`feat:`, `fix:`, `chore:`, `docs:`). Several small commits beat one dump.
+3. **End on `git status --short` printing nothing.** Unrelated churn still gets its own commit; it is never left dirty and never discarded.
+4. **Never swept in**: `.env*` (except `.env.example`), credentials, and anything `.gitignore` already covers (`node_modules/`, `dist/`, `.next/`, `.turbo/`, `api/src/generated/`, `graphify-out/`).
+5. **If a commit cannot happen**, report it — no `--no-verify`, no `reset --hard`, no discarding someone else's work to get clean.
+
+Full rule text: `.qoder/rules/clean-working-tree.md`.
+
 ## Graphify — MANDATORY
 
 These rules are strict and non-negotiable for every agent working in this repo:

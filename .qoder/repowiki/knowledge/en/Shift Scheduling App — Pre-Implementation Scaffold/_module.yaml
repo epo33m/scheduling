@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: ""
-title: Shift Scheduling App (Pre-Implementation Scaffold)
+title: Shift Scheduling App — Pre-Implementation Scaffold
 scope:
     - README.md
     - .gitignore
