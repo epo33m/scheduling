@@ -74,8 +74,8 @@ async function refusalMessage(response: Response): Promise<string> {
 }
 
 export function listEmployees(): Promise<ManagedEmployee[]> {
-  return authorizedFetch('/employees', { method: 'GET' }).then((r) =>
-    r.json() as Promise<ManagedEmployee[]>,
+  return authorizedFetch('/employees', { method: 'GET' }).then(
+    (r) => r.json() as Promise<ManagedEmployee[]>,
   );
 }
 
@@ -93,7 +93,10 @@ export function setEmployeeActive(
   id: string,
   isActive: boolean,
 ): Promise<ManagedEmployee> {
-  return authorizedFetch(`/employees/${id}/${isActive ? 'reactivate' : 'deactivate'}`, {
-    method: 'PATCH',
-  }).then((r) => r.json() as Promise<ManagedEmployee>);
+  return authorizedFetch(
+    `/employees/${id}/${isActive ? 'reactivate' : 'deactivate'}`,
+    {
+      method: 'PATCH',
+    },
+  ).then((r) => r.json() as Promise<ManagedEmployee>);
 }

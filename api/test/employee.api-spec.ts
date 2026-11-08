@@ -78,7 +78,11 @@ describe('employee management over HTTP', () => {
     ];
     rows = seed();
 
-    const findUnique = ({ where }: { where: { email?: string; id?: string } }) =>
+    const findUnique = ({
+      where,
+    }: {
+      where: { email?: string; id?: string };
+    }) =>
       rows.find((r) =>
         where.email !== undefined ? r.email === where.email : r.id === where.id,
       ) ?? null;
@@ -145,8 +149,7 @@ describe('employee management over HTTP', () => {
       .sign(signingKey);
   }
 
-  const asManager = async () =>
-    (await accessToken(managerEmail)).toString();
+  const asManager = async () => (await accessToken(managerEmail)).toString();
 
   function findRow(email: string): Row | undefined {
     return rows.find((r) => r.email === email);

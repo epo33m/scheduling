@@ -18,11 +18,7 @@ export const calendarDateSchema = z
 export const createEmployeeSchema = z
   .object({
     name: z.string().trim().min(1),
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .pipe(z.email()),
+    email: z.string().trim().toLowerCase().pipe(z.email()),
     position: z.enum(EMPLOYEE_POSITIONS),
     role: z.enum(EMPLOYEE_ROLES).default('staff'),
     status: z.enum(EMPLOYEE_STATUSES).default('probation'),
