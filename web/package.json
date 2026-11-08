@@ -10,6 +10,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@repo/types": "*",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "dotenv": "^18.0.9",
     "next": "16.2.12",
     "react": "19.2.7",
     "react-dom": "19.2.7"
