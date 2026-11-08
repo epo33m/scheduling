@@ -1,0 +1,26 @@
+/// A staff member's preference for which shift to work on a given day (PRD
+/// §Model data). Best-effort, not guaranteed: the manager decides (F4). Only
+/// PAGI and SORE are requestable — MIDDLE is derived by the scheduler when a
+/// kitchen peer is off, never requested. Unlike an off request, a staff member
+/// may hold one shift request per day across the week (unique below), so the
+/// rows are per-day, not one-per-week.
+model ShiftRequest {
+  id         String        @id @default(uuid()) @db.Uuid
+  weekId     String        @map("week_id") @db.Uuid
+  employeeId String        @map("employee_id") @db.Uuid
+  tanggal    DateTime      @db.Date
+  shiftCode  ShiftCode     @map("shift_code")
+  status     RequestStatus @default(pending)
+  decidedBy  String?       @map("decided_by") @db.Uuid
+  decidedAt  DateTime?     @map("decided_at")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  createdBy  String?       @map("created_by") @db.Uuid
+
+  week     ScheduleWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, employeeId, tanggal])
+  @@index([employeeId])
+  @@map("shift_request")
+}

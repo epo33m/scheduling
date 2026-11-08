@@ -31,6 +31,9 @@ model Employee {
   updatedAt        DateTime         @updatedAt @map("updated_at")
   createdBy        String?          @map("created_by") @db.Uuid
 
+  offRequests   OffRequest[]
+  shiftRequests ShiftRequest[]
+
   @@index([isActive])
   @@map("employee")
 }

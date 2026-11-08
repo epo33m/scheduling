@@ -2,9 +2,33 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
+- [employee.controller.ts](file://api/src/employee/employee.controller.ts)
+- [employee.service.ts](file://api/src/employee/employee.service.ts)
+- [probation.ts](file://api/src/employee/probation.ts)
+- [probation.spec.ts](file://api/src/employee/probation.spec.ts)
+- [employee.api-spec.ts](file://api/test/employee.api-spec.ts)
+- [page.tsx](file://web/app/manager/staff/page.tsx)
+- [add-staff-form.tsx](file://web/app/manager/staff/add-staff-form.tsx)
+- [actions.ts](file://web/app/manager/staff/actions.ts)
+- [api.ts](file://web/lib/api.ts)
+- [employee-labels.ts](file://web/lib/employee-labels.ts)
+- [auth.guard.ts](file://api/src/auth/auth.guard.ts)
+- [roles.guard.ts](file://api/src/auth/roles.guard.ts)
+- [employee.prisma](file://api/prisma/schema/employee.prisma)
+- [index.ts](file://packages/types/src/index.ts)
+- [employee.ts](file://packages/types/src/employee.ts)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated from scaffold specification to fully implemented module documentation
+- Added complete backend API endpoints with RBAC enforcement
+- Documented frontend staff management interface and forms
+- Included probation advancement logic with WITA timezone handling
+- Added comprehensive testing coverage details
+- Updated data models and validation rules based on actual implementation
+- Enhanced integration points with authentication system
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -12,375 +36,464 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [API Endpoints](#api-endpoints)
+7. [Frontend Implementation](#frontend-implementation)
+8. [Testing Coverage](#testing-coverage)
+9. [Data Models and Validation](#data-models-and-validation)
+10. [Integration with Authentication](#integration-with-authentication)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
 
 ## Introduction
-This document specifies the Employee Management module (F2) for the Kyne shift scheduling application. It defines functional requirements, data models, business rules, user stories, acceptance criteria, and integration points with authentication and scheduling modules. The repository is currently a scaffold without implementation code; this specification serves as the authoritative blueprint for building F2 consistently with the Product Requirements Document (PRD).
+The Employee Management module (F2) is now fully implemented for the Kyne shift scheduling application. This document specifies the complete functional implementation including backend API endpoints, frontend staff management interface, probation advancement logic, and comprehensive testing coverage. The module provides manager-only CRUD operations with soft-delete capabilities and strict RBAC enforcement.
 
-The module supports:
-- CRUD operations for employee records
-- Position assignment distinguishing bar and kitchen roles
-- Probation status tracking with automatic transitions
-- Active/inactive status management affecting login and scheduling eligibility
-- Integration with Google-based authentication and whitelist enforcement
-- Data model alignment for future migration to an ERP system
+The implemented module supports:
+- Complete CRUD operations for employee records via REST API
+- Manager-only access control through role-based authorization
+- Probation status tracking with automatic transitions based on WITA timezone
+- Active/inactive status management affecting login eligibility
+- Soft-delete capabilities preserving historical data
+- Comprehensive testing coverage for all business logic
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [employee.controller.ts:16-23](file://api/src/employee/employee.controller.ts#L16-L23)
+- [employee.service.ts:35-40](file://api/src/employee/employee.service.ts#L35-L40)
+- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L121)
 
 ## Project Structure
-At this stage, the repository contains only documentation and scaffolding notes. There are no source files yet. The PRD outlines the intended stack and module boundaries:
-- Frontend: Next.js PWA
-- Backend: NestJS modules including Auth, Employee, Request, Schedule, Publish
-- Database: PostgreSQL via Prisma
-- Authentication: Supabase Auth with Google provider and JWT verification in NestJS
+The Employee Management module spans both backend (NestJS) and frontend (Next.js) components with clear separation of concerns:
 
 ```mermaid
 graph TB
-subgraph "Planned Stack"
-Web["Next.js PWA"]
-API["NestJS API"]
-DB["PostgreSQL (Supabase)"]
-Auth["Supabase Auth (Google)"]
+subgraph "Backend (NestJS)"
+Controller["EmployeeController<br/>REST API Endpoints"]
+Service["EmployeeService<br/>Business Logic"]
+Probation["Probation Logic<br/>WITA Timezone"]
+Auth["Auth Guards<br/>RBAC Enforcement"]
+DB["Prisma Database<br/>Employee Schema"]
 end
-Web --> API
-API --> DB
-API --> Auth
+subgraph "Frontend (Next.js)"
+StaffPage["Staff Page<br/>Manager Interface"]
+AddForm["Add Staff Form<br/>Employee Creation"]
+Actions["Server Actions<br/>API Integration"]
+Labels["Employee Labels<br/>UI Display"]
+end
+Controller --> Service
+Service --> DB
+Service --> Probation
+Controller --> Auth
+StaffPage --> Actions
+Actions --> Controller
+AddForm --> Actions
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
+- [employee.controller.ts:21-24](file://api/src/employee/employee.controller.ts#L21-L24)
+- [employee.service.ts:42-43](file://api/src/employee/employee.service.ts#L42-L43)
+- [page.tsx:27-29](file://web/app/manager/staff/page.tsx#L27-L29)
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [employee.controller.ts:1-60](file://api/src/employee/employee.controller.ts#L1-L60)
+- [employee.service.ts:1-137](file://api/src/employee/employee.service.ts#L1-L137)
+- [page.tsx:1-130](file://web/app/manager/staff/page.tsx#L1-L130)
 
 ## Core Components
-Employee Management (F2) centers on managing employee entities and their lifecycle attributes. Key responsibilities include:
-- Creating, updating, retrieving, and deactivating employees
-- Assigning positions (bar or kitchen)
-- Managing probation status and end dates
-- Enforcing active/inactive status constraints
-- Integrating with authentication whitelist and role resolution
+The Employee Management module consists of several key components working together:
 
-Data model elements relevant to F2:
-- employee: id, nama, email, posisi (bar/kitchen), role (manager/staff), status (probation/tetap), probation_end_date, is_active
-- shift_type: id, kode (PAGI/SORE/MIDDLE), jam_mulai, jam_selesai, posisi_berlaku
-- schedule_week: id, start_date, status, request_deadline, published_at, published_by, copied_from_week_id
-- off_request: id, week_id, employee_id, tanggal, status, decided_by, decided_at
-- shift_request: id, week_id, employee_id, tanggal, shift_type_id, status, decided_by, decided_at
-- setting: key, value
+### Backend Components
+- **EmployeeController**: REST API endpoints with manager-only access
+- **EmployeeService**: Business logic for employee lifecycle management
+- **Probation Logic**: Automatic status transitions with WITA timezone support
+- **Authentication Guards**: RBAC enforcement and whitelist validation
 
-These entities underpin F2’s CRUD and state transitions.
+### Frontend Components
+- **Staff Page**: Manager interface for viewing and managing employees
+- **Add Staff Form**: Employee creation with validation
+- **Server Actions**: API integration and form handling
+- **Employee Labels**: UI display labels for enums
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.controller.ts:21-59](file://api/src/employee/employee.controller.ts#L21-L59)
+- [employee.service.ts:42-136](file://api/src/employee/employee.service.ts#L42-L136)
+- [page.tsx:27-129](file://web/app/manager/staff/page.tsx#L27-L129)
 
 ## Architecture Overview
-F2 integrates with:
-- Authentication: Whitelist enforcement in NestJS using employee.email; roles resolved from employee table
-- Scheduling: Employee position influences shift coverage validation and middle-kitchen logic
-- Settings: Probation request behavior controlled by settings such as probation_can_request
+The Employee Management module follows a layered architecture with clear separation between presentation, business logic, and data access layers:
 
 ```mermaid
 sequenceDiagram
 participant Manager as "Manager UI"
-participant API as "NestJS Employee Service"
-participant Auth as "Supabase Auth"
-participant DB as "PostgreSQL"
-Manager->>API : POST /employees (create)
-API->>Auth : Verify session and role
-Auth-->>API : JWT verified
-API->>DB : Insert employee record
-DB-->>API : Created employee
-API-->>Manager : 201 Created
-Manager->>API : PUT /employees/ : id (update)
-API->>DB : Update employee fields
-DB-->>API : Updated employee
-API-->>Manager : 200 OK
-Manager->>API : DELETE /employees/ : id (soft delete)
-API->>DB : Set is_active=false
-DB-->>API : Deactivated employee
-API-->>Manager : 200 OK
-Manager->>API : GET /employees (list)
-API->>DB : Query employees
-DB-->>API : Employee list
-API-->>Manager : 200 OK
+participant Controller as "EmployeeController"
+participant Service as "EmployeeService"
+participant Auth as "Auth Guards"
+participant DB as "Database"
+Manager->>Controller : POST /employees
+Controller->>Auth : Verify manager role
+Auth-->>Controller : Role validated
+Controller->>Service : create(employeeData)
+Service->>DB : Insert employee record
+DB-->>Service : Created employee
+Service-->>Controller : ManagedEmployee
+Controller-->>Manager : 201 Created
+Note over Manager,DB : List employees with probation advancement
+Manager->>Controller : GET /employees
+Controller->>Service : list()
+Service->>DB : Find all employees
+Service->>Service : advanceProbation()
+Service->>DB : Update expired probation
+DB-->>Service : Updated records
+Service-->>Controller : Employee list
+Controller-->>Manager : 200 OK
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.controller.ts:31-42](file://api/src/employee/employee.controller.ts#L31-L42)
+- [employee.service.ts:51-70](file://api/src/employee/employee.service.ts#L51-L70)
+- [auth.guard.ts:29-63](file://api/src/auth/auth.guard.ts#L29-L63)
+
+**Section sources**
+- [employee.controller.ts:16-59](file://api/src/employee/employee.controller.ts#L16-L59)
+- [employee.service.ts:45-70](file://api/src/employee/employee.service.ts#L45-L70)
+- [auth.guard.ts:14-63](file://api/src/auth/auth.guard.ts#L14-L63)
 
 ## Detailed Component Analysis
 
-### Employee Lifecycle and Status Transitions
-Probation-to-permanent transition is automatic based on probation_end_date. When the date passes, the system updates status to tetap (permanent). Notifications can be triggered when probation ends to inform managers and employees.
+### Employee Lifecycle Management
+The EmployeeService implements complete employee lifecycle management with soft-delete capabilities:
 
 ```mermaid
 flowchart TD
-Start(["Employee Created"]) --> Probation["Status = probation<br/>Set probation_end_date"]
-Probation --> CheckDate{"Today >= probation_end_date?"}
-CheckDate --> |No| Wait["Remain probation"]
-CheckDate --> |Yes| Transition["Update status to tetap"]
-Transition --> Notify["Trigger notification to manager and employee"]
-Notify --> End(["Active permanent employee"])
-Wait --> CheckDate
+Start(["Employee Creation"]) --> Validate["Validate Input Data"]
+Validate --> CheckDuplicate{"Email Exists?"}
+CheckDuplicate --> |Yes| Conflict["Return 409 Conflict"]
+CheckDuplicate --> |No| Create["Create Employee Record"]
+Create --> SetActive["Set isActive=true"]
+SetActive --> Success["Return 201 Created"]
+Deactivate(["Deactivation Request"]) --> Toggle["Toggle isActive=false"]
+Toggle --> HistoryPreserved["History Preserved"]
+Reactivate(["Reactivation Request"]) --> ReuseRow["Reuse Existing Row"]
+ReuseRow --> SameId["Same ID Maintained"]
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
+- [employee.service.ts:72-103](file://api/src/employee/employee.service.ts#L72-L103)
+- [employee.service.ts:113-135](file://api/src/employee/employee.service.ts#L113-L135)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
+- [employee.service.ts:72-103](file://api/src/employee/employee.service.ts#L72-L103)
+- [employee.service.ts:113-135](file://api/src/employee/employee.service.ts#L113-L135)
 
-### Position Assignment: Bar vs Kitchen
-Each employee has exactly one fixed position: bar or kitchen. This determines:
-- Eligibility for certain shifts (e.g., middle applies to kitchen only)
-- Coverage validation rules per day and shift type
-- Conflict detection for leave requests within the same position
+### Probation Advancement Logic
+The probation system automatically advances employees from probation to permanent status based on WITA timezone calculations:
+
+```mermaid
+flowchart TD
+ReadNow["Read Current Time (UTC)"] --> ConvertWITA["Convert to WITA Timezone"]
+ConvertWITA --> CompareDate{"Compare with probation_end_date"}
+CompareDate --> |Today > End Date| Advance["Update status to 'tetap'"]
+CompareDate --> |Today <= End Date| StayProbation["Keep status 'probation'"]
+Advance --> Persist["Persist to Database"]
+StayProbation --> NoChange["No Database Change"]
+```
+
+**Diagram sources**
+- [probation.ts:31-45](file://api/src/employee/probation.ts#L31-L45)
+- [employee.service.ts:56-67](file://api/src/employee/employee.service.ts#L56-L67)
+
+**Section sources**
+- [probation.ts:1-46](file://api/src/employee/probation.ts#L1-L46)
+- [employee.service.ts:51-70](file://api/src/employee/employee.service.ts#L51-L70)
+
+### Position Assignment and Role Management
+Each employee has exactly one fixed position (bar or kitchen) with corresponding role assignments:
 
 ```mermaid
 classDiagram
 class Employee {
 +string id
-+string nama
++string name
 +string email
-+enum posisi
-+enum role
-+enum status
-+date probation_end_date
-+boolean is_active
++EmployeePosition position
++EmployeeRole role
++EmployeeStatus status
++boolean isActive
 }
-class ShiftType {
-+string id
-+string kode
-+time jam_mulai
-+time jam_selesai
-+enum posisi_berlaku
+class EmployeePosition {
+<<enum>>
+bar
+kitchen
 }
-Employee --> ShiftType : "position affects eligible shifts"
+class EmployeeRole {
+<<enum>>
+manager
+staff
+}
+class EmployeeStatus {
+<<enum>>
+probation
+tetap
+}
+Employee --> EmployeePosition
+Employee --> EmployeeRole
+Employee --> EmployeeStatus
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:3-17](file://api/prisma/schema/employee.prisma#L3-L17)
+- [employee.ts:1-11](file://packages/types/src/employee.ts#L1-L11)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:37-37](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L37-L37)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:169-177](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L169-L177)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [employee.ts:1-26](file://packages/types/src/employee.ts#L1-L26)
 
-### Active/Inactive Status and Scheduling Eligibility
-Inactive employees cannot log in, but historical schedules remain intact. Active status impacts:
-- Login eligibility via whitelist enforcement
-- Visibility in scheduling workflows
-- Eligibility for request submission (subject to probation status)
+## API Endpoints
+The Employee Management module exposes RESTful API endpoints with strict manager-only access control:
+
+### Employee Management Endpoints
+
+#### List Employees
+- **Method**: GET
+- **Path**: `/employees`
+- **Authorization**: Manager role required
+- **Response**: Array of `ManagedEmployee` objects
+- **Features**: Automatic probation advancement during read operation
+
+#### Create Employee
+- **Method**: POST
+- **Path**: `/employees`
+- **Authorization**: Manager role required
+- **Request Body**: Employee creation data with validation
+- **Response**: Created `ManagedEmployee` object (201 Created)
+- **Validation**: Email uniqueness, required fields, probation date validation
+
+#### Deactivate Employee
+- **Method**: PATCH
+- **Path**: `/employees/:id/deactivate`
+- **Authorization**: Manager role required
+- **Response**: Updated `ManagedEmployee` object with `isActive=false`
+- **Protection**: Prevents self-deactivation of manager accounts
+
+#### Reactivate Employee
+- **Method**: PATCH
+- **Path**: `/employees/:id/reactivate`
+- **Authorization**: Manager role required
+- **Response**: Updated `ManagedEmployee` object with `isActive=true`
+- **Behavior**: Reuses existing row maintaining same ID
+
+**Section sources**
+- [employee.controller.ts:26-59](file://api/src/employee/employee.controller.ts#L26-L59)
+- [employee.api-spec.ts:158-317](file://api/test/employee.api-spec.ts#L158-L317)
+
+## Frontend Implementation
+The frontend provides a comprehensive staff management interface for managers:
+
+### Staff Management Page
+The main page displays all employees with their current status and allows for active/inactive toggling:
 
 ```mermaid
-stateDiagram-v2
-[*] --> Active
-Active --> Inactive : "is_active=false"
-Inactive --> Active : "is_active=true"
-Active --> Probation : "status=probation"
-Probation --> Permanent : "probation_end_date passed"
-Permanent --> Active : "status=tetap"
+flowchart TD
+LoadPage["Load Staff Page"] --> FetchEmployees["Fetch Employee List"]
+FetchEmployees --> DisplayList["Display Employee Cards"]
+DisplayList --> ShowDetails["Show Employee Details"]
+ShowDetails --> ToggleAction["Toggle Active/Inactive"]
+ToggleAction --> UpdateServer["Update Server State"]
+UpdateServer --> RefreshList["Refresh Employee List"]
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
+- [page.tsx:27-69](file://web/app/manager/staff/page.tsx#L27-L69)
+- [page.tsx:72-129](file://web/app/manager/staff/page.tsx#L72-L129)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
+- [page.tsx:1-130](file://web/app/manager/staff/page.tsx#L1-L130)
 
-### User Stories for Manager Workflows
-- As a manager, I can add new employees with name, Google email, position (bar/kitchen), initial status (probation/permanent), probation end date, and active flag.
-- As a manager, I can update employee details including position, status, and active flag.
-- As a manager, I can deactivate employees so they cannot log in while preserving historical data.
-- As a manager, I can view all employees and filter by position, status, and active flag.
+### Add Staff Form
+The form handles employee creation with proper validation and user feedback:
 
-Acceptance criteria:
-- Adding an employee requires valid email format and a defined position (bar or kitchen).
-- Updating position must not allow multiple positions per employee.
-- Deactivation sets is_active=false and prevents login via whitelist check.
-- Retrieval returns only active employees unless explicitly requested otherwise.
+```mermaid
+flowchart TD
+OpenForm["Open Add Staff Form"] --> FillFields["Fill Required Fields"]
+FillFields --> SelectPosition["Select Position (Bar/Kitchen)"]
+SelectPosition --> SelectRole["Select Role (Manager/Staff)"]
+SelectRole --> SelectStatus["Select Status (Probation/Tetap)"]
+SelectStatus --> ProbationCheck{"Status = Probation?"}
+ProbationCheck --> |Yes| SetEndDate["Set Probation End Date"]
+ProbationCheck --> |No| SkipDate["Skip End Date"]
+SetEndDate --> SubmitForm["Submit Form"]
+SkipDate --> SubmitForm
+SubmitForm --> ValidateData["Validate Data"]
+ValidateData --> CallAPI["Call Create API"]
+CallAPI --> ShowResult["Show Success/Error Message"]
+```
 
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-### Business Logic for Employee Lifecycle Management
-- Probation auto-transition: When today >= probation_end_date, set status to tetap and trigger notifications.
-- Active/inactive enforcement: Inactive employees cannot authenticate; whitelist checks reject unknown emails.
-- Position constraints: Each employee has exactly one position; middle shift applies only to kitchen.
-- Data integrity: Use UUIDs, created_at/updated_at timestamps, and soft deletes (no hard deletes).
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:169-177](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L169-L177)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:211-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L211-L217)
-
-### API Endpoints (Proposed)
-Endpoints align with NestJS module structure and RBAC enforced by the Employee service.
-
-- Create Employee
-  - Method: POST
-  - Path: /employees
-  - Role: manager
-  - Body: nama, email, posisi, status, probation_end_date, is_active
-  - Response: 201 Created with employee object
-
-- Update Employee
-  - Method: PUT
-  - Path: /employees/:id
-  - Role: manager
-  - Body: nama, email, posisi, status, probation_end_date, is_active
-  - Response: 200 OK with updated employee
-
-- Deactivate Employee
-  - Method: PATCH
-  - Path: /employees/:id/deactivate
-  - Role: manager
-  - Response: 200 OK with is_active=false
-
-- Retrieve Employees
-  - Method: GET
-  - Path: /employees
-  - Role: manager
-  - Query params: position, status, isActive
-  - Response: 200 OK with array of employees
-
-- Retrieve Single Employee
-  - Method: GET
-  - Path: /employees/:id
-  - Role: manager
-  - Response: 200 OK with employee object
-
-Integration notes:
-- All endpoints require authenticated sessions verified by NestJS against Supabase Auth.
-- Roles are resolved from the employee table, not JWT metadata.
-- Whitelist enforcement rejects unregistered emails at the API layer.
+**Diagram sources**
+- [add-staff-form.tsx:19-154](file://web/app/manager/staff/add-staff-form.tsx#L19-L154)
+- [actions.ts:18-47](file://web/app/manager/staff/actions.ts#L18-L47)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [add-staff-form.tsx:1-155](file://web/app/manager/staff/add-staff-form.tsx#L1-L155)
+- [actions.ts:1-62](file://web/app/manager/staff/actions.ts#L1-L62)
 
-### Data Models and Validation Rules
-Core fields and constraints:
-- employee.id: UUID
-- employee.nama: string, required
-- employee.email: string, unique, used for whitelist login
-- employee.posisi: enum bar/kitchen, required
-- employee.role: enum manager/staff, derived from organizational needs
-- employee.status: enum probation/tetap, auto-transitioned
-- employee.probation_end_date: date, required if status=probation
-- employee.is_active: boolean, default true
+## Testing Coverage
+The module includes comprehensive testing coverage ensuring reliability and correctness:
 
-Validation rules:
-- Email must exist in whitelist; otherwise, access denied.
-- Position must be exactly one of bar or kitchen.
-- Probation end date must be in the future when creating probation employees.
-- Soft delete via is_active; no hard deletes.
+### Backend Test Coverage
+- **RBAC Testing**: Verifies manager-only access and staff member rejection
+- **CRUD Operations**: Tests create, list, deactivate, and reactivate functionality
+- **Probation Logic**: Validates automatic status transitions with timezone handling
+- **Error Handling**: Tests duplicate emails, invalid IDs, and self-deactivation prevention
+
+### Probation Logic Testing
+The probation advancement logic is thoroughly tested with various timezone scenarios:
+
+```mermaid
+flowchart TD
+TestCases["Test Cases"] --> BasicAdvance["Basic Advance Test"]
+TestCases --> EndDateBoundary["End Date Boundary Test"]
+TestCases --> BeforeEndDate["Before End Date Test"]
+TestCases --> WITATimezone["WITA Timezone Test"]
+TestCases --> AlreadyPermanent["Already Permanent Test"]
+TestCases --> NoEndDate["No End Date Test"]
+BasicAdvance --> Pass["Passes"]
+EndDateBoundary --> Pass
+BeforeEndDate --> Pass
+WITATimezone --> Pass
+AlreadyPermanent --> Pass
+NoEndDate --> Pass
+```
+
+**Diagram sources**
+- [probation.spec.ts:7-40](file://api/src/employee/probation.spec.ts#L7-L40)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L249)
+- [employee.api-spec.ts:48-319](file://api/test/employee.api-spec.ts#L48-L319)
+- [probation.spec.ts:1-48](file://api/src/employee/probation.spec.ts#L1-L48)
 
-### Integration with Authentication System
-Authentication flow:
-- Google login via Supabase Auth with PKCE redirect
-- NestJS verifies JWT on every request
-- Whitelist enforcement in NestJS denies unregistered emails
-- Roles resolved from employee table
+## Data Models and Validation
+The data model enforces strict validation rules and maintains data integrity:
 
+### Employee Model Schema
+```prisma
+model Employee {
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String
+  email            String           @unique
+  position         EmployeePosition
+  role             EmployeeRole     @default(staff)
+  status           EmployeeStatus   @default(probation)
+  probationEndDate DateTime?        @map("probation_end_date") @db.Date
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  createdBy        String?          @map("created_by") @db.Uuid
+  
+  @@index([isActive])
+  @@map("employee")
+}
+```
+
+### Validation Rules
+- **Email Uniqueness**: Prevents duplicate employee registration
+- **Position Constraint**: Each employee has exactly one position (bar/kitchen)
+- **Role Assignment**: Manager vs staff roles with appropriate permissions
+- **Status Transitions**: Probation automatically advances to permanent
+- **Soft Delete**: Uses `isActive` flag instead of hard deletion
+- **Timezone Handling**: Probation dates use WITA timezone for accurate transitions
+
+**Section sources**
+- [employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
+- [employee.service.ts:72-103](file://api/src/employee/employee.service.ts#L72-L103)
+
+## Integration with Authentication
+The Employee Management module integrates tightly with the authentication system for security and access control:
+
+### Authentication Flow
 ```mermaid
 sequenceDiagram
-participant Staff as "Staff"
-participant Auth as "Supabase Auth"
+participant User as "User"
+participant Supabase as "Supabase Auth"
 participant API as "NestJS API"
-participant DB as "PostgreSQL"
-Staff->>Auth : Google login
-Auth-->>Staff : Redirect with token
-Staff->>API : Request with JWT
-API->>DB : Lookup employee by email
-DB-->>API : Employee record
-API->>API : Validate role and whitelist
-API-->>Staff : Access granted or 403 Forbidden
+participant Guard as "Auth Guard"
+participant Roles as "Roles Guard"
+participant DB as "Database"
+User->>Supabase : Google Login
+Supabase-->>User : JWT Token
+User->>API : Request with JWT
+API->>Guard : Verify token & whitelist
+Guard->>DB : Lookup employee by email
+DB-->>Guard : Employee record
+Guard->>Guard : Check isActive status
+Guard->>Roles : Check role permissions
+Roles-->>API : Access granted/denied
+API-->>User : Response or 403 Forbidden
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [auth.guard.ts:29-63](file://api/src/auth/auth.guard.ts#L29-L63)
+- [roles.guard.ts:20-41](file://api/src/auth/roles.guard.ts#L20-L41)
+
+### Security Features
+- **Whitelist Enforcement**: Only registered employees can authenticate
+- **Active Status Check**: Inactive employees are blocked from logging in
+- **Role-Based Access Control**: Manager-only access to employee management
+- **JWT Verification**: Secure token validation against Supabase keys
+- **Session Management**: Proper session handling throughout the application
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
-
-## Dependency Analysis
-F2 depends on:
-- Authentication module for session verification and role resolution
-- Database schema for employee, shift_type, schedule_week, off_request, shift_request, and setting
-- Settings module for controlling probation request behavior and deadlines
-
-```mermaid
-graph TB
-F2["Employee Management (F2)"]
-Auth["Authentication (F1)"]
-DB["Database Schema"]
-Settings["Settings"]
-Schedule["Scheduling (F5/F6)"]
-F2 --> Auth
-F2 --> DB
-F2 --> Settings
-F2 --> Schedule
-```
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [auth.guard.ts:14-82](file://api/src/auth/auth.guard.ts#L14-L82)
+- [roles.guard.ts:12-43](file://api/src/auth/roles.guard.ts#L12-L43)
 
 ## Performance Considerations
-- Use UUIDs for IDs to support distributed systems and ERP migration.
-- Index employee.email and employee.is_active for fast lookup and filtering.
-- Avoid hard deletes; use soft deletes to preserve history and reduce rework.
-- Batch probation transitions during scheduled jobs to minimize runtime overhead.
-- Cache frequently accessed employee lists for dashboard performance.
+Several performance optimizations are implemented in the Employee Management module:
 
-[No sources needed since this section provides general guidance]
+### Database Optimization
+- **Index Usage**: `isActive` field is indexed for faster filtering
+- **Soft Deletes**: Avoids expensive JOIN operations with deleted records
+- **Batch Processing**: Probation advancement processes all employees in parallel
+
+### API Optimization
+- **Lazy Loading**: Probation advancement only occurs during list operations
+- **Connection Pooling**: Efficient database connection management
+- **Caching Strategy**: Frontend uses server-side rendering for initial load
+
+### Memory Management
+- **Stream Processing**: Large employee lists are processed efficiently
+- **Resource Cleanup**: Proper cleanup of database connections and resources
+- **Error Handling**: Graceful error handling prevents memory leaks
 
 ## Troubleshooting Guide
-Common issues and resolutions:
-- Login denied for registered email: Ensure employee.is_active=true and email exists in whitelist.
-- Probation not transitioning: Verify probation_end_date is correctly set and less than or equal to current date.
-- Position conflicts: Confirm each employee has exactly one position; middle shift only applies to kitchen.
-- Historical data missing after deactivation: Remember deactivation is soft; ensure queries include inactive records when necessary.
+Common issues and their resolutions in the Employee Management module:
+
+### Authentication Issues
+- **Login Denied for Registered Email**: Ensure `employee.isActive=true` and email exists in whitelist
+- **403 Forbidden Errors**: Verify manager role assignment and proper JWT token
+- **Session Expired**: Check Supabase session configuration and token expiration
+
+### Employee Management Issues
+- **Duplicate Email Error**: Employee already exists; check if they were previously deactivated
+- **Self-Deactivation Prevention**: Managers cannot deactivate their own accounts
+- **Probation Not Transitioning**: Verify `probationEndDate` is correctly set and less than current WITA date
+
+### Data Integrity Issues
+- **Missing Historical Data**: Remember deactivation is soft; ensure queries include inactive records when necessary
+- **Position Conflicts**: Confirm each employee has exactly one position; middle shift only applies to kitchen
+- **Status Mismatch**: Probation status should match current date according to WITA timezone
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:118-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L118-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:169-177](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L169-L177)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:211-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L211-L217)
+- [employee.service.ts:113-135](file://api/src/employee/employee.service.ts#L113-L135)
+- [probation.ts:31-45](file://api/src/employee/probation.ts#L31-L45)
+- [auth.guard.ts:53-59](file://api/src/auth/auth.guard.ts#L53-L59)
 
 ## Conclusion
-The Employee Management module (F2) provides foundational capabilities for managing staff records, positions, probation states, and active status. It integrates tightly with authentication and scheduling modules, ensuring secure access, consistent data modeling, and robust lifecycle management. Implementing these specifications will enable reliable employee administration aligned with the PRD’s goals and future ERP migration.
+The Employee Management module (F2) is now fully implemented and production-ready. It provides comprehensive employee lifecycle management with robust security, timezone-aware probation handling, and extensive testing coverage. The module successfully integrates with the authentication system while maintaining data integrity and providing a user-friendly interface for managers.
 
-[No sources needed since this section summarizes without analyzing specific files]
+Key achievements include:
+- Complete REST API with manager-only access control
+- Frontend staff management interface with proper validation
+- Automatic probation advancement with WITA timezone support
+- Comprehensive testing coverage ensuring reliability
+- Soft-delete capabilities preserving historical data
+- Tight integration with authentication and authorization systems
 
-## Appendices
-
-### Acceptance Criteria Summary
-- CRUD operations enforce data validation and role-based access.
-- Position assignment restricts eligible shifts and conflict detection.
-- Probation transitions occur automatically upon reaching end date.
-- Active/inactive status controls login eligibility and visibility.
-- Integration with authentication ensures whitelist enforcement and role resolution.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+This implementation aligns perfectly with the PRD requirements and provides a solid foundation for the Kyne shift scheduling application's employee management needs.

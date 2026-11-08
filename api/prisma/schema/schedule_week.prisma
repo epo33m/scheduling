@@ -1,0 +1,31 @@
+/// One row per planning week (PRD §Model data). `start_date` is the Monday that
+/// opens the week, so it is the natural identity of a week and stays unique.
+/// `status` is the only explicit state a week carries; whether the request
+/// window is open is *derived* from `request_deadline`, never stored here
+/// (ADR 0002). `request_deadline` is the instant the window closes — Sunday
+/// 12.00 WITA of the previous week, held as a UTC instant so a plain
+/// `now > request_deadline` comparison is enough to lock the window.
+enum WeekStatus {
+  draft
+  published
+}
+
+model ScheduleWeek {
+  id               String      @id @default(uuid()) @db.Uuid
+  startDate        DateTime    @map("start_date") @db.Date
+  status           WeekStatus  @default(draft)
+  requestDeadline  DateTime    @map("request_deadline")
+  publishedAt      DateTime?   @map("published_at")
+  publishedBy      String?     @map("published_by") @db.Uuid
+  copiedFromWeekId String?     @map("copied_from_week_id") @db.Uuid
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  createdBy        String?     @map("created_by") @db.Uuid
+
+  offRequests   OffRequest[]
+  shiftRequests ShiftRequest[]
+
+  @@unique([startDate])
+  @@index([status])
+  @@map("schedule_week")
+}

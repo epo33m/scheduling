@@ -2,14 +2,18 @@ import {
   EMPLOYEE_POSITIONS,
   EMPLOYEE_ROLES,
   EMPLOYEE_STATUSES,
+  REQUEST_STATUSES,
   SHIFT_CODES,
+  WEEK_STATUSES,
 } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
   EmployeePosition,
   EmployeeRole,
   EmployeeStatus,
+  RequestStatus,
   ShiftCode,
+  WeekStatus,
 } from '../generated/prisma/enums';
 
 /**
@@ -39,5 +43,15 @@ describe('prisma schema vocabulary', () => {
     expect(Object.keys(EmployeeStatus).sort()).toEqual(
       [...EMPLOYEE_STATUSES].sort(),
     );
+  });
+
+  it('matches REQUEST_STATUSES', () => {
+    expect(Object.keys(RequestStatus).sort()).toEqual(
+      [...REQUEST_STATUSES].sort(),
+    );
+  });
+
+  it('matches WEEK_STATUSES', () => {
+    expect(Object.keys(WeekStatus).sort()).toEqual([...WEEK_STATUSES].sort());
   });
 });
