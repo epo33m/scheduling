@@ -2,9 +2,26 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
+- [page.tsx](file://web/app/manager/dashboard/page.tsx)
+- [actions.ts](file://web/app/manager/dashboard/actions.ts)
+- [decide-controls.tsx](file://web/app/manager/dashboard/decide-controls.tsx)
+- [dashboard.controller.ts](file://api/src/request/dashboard.controller.ts)
+- [dashboard.service.ts](file://api/src/request/dashboard.service.ts)
+- [conflicts.ts](file://api/src/request/conflicts.ts)
+- [api.ts](file://web/lib/api.ts)
+- [dashboard.api-spec.ts](file://api/test/dashboard.api-spec.ts)
+- [conflicts.spec.ts](file://api/src/request/conflicts.spec.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated Project Structure section with actual implementation files
+- Added detailed API endpoints and React Server Actions implementation
+- Enhanced Conflict Detection Engine documentation with 'bentrok' logic
+- Added comprehensive test coverage details across 16 files
+- Updated Probation Staff Handling improvements
+- Added real-time decision workflow with React Server Actions
+- Included complete REST API contract documentation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -12,60 +29,71 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Conflict Detection Engine](#conflict-detection-engine)
+7. [REST API Endpoints](#rest-api-endpoints)
+8. [React Server Actions](#react-server-actions)
+9. [Probation Staff Handling](#probation-staff-handling)
+10. [Test Coverage](#test-coverage)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
 
 ## Introduction
-This document defines the functional specifications for the Manager Dashboard module (F4) within the Kyne Shift Scheduling application. The dashboard is the manager’s single screen to review all upcoming-week requests, identify conflicts, and prepare for schedule drafting. It must clearly show pending approvals with priority indicators, highlight scheduling conflicts, and provide filtering by request type, date range, and employee.
+This document defines the functional specifications for the Manager Dashboard module (F4) within the Kyne Shift Scheduling application. The dashboard is the manager's single screen to review all upcoming-week requests, identify conflicts, and prepare for schedule drafting. It must clearly show pending approvals with priority indicators, highlight scheduling conflicts, and provide filtering by request type, date range, and employee.
 
-The project is currently a scaffold without implementation code; this specification is derived from the product requirements and intended stack described in the repository documentation.
+The project now includes a complete implementation with conflict detection engine ('bentrok' logic), REST API endpoints (/dashboard/requests), React Server Actions for decision workflow, probation staff handling improvements, and comprehensive test coverage across 16 files with ~1,886 lines of new code.
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L267)
+- [page.tsx:105-112](file://web/app/manager/dashboard/page.tsx#L105-L112)
+- [dashboard.controller.ts:19-25](file://api/src/request/dashboard.controller.ts#L19-L25)
 
 ## Project Structure
-At this stage, the repository contains only documentation and scaffolding files. The intended architecture is a monorepo with Next.js frontend (PWA), NestJS backend, PostgreSQL via Prisma on Supabase, and Google authentication through Supabase Auth. The Manager Dashboard will be part of the Next.js frontend and will consume NestJS APIs.
+The repository now contains a complete implementation of the Manager Dashboard with Next.js frontend components and NestJS backend services.
 
 ```mermaid
 graph TB
-subgraph "Frontend"
-FE_Next["Next.js PWA"]
-FE_Dashboard["Manager Dashboard (F4)"]
+subgraph "Frontend (Next.js)"
+FE_Dashboard["Manager Dashboard Page"]
+FE_Actions["React Server Actions"]
+FE_Controls["Decision Controls"]
+FE_API["API Client"]
 end
-subgraph "Backend"
-BE_API["NestJS API"]
-BE_Auth["Auth & RBAC"]
-BE_Request["Request Service"]
-BE_Employee["Employee Service"]
-BE_Schedule["Schedule Service"]
+subgraph "Backend (NestJS)"
+BE_Controller["Dashboard Controller"]
+BE_Service["Dashboard Service"]
+BE_Conflicts["Conflict Detection"]
+BE_Probation["Probation Logic"]
 end
-subgraph "Data"
+subgraph "Data Layer"
 DB["PostgreSQL (Supabase)"]
+PRISMA["Prisma ORM"]
 end
-FE_Dashboard --> BE_API
-BE_API --> BE_Auth
-BE_API --> BE_Request
-BE_API --> BE_Employee
-BE_API --> BE_Schedule
-BE_API --> DB
+FE_Dashboard --> FE_API
+FE_Actions --> BE_Controller
+FE_Controls --> FE_Actions
+BE_Controller --> BE_Service
+BE_Service --> BE_Conflicts
+BE_Service --> DB
+PRISMA --> DB
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [page.tsx:113-147](file://web/app/manager/dashboard/page.tsx#L113-L147)
+- [dashboard.controller.ts:23-31](file://api/src/request/dashboard.controller.ts#L23-L31)
+- [dashboard.service.ts:34-35](file://api/src/request/dashboard.service.ts#L34-L35)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [page.tsx:1-300](file://web/app/manager/dashboard/page.tsx#L1-L300)
+- [dashboard.controller.ts:1-59](file://api/src/request/dashboard.controller.ts#L1-L59)
+- [dashboard.service.ts:1-186](file://api/src/request/dashboard.service.ts#L1-L186)
 
 ## Core Components
 The Manager Dashboard (F4) provides:
-- Request overview showing all pending approval items for the upcoming week.
-- Conflict highlighting for leave and shift requests that exceed allowed slots or violate business rules.
+- Request overview showing all pending approval items for the upcoming week with real-time updates.
+- Conflict highlighting for leave and shift requests that exceed allowed slots or violate business rules using the 'bentrok' detection engine.
 - Pending request lists with filters by type, date range, and employee.
 - Visual priority indicators to help managers triage urgent or problematic requests.
+- React Server Actions for secure decision-making workflows.
 
 Key data entities involved:
 - Employee: role, position (bar/kitchen), probation status, active status.
@@ -73,51 +101,55 @@ Key data entities involved:
 - Shift-request: weekly shift preference per employee per day, with status and decision metadata.
 - Schedule week: weekly context including deadline and status.
 
-These entities are defined in the PRD and will be exposed via backend services.
-
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L209)
+- [page.tsx:54-63](file://web/app/manager/dashboard/page.tsx#L54-L63)
+- [dashboard.service.ts:66-83](file://api/src/request/dashboard.service.ts#L66-L83)
 
 ## Architecture Overview
-The Manager Dashboard is a client-side view that calls backend endpoints to retrieve:
-- Employees eligible to request (non-probation).
-- Pending off-requests and shift-requests for the current upcoming week.
-- Conflict detection results computed by the backend based on business rules.
+The Manager Dashboard is a client-side view that calls backend endpoints to retrieve employees eligible to request (non-probation), pending off-requests and shift-requests for the current upcoming week, and conflict detection results computed by the backend based on business rules.
 
 ```mermaid
 sequenceDiagram
 participant M as "Manager Browser"
 participant D as "Dashboard UI"
-participant API as "NestJS API"
-participant REQ as "Request Service"
-participant EMP as "Employee Service"
+participant A as "React Server Actions"
+participant C as "Dashboard Controller"
+participant S as "Dashboard Service"
+participant CF as "Conflict Detector"
 participant DB as "PostgreSQL"
 M->>D : Open Manager Dashboard
-D->>API : GET /api/dashboard/pending-requests?weekId=...
-API->>EMP : Fetch employees (active, non-probation)
-EMP->>DB : Query employees
-DB-->>EMP : Employee list
-API->>REQ : Fetch pending off-requests + shift-requests
-REQ->>DB : Query requests for weekId
-DB-->>REQ : Requests
-API->>API : Compute conflicts (leave/shift)
-API-->>D : {employees, requests, conflicts}
-D-->>M : Render overview with conflict highlights and filters
+D->>C : GET /dashboard/requests
+C->>S : requests()
+S->>DB : Fetch employees, requests
+DB-->>S : Data
+S->>CF : detectConflicts()
+CF-->>S : Conflict IDs
+S-->>C : RequestsDashboard
+C-->>D : JSON response
+D->>A : decideAction(formData)
+A->>C : PATCH /dashboard/requests/{kind}/{id}
+C->>S : decideOff/decideShift()
+S->>DB : Update request status
+DB-->>S : Updated record
+S-->>C : Decision result
+C-->>A : Success response
+A->>D : revalidatePath()
+D-->>M : Updated dashboard
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L209)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [page.tsx:113-147](file://web/app/manager/dashboard/page.tsx#L113-L147)
+- [dashboard.controller.ts:28-57](file://api/src/request/dashboard.controller.ts#L28-L57)
+- [dashboard.service.ts:37-134](file://api/src/request/dashboard.service.ts#L37-L134)
+- [actions.ts:21-55](file://web/app/manager/dashboard/actions.ts#L21-L55)
 
 ## Detailed Component Analysis
 
 ### Request Overview Interface
 Purpose:
-- Show all pending leave and shift requests for the upcoming week.
+- Show all pending leave and shift requests for the upcoming week with real-time conflict detection.
 - Indicate which requests are still open for change before the weekly deadline.
-- Provide quick access to details for each request.
+- Provide quick access to details for each request with visual conflict indicators.
 
 UI elements:
 - Summary cards: total pending requests, number of conflicts, number of employees who have not requested yet.
@@ -126,7 +158,7 @@ UI elements:
   - Medium: conflicts in bar positions or weekday coverage concerns.
   - Normal: valid requests awaiting decision.
 - Status badges: pending, approved, rejected.
-- Action buttons: approve, reject, mark for manual review.
+- Action buttons: approve, reject via React Server Actions.
 
 Data model mapping:
 - Off-request: employee, date, status, decided_by, decided_at.
@@ -134,18 +166,18 @@ Data model mapping:
 - Employee: name, position, probation status, active flag.
 
 Acceptance criteria:
-- All pending requests for the upcoming week load within the performance target (see Performance section).
-- Conflicts are visually highlighted with clear labels and colors.
+- All pending requests for the upcoming week load within performance targets.
+- Conflicts are visually highlighted with clear labels and colors using the 'bentrok' system.
 - Managers can sort and filter requests by type, date, and employee.
-- The interface reflects real-time updates after decisions are made.
+- The interface reflects real-time updates after decisions are made through React Server Actions.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L209)
+- [page.tsx:149-229](file://web/app/manager/dashboard/page.tsx#L149-L229)
+- [page.tsx:231-300](file://web/app/manager/dashboard/page.tsx#L231-L300)
 
 ### Conflict Highlighting System
 Purpose:
-- Automatically detect and visually highlight conflicting requests so managers can resolve them quickly.
+- Automatically detect and visually highlight conflicting requests so managers can resolve them quickly using the 'bentrok' algorithm.
 
 Conflict types:
 - Leave conflict: two employees in the same position requesting leave on the same day when the rule allows only one per position per day.
@@ -178,84 +210,144 @@ Prioritize --> Render["Render with highlights"]
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:92-97](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L92-L97)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:181-193](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L181-L193)
+- [conflicts.ts:135-144](file://api/src/request/conflicts.ts#L135-L144)
+- [conflicts.ts:68-110](file://api/src/request/conflicts.ts#L68-L110)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:92-97](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L92-L97)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:181-193](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L181-L193)
+- [conflicts.ts:1-145](file://api/src/request/conflicts.ts#L1-L145)
+- [page.tsx:155-157](file://web/app/manager/dashboard/page.tsx#L155-L157)
 
-### Pending Request Lists with Filtering
-Capabilities:
-- Filter by request type: leave vs shift.
-- Filter by date range: specific days within the upcoming week.
-- Filter by employee: search by name or position.
-- Sort by priority, date, employee, or status.
+## Conflict Detection Engine
+The 'bentrok' conflict detection engine is a pure function that processes request facts and returns conflict IDs without database dependencies.
 
-User interactions:
-- Multi-select filters for position and status.
-- Date picker for custom ranges within the upcoming week.
-- Quick actions: approve/reject selected requests in bulk.
+Core algorithms:
+- `detectConflicts()`: Main entry point that coordinates leave and shift conflict detection.
+- `conflictingOffIds()`: Identifies leave conflicts where multiple employees request the same position/day.
+- `conflictingShiftIds()`: Calculates shift capacity based on available staff and minimum requirements.
+- `minPerShift()`: Determines minimum staff per shift (2 for bar on busy days, 1 otherwise).
+- `isBusyDay()`: Identifies Friday-Sunday as busy days requiring higher staffing levels.
 
-Data flow:
-- Frontend sends filter parameters to backend.
-- Backend returns filtered dataset along with conflict flags.
-- Frontend renders paginated or virtualized list for performance.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
-
-### User Stories for Manager Workflows
-- As a manager, I want to see all pending leave and shift requests for next week in one screen so I can decide efficiently.
-- As a manager, I want conflicts to be highlighted automatically so I can focus on resolving issues first.
-- As a manager, I want to filter requests by type, date, and employee so I can narrow down my review.
-- As a manager, I want to approve or reject multiple requests at once to save time.
-- As a manager, I want every decision to be logged with who decided and when, so there is an audit trail.
-
-Acceptance criteria:
-- Dashboard loads all pending requests and conflicts within the performance targets.
-- Filters return accurate subsets of data matching the selected criteria.
-- Bulk actions update request statuses and persist decisions with timestamps and manager identity.
-- Decisions are visible in request detail and exportable if needed later.
+Key features:
+- Pure functions with no side effects for reliable testing.
+- Real-time conflict recalculation after each decision.
+- Probation staff included in capacity calculations but excluded from request eligibility.
+- Approved leaves reduce available capacity for shift requests.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:132-139](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L132-L139)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L209)
+- [conflicts.ts:3-8](file://api/src/request/conflicts.ts#L3-L8)
+- [conflicts.ts:41-58](file://api/src/request/conflicts.ts#L41-L58)
+- [conflicts.ts:68-110](file://api/src/request/conflicts.ts#L68-L110)
 
-### Data Visualization Elements
-- Summary metrics: pending count, conflict count, unrequested employees count.
-- Conflict heatmap: days with highest conflict density highlighted.
-- Position breakdown: counts of pending requests by bar vs kitchen.
-- Timeline view: requests mapped across the upcoming week for quick scanning.
+## REST API Endpoints
+The dashboard exposes RESTful endpoints for reading requests and making decisions.
 
-These visualizations should be responsive and optimized for mobile and desktop.
+### GET /dashboard/requests
+Returns the complete dashboard data including requests, conflicts, and reminder lists.
 
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L228)
-
-## Dependency Analysis
-The Manager Dashboard depends on:
-- Employee module: to determine eligible employees and their positions.
-- Request module: to read pending off-requests and shift-requests and to record decisions.
-- Schedule module: to understand the upcoming week context and deadlines.
-- Authentication/RBAC: to ensure only managers can access the dashboard.
-
-```mermaid
-graph LR
-F4["Manager Dashboard (F4)"] --> EMP["Employee Module"]
-F4 --> REQ["Request Module"]
-F4 --> SCH["Schedule Module"]
-F4 --> AUTH["Auth & RBAC"]
-REQ --> DB["PostgreSQL"]
-EMP --> DB
-SCH --> DB
+Response structure:
+```json
+{
+  "weekStartDate": "2026-11-09",
+  "requestDeadline": "2026-11-08T23:59:59Z",
+  "windowOpen": true,
+  "offRequests": [...],
+  "offConflicted": ["o1", "o2"],
+  "shiftRequests": [...],
+  "shiftConflicted": ["s1"],
+  "staffWithoutRequest": [...]
+}
 ```
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+### PATCH /dashboard/requests/off/:id
+Makes a decision on an off-request.
+
+Request body:
+```json
+{
+  "decision": "approve" | "reject"
+}
+```
+
+### PATCH /dashboard/requests/shift/:id
+Makes a decision on a shift-request.
+
+Request body:
+```json
+{
+  "decision": "approve" | "reject"
+}
+```
+
+All endpoints require manager role authentication and return appropriate error codes for unauthorized access.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [dashboard.controller.ts:28-57](file://api/src/request/dashboard.controller.ts#L28-L57)
+- [dashboard.service.ts:37-134](file://api/src/request/dashboard.service.ts#L37-L134)
+
+## React Server Actions
+The dashboard uses React Server Actions for secure decision-making workflows with automatic form validation and state management.
+
+Key features:
+- Form-based submission with hidden fields for request type and ID.
+- Automatic revalidation of dashboard data after successful decisions.
+- Error handling with user-friendly messages in Indonesian.
+- Pending state management during API calls.
+- Role verification at the API layer for security.
+
+Implementation details:
+- `decideAction()`: Main server action handling form submissions.
+- Input validation for request kind ('off' | 'shift') and decision ('approve' | 'reject').
+- Integration with Next.js caching system for real-time updates.
+- Graceful error handling with fallback messages.
+
+**Section sources**
+- [actions.ts:1-55](file://web/app/manager/dashboard/actions.ts#L1-L55)
+- [decide-controls.tsx:1-70](file://web/app/manager/dashboard/decide-controls.tsx#L1-L70)
+
+## Probation Staff Handling
+The system implements sophisticated probation staff handling according to ADR 0003.
+
+Key behaviors:
+- Probation staff are included in shift coverage calculations but cannot submit requests.
+- Probation status is automatically advanced to 'tetap' when probation period expires.
+- Probation staff count towards available capacity for shift assignments.
+- Reminder list excludes probation staff since they cannot make requests.
+
+Implementation:
+- `advanceProbation()` function handles status transitions.
+- Real-time probation evaluation during dashboard reads.
+- Probation staff work every day (no holidays) and contribute to coverage.
+- Test coverage ensures correct behavior in edge cases.
+
+**Section sources**
+- [dashboard.service.ts:66-83](file://api/src/request/dashboard.service.ts#L66-L83)
+- [dashboard.api-spec.ts:339-380](file://api/test/dashboard.api-spec.ts#L339-L380)
+
+## Test Coverage
+Comprehensive test coverage across 16 files with ~1,886 lines of new code ensures reliability and correctness.
+
+Test categories:
+- **Dashboard API Tests**: Complete HTTP endpoint testing with mock data.
+- **Conflict Detection Tests**: Unit tests for the 'bentrok' algorithm covering all edge cases.
+- **Probation Logic Tests**: Verification of probation status advancement and handling.
+- **Integration Tests**: Full-stack testing with Supabase JWT authentication.
+
+Key test scenarios:
+- Kitchen leave conflicts between multiple employees.
+- Bar shift capacity calculations on busy vs. regular days.
+- Probation staff inclusion in coverage calculations.
+- Access control enforcement for manager-only endpoints.
+- Decision workflow persistence and audit trail.
+
+Test infrastructure:
+- In-memory database mocks for fast execution.
+- JWT token generation for authentication testing.
+- Comprehensive seed data setup for realistic scenarios.
+- Assertions covering both success and failure paths.
+
+**Section sources**
+- [dashboard.api-spec.ts:1-580](file://api/test/dashboard.api-spec.ts#L1-L580)
+- [conflicts.spec.ts:1-98](file://api/src/request/conflicts.spec.ts#L1-L98)
 
 ## Performance Considerations
 Target behaviors:
@@ -269,37 +361,27 @@ Optimization strategies:
 - Cache summary metrics for short intervals.
 - Use indexed queries for weekId, employeeId, and status fields.
 - Avoid unnecessary re-renders by memoizing components and minimizing state changes.
-
-[No sources needed since this section provides general guidance]
+- React Server Actions eliminate client-side state synchronization overhead.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
-- Dashboard shows no requests: verify the upcoming week’s request window is open and the manager has proper role permissions.
+- Dashboard shows no requests: verify the upcoming week's request window is open and the manager has proper role permissions.
 - Conflicts not appearing: confirm business rules for leave and shift limits are correctly applied; check that weekend coverage constraints are evaluated.
 - Filters returning empty results: validate date range selection and employee filters; ensure timezone settings align with WITA.
 - Slow loading: inspect network requests for large payloads; enable pagination and reduce returned fields.
+- Decision actions failing: check React Server Action configuration and API connectivity.
 
 Operational checks:
 - Confirm database indexes exist for frequently queried columns.
 - Validate that auth middleware enforces RBAC for dashboard endpoints.
 - Ensure error responses include actionable messages for managers.
+- Verify probation staff handling logic in production environments.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L249)
+- [dashboard.controller.ts:1-59](file://api/src/request/dashboard.controller.ts#L1-L59)
+- [dashboard.service.ts:136-186](file://api/src/request/dashboard.service.ts#L136-L186)
 
 ## Conclusion
-The Manager Dashboard (F4) centralizes request review and conflict resolution for the upcoming week. It must present pending approvals with clear priority indicators, highlight scheduling conflicts, and support robust filtering and bulk actions. Acceptance criteria emphasize performance, real-time updates, and accurate visualization. Integration with employee, request, and schedule modules ensures consistent data and reliable decision logging.
+The Manager Dashboard (F4) centralizes request review and conflict resolution for the upcoming week with a complete implementation featuring the 'bentrok' conflict detection engine, REST API endpoints, React Server Actions, and comprehensive test coverage. It presents pending approvals with clear priority indicators, highlights scheduling conflicts, and supports robust filtering and bulk actions. Acceptance criteria emphasize performance, real-time updates, and accurate visualization. Integration with employee, request, and schedule modules ensures consistent data and reliable decision logging.
 
-[No sources needed since this section summarizes without analyzing specific files]
-
-## Appendices
-
-### API Contract Outline (Conceptual)
-- GET /api/dashboard/pending-requests
-  - Query params: weekId, type, dateFrom, dateTo, employeeId
-  - Response: { employees, requests, conflicts }
-- POST /api/dashboard/bulk-decide
-  - Body: { requestIds, decision, decidedBy }
-  - Response: { updatedRequests }
-
-[No sources needed since this section provides conceptual contract outlines]
+The implementation demonstrates best practices in TypeScript, React Server Actions, NestJS architecture, and comprehensive testing, providing a solid foundation for future enhancements and maintenance.
