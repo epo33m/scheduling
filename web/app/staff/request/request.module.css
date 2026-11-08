@@ -1,0 +1,213 @@
+/* The staff works this screen on a phone at the bar, so it is a single
+   centered column with a fluid cap, never a fixed grid or wide table. */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-lg) 80px;
+}
+
+/* DESIGN.md Typography › {typography.display-lg} */
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg-size);
+  font-weight: var(--text-display-lg-weight);
+  line-height: var(--text-display-lg-line-height);
+  letter-spacing: var(--text-display-lg-tracking);
+}
+
+/* DESIGN.md Typography › {typography.body} */
+.lead {
+  margin: var(--spacing-sm) 0 var(--spacing-xl);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.sectionTitle {
+  margin: var(--spacing-xl) 0 var(--spacing-md);
+  font-family: var(--font-display);
+  font-size: var(--text-tagline-size);
+  font-weight: var(--text-tagline-weight);
+  line-height: var(--text-tagline-line-height);
+  letter-spacing: var(--text-tagline-tracking);
+}
+
+/* The week header states the target and the deadline that closes it. The
+   deadline is the one number a staff member needs before they can edit. */
+.windowBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+}
+
+.windowLabel {
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+  color: var(--color-ink);
+}
+
+.windowValue {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* DESIGN.md Components › store-utility-card: hairline on a parchment surface. */
+.card {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas);
+}
+
+/* The current decision, read back in the staff member's words. Text carries
+   the state, never colour alone (antislop-human R-27). */
+.current {
+  margin: 0 0 var(--spacing-md);
+  font-family: var(--font-text);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
+}
+
+.status {
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+/* A row of day/shift choices. Wraps on narrow screens; each target stays
+   44px tall so it is usable with one hand behind the bar. */
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+/* The pill chooser. Selected = the single Action Blue fill; unselected keeps
+   the secondary-pill grammar so only one accent exists (DESIGN.md). */
+.choice {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--rounded-pill);
+  background: var(--color-canvas);
+  color: var(--color-primary);
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+  cursor: pointer;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.choiceSelected {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* A closed window or a pending save is not an action: it steps back to the
+   neutral surface, matching the global button-disabled grammar. */
+.choice:disabled {
+  border-color: var(--color-hairline);
+  background: var(--color-canvas-parchment);
+  color: var(--color-ink);
+  cursor: default;
+}
+
+/* One labeled group per day in the shift picker. */
+.dayRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.dayRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.dayName {
+  font-family: var(--font-text);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
+}
+
+.dayPickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* The per-day shift buttons are a tighter pair beside the day label. */
+.choiceSmall {
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: var(--text-caption-size);
+}
+
+.dayStatus {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+.formActions {
+  margin-top: var(--spacing-lg);
+}
+
+/* Feedback after a save. Announced politely so screen readers read it back. */
+.notice {
+  margin: var(--spacing-md) 0 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+}
+
+/* antislop-human R-27: the three non-happy states each get their own surface. */
+.empty,
+.error,
+.locked {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.error {
+  margin: 0 0 var(--spacing-lg);
+}
+
+.locked {
+  margin-bottom: var(--spacing-lg);
+}

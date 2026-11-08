@@ -1,4 +1,9 @@
-import type { ManagedEmployee } from '@repo/types';
+import type {
+  ManagedEmployee,
+  OffRequestView,
+  ShiftRequestView,
+  StaffRequests,
+} from '@repo/types';
 import { createServerSupabaseClient } from './supabase/server';
 
 /**
@@ -99,4 +104,47 @@ export function setEmployeeActive(
       method: 'PATCH',
     },
   ).then((r) => r.json() as Promise<ManagedEmployee>);
+}
+
+/** The staff request screen's whole read: the open window and current picks. */
+export function getRequests(): Promise<StaffRequests> {
+  return authorizedFetch('/requests', { method: 'GET' }).then(
+    (r) => r.json() as Promise<StaffRequests>,
+  );
+}
+
+/** Capture or replace the single request libur for the open window. */
+export function setOffRequest(
+  tanggal: string,
+): Promise<OffRequestView> {
+  return authorizedFetch('/requests/off', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tanggal }),
+  }).then((r) => r.json() as Promise<OffRequestView>);
+}
+
+export function cancelOffRequest(): Promise<void> {
+  return authorizedFetch('/requests/off', { method: 'DELETE' }).then(
+    () => undefined,
+  );
+}
+
+/** Capture or replace a per-day request shift (pagi/sore) for the open window. */
+export function setShiftRequest(
+  tanggal: string,
+  shiftCode: string,
+): Promise<ShiftRequestView> {
+  return authorizedFetch('/requests/shift', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tanggal, shiftCode }),
+  }).then((r) => r.json() as Promise<ShiftRequestView>);
+}
+
+export function cancelShiftRequest(tanggal: string): Promise<void> {
+  return authorizedFetch(
+    `/requests/shift?tanggal=${encodeURIComponent(tanggal)}`,
+    { method: 'DELETE' },
+  ).then(() => undefined);
 }
