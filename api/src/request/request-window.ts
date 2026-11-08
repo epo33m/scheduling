@@ -34,3 +34,18 @@ export function resolveOpenWindow<T extends { requestDeadline: Date }>(
 
   return open;
 }
+
+/**
+ * The most recent minggu target by start date: what a staff member or the
+ * dashboard still shows once every window has closed and no newer one is
+ * open yet.
+ */
+export function mostRecentWeek<T extends { startDate: Date }>(
+  weeks: T[],
+): T | null {
+  return weeks.reduce<T | null>(
+    (latest, week) =>
+      !latest || week.startDate > latest.startDate ? week : latest,
+    null,
+  );
+}

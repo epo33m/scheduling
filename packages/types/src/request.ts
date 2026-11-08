@@ -1,3 +1,4 @@
+import type { EmployeePosition } from './employee';
 import type { ShiftCode } from './shift';
 
 export const REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
@@ -44,4 +45,54 @@ export interface StaffRequests {
   windowOpen: boolean;
   offRequest: OffRequestView | null;
   shiftRequests: ShiftRequestView[];
+}
+
+/**
+ * The manager dashboard (F4): every request of the minggu target in one read.
+ * `offConflicted` / `shiftConflicted` carry the ids the system marks as
+ * bentrok — requests that cannot all be granted, so the manager picks which
+ * to approve (PRD §Bentrok request). `staffWithoutRequest` lists the active
+ * non-probation staf who submitted neither kind, the people to remind.
+ */
+export interface RequestsDashboard {
+  /** Monday of the minggu target, `YYYY-MM-DD`; null when none exists yet. */
+  weekStartDate: string | null;
+  /** Window-close instant in ISO-8601; null when no week exists yet. */
+  requestDeadline: string | null;
+  /** Whether staf can still edit; the dashboard stays readable once closed. */
+  windowOpen: boolean;
+  offRequests: DashboardOffRequest[];
+  /** Ids among `offRequests` that clash with a same-position same-day pick. */
+  offConflicted: string[];
+  shiftRequests: DashboardShiftRequest[];
+  /** Ids among `shiftRequests` that exceed the day's slots. */
+  shiftConflicted: string[];
+  staffWithoutRequest: DashboardStaff[];
+}
+
+/** A request as the manager decides it: whose, which day, and the row id. */
+export interface DashboardOffRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  position: EmployeePosition;
+  tanggal: string;
+  status: RequestStatus;
+}
+
+export interface DashboardShiftRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  position: EmployeePosition;
+  tanggal: string;
+  shiftCode: ShiftCode;
+  status: RequestStatus;
+}
+
+/** One entry of the "belum request" reminder list. */
+export interface DashboardStaff {
+  id: string;
+  name: string;
+  position: EmployeePosition;
 }
