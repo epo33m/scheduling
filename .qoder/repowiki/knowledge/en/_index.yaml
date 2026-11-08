@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-11-08T00:46:01Z"
+exported_at: "2026-11-08T01:47:16Z"
 modules:
     "":
-        dir_name: Shift Scheduling App — Pre-Implementation Scaffold
-        title: Shift Scheduling App — Pre-Implementation Scaffold
+        dir_name: Kyne Shift Scheduling Scaffold
+        title: Kyne Shift Scheduling Scaffold
         scope:
             - README.md
             - .gitignore

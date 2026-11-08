@@ -2,9 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
+- [employee.prisma](file://api/prisma/schema/employee.prisma)
+- [shift_type.prisma](file://api/prisma/schema/shift_type.prisma)
+- [schema.prisma](file://api/prisma/schema/schema.prisma)
+- [migration.sql](file://api/prisma/migrations/20261108120000_init/migration.sql)
+- [hardening migration.sql](file://api/prisma/migrations/20261108120100_hardening/migration.sql)
+- [seed.ts](file://api/prisma/seed.ts)
+- [shift.ts](file://packages/types/src/shift.ts)
+- [employee.ts](file://packages/types/src/employee.ts)
+- [shift.ts](file://packages/validators/src/shift.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated Employee entity documentation to reflect actual Prisma implementation with UUID identifiers, audit fields, and soft delete patterns
+- Updated ShiftType entity documentation to document varchar(5) time format and position array relationships
+- Added database security features including Row Level Security (RLS) and CHECK constraints
+- Documented the complete enum structure for positions, roles, and statuses
+- Added seed data structure and validation schemas
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -12,492 +27,363 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Database Implementation Details](#database-implementation-details)
+7. [Security and Constraints](#security-and-constraints)
+8. [Seed Data and Validation](#seed-data-and-validation)
+9. [Dependency Analysis](#dependency-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
 
 ## Introduction
-This document defines the data model for the Kyne shift scheduling application. It focuses on seven core entities that support weekly shift planning, leave and shift requests, manager publishing, and system configuration. The model is designed to be ERP-ready: it uses UUID identifiers, audit fields, soft delete patterns, and explicit timezone handling for WITA (Asia/Makassar).
+This document defines the data model for the Kyne shift scheduling application, now implemented using Prisma ORM with PostgreSQL. The current implementation includes two core entities: Employee and ShiftType, with a foundation designed for ERP migration readiness. The model uses UUID identifiers, audit fields, soft delete patterns, and explicit timezone handling for WITA (Asia/Makassar).
 
-The repository is currently an early scaffold without implementation code. The data model is therefore derived from the product requirements document and the project’s stated goals.
+The repository has progressed from an early scaffold to having a working Prisma schema with proper enums, constraints, and security measures.
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L267)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)
 
 ## Project Structure
-At this stage, the repository contains:
-- A top-level README describing the project as a standalone scheduling application scaffold.
-- A product requirements document detailing business rules, user roles, weekly scheduling flow, and a draft data model.
-- No backend, frontend, database schema, or migration files yet.
+The current implementation consists of:
+- Prisma schema files defining Employee and ShiftType models
+- Database migrations with hardening constraints
+- Seed data for shift type catalog
+- Type definitions and validation schemas
+- Row Level Security policies for database protection
 
 ```mermaid
 graph TB
 Root["Repository Root"]
-Readme["README.md"]
-Docs["docs/"]
-PRD["PRD-Aplikasi-Penjadwalan-Shift-Kyne.md"]
-Root --> Readme
-Root --> Docs
-Docs --> PRD
+Prisma["api/prisma/"]
+Schema["schema/"]
+Migrations["migrations/"]
+Types["packages/types/"]
+Validators["packages/validators/"]
+Root --> Prisma
+Prisma --> Schema
+Prisma --> Migrations
+Root --> Types
+Root --> Validators
+Schema --> Employee["employee.prisma"]
+Schema --> ShiftType["shift_type.prisma"]
 ```
 
 **Diagram sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L267)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L267)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)
 
 ## Core Components
-The MVP requires seven entities:
+The current implementation focuses on two foundational entities that establish the core business concepts:
 
 | Entity | Purpose | Key Fields | Notes |
 |---|---|---|---|
-| Employee | Staff identity and access control | id, name, google_email, position, role, status, probation_end_date, is_active | Email whitelist controls login; role distinguishes manager vs staff; status tracks probation vs permanent; is_active supports soft deactivation. |
-| ShiftType | Reusable shift definitions | id, code, start_time, end_time, applicable_positions | Codes include PAGI, SORE, MIDDLE; times are local WITA; positions restrict eligibility. |
-| ScheduleWeek | Weekly schedule container | id, start_date, status, request_deadline, published_at, published_by, copied_from_week_id | start_date is Monday; status is draft or published; deadline drives request window; copy source links to previous week. |
-| ShiftAssignment | Core scheduling table | id, week_id, employee_id, date, shift_type_id, source | Links employees to dates and shifts; shift_type_id can be null for leave; source tracks how placement was created. |
-| OffRequest | Leave request | id, week_id, employee_id, date, status, decided_by, decided_at | One leave per employee per week; status includes pending, approved, rejected. |
-| ShiftRequest | Preferred shift request | id, week_id, employee_id, date, shift_type_id, status, decided_by, decided_at | Up to one per day per employee; preferred but not guaranteed until approved. |
-| Setting | System configuration | key, value | Stores policies such as probation request policy, deadline settings, and timezone. |
+| Employee | Staff identity and access control | id, name, email, position, role, status, probation_end_date, is_active, audit_fields | Email whitelist controls login; role distinguishes manager vs staff; status tracks probation vs permanent; is_active supports soft deactivation. |
+| ShiftType | Reusable shift definitions | id, code, start_time, end_time, positions | Codes include PAGI, SORE, MIDDLE; times are local WITA as HH:MM strings; positions restrict eligibility via array. |
 
 These entities together enable:
 - Manager-managed staff records with Google email whitelisting.
-- Weekly scheduling cycles anchored to Monday.
-- Automated middle kitchen logic when a kitchen colleague is off.
-- Request windows bounded by weekly deadlines.
-- Auditability through decision metadata and source tracking.
+- Standardized shift templates with position-based restrictions.
+- Audit trail for all data changes through created_at, updated_at, and created_by fields.
+- Soft deletion support while preserving historical data integrity.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
+- [shift_type.prisma:16-27](file://api/prisma/schema/shift_type.prisma#L16-L27)
 
 ## Architecture Overview
-The data architecture centers on a weekly cadence. Employees are assigned to shifts within a ScheduleWeek. Requests are submitted before the deadline and then applied during schedule construction. Configuration controls behavior such as timezone and deadline timing.
+The data architecture centers on two core entities that will serve as the foundation for future scheduling functionality. Employees are categorized by position and role, while ShiftType provides standardized shift templates with time management.
 
 ```mermaid
 erDiagram
 EMPLOYEE {
 uuid id PK
 string name
-string google_email
+string email
 enum position
 enum role
 enum status
 date probation_end_date
 boolean is_active
+timestamp created_at
+timestamp updated_at
+uuid created_by
 }
 SHIFT_TYPE {
 uuid id PK
-string code
-time start_time
-time end_time
-json applicable_positions
+enum code
+varchar start_time
+varchar end_time
+array positions
+timestamp created_at
+timestamp updated_at
+uuid created_by
 }
-SCHEDULE_WEEK {
-uuid id PK
-date start_date
-enum status
-timestamp request_deadline
-timestamp published_at
-uuid published_by
-uuid copied_from_week_id
-}
-SHIFT_ASSIGNMENT {
-uuid id PK
-uuid week_id FK
-uuid employee_id FK
-date date
-uuid shift_type_id
-enum source
-}
-OFF_REQUEST {
-uuid id PK
-uuid week_id FK
-uuid employee_id FK
-date date
-enum status
-uuid decided_by
-timestamp decided_at
-}
-SHIFT_REQUEST {
-uuid id PK
-uuid week_id FK
-uuid employee_id FK
-date date
-uuid shift_type_id
-enum status
-uuid decided_by
-timestamp decided_at
-}
-SETTING {
-string key PK
-string value
-}
-EMPLOYEE ||--o{ SHIFT_ASSIGNMENT : "assigned"
-EMPLOYEE ||--o{ OFF_REQUEST : "submits"
-EMPLOYEE ||--o{ SHIFT_REQUEST : "submits"
-SCHEDULE_WEEK ||--o{ SHIFT_ASSIGNMENT : "contains"
-SHIFT_TYPE ||--o{ SHIFT_ASSIGNMENT : "defines"
-SHIFT_TYPE ||--o{ SHIFT_REQUEST : "preferred"
-SCHEDULE_WEEK ||--o{ OFF_REQUEST : "request period"
-SCHEDULE_WEEK ||--o{ SHIFT_REQUEST : "request period"
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
+- [shift_type.prisma:16-27](file://api/prisma/schema/shift_type.prisma#L16-L27)
 
 ## Detailed Component Analysis
 
 ### Employee
 Employee represents staff members who can log in via Google and participate in scheduling.
 
-- Identifier: UUID primary key.
-- Identity: name and google_email.
-- Position: bar or kitchen. Each staff has one fixed position.
-- Role: manager or staff.
-- Status: probation or permanent. Probation transitions automatically after probation_end_date.
-- Active flag: is_active enables soft deactivation while preserving history.
+**Updated** - Now reflects actual Prisma implementation with full audit trail and soft delete support.
+
+- Identifier: UUID primary key with @default(uuid()) and @db.Uuid mapping.
+- Identity: name and email (unique constraint for Google authentication whitelist).
+- Position: EmployeePosition enum (bar or kitchen) - maps to HR position in ERP later.
+- Role: EmployeeRole enum (manager or staff) with default 'staff'.
+- Status: EmployeeStatus enum (probation or tetap/permanent) with default 'probation'.
+- Probation management: probation_end_date as nullable Date field for automatic status transitions.
+- Active flag: is_active Boolean with default true for soft deactivation.
+- Audit fields: created_at, updated_at, and created_by for change tracking.
 
 Business implications:
-- Only whitelisted google_email values may authenticate.
-- Probation affects whether request menus are visible.
+- Only whitelisted email values may authenticate via Google OAuth.
+- Probation affects whether request menus are visible until probation_end_date passes.
 - Inactive employees cannot log in but retain historical schedules.
+- Index on is_active for efficient filtering of active employees.
 
 ```mermaid
 classDiagram
 class Employee {
 +uuid id
 +string name
-+string google_email
-+position
-+role
-+status
-+date probation_end_date
++string email
++EmployeePosition position
++EmployeeRole role
++EmployeeStatus status
++Date probation_end_date
 +boolean is_active
++DateTime created_at
++DateTime updated_at
++uuid created_by
+}
+class EmployeePosition {
+<<enumeration>>
+bar
+kitchen
+}
+class EmployeeRole {
+<<enumeration>>
+manager
+staff
+}
+class EmployeeStatus {
+<<enumeration>>
+probation
+tetap
 }
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:3-17](file://api/prisma/schema/employee.prisma#L3-L17)
+- [employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-121](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L121)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
 
 ### ShiftType
 ShiftType defines reusable shift templates used across weeks.
 
-- Identifier: UUID primary key.
-- Code: PAGI, SORE, or MIDDLE.
-- Time range: start_time and end_time in local WITA.
-- Applicable positions: restricts which positions can use the shift.
+**Updated** - Now reflects actual implementation with varchar(5) time format and position array relationship.
+
+- Identifier: UUID primary key with @default(uuid()) and @db.Uuid mapping.
+- Code: ShiftCode enum (PAGI, SORE, or MIDDLE) with unique constraint.
+- Time range: startTime and endTime stored as VARCHAR(5) in HH:MM format for local WITA wall-clock times.
+- Positions: EmployeePosition[] array (posisi_berlaku) restricting which positions can use the shift.
+- Audit fields: created_at, updated_at, and created_by for change tracking.
 
 Rules:
-- Pagi and Sore apply to both bar and kitchen.
-- Middle applies only to kitchen and is typically used when a kitchen colleague is off.
-- Overlap between Pagi and Sore supports handover.
+- Pagi (07:30-15:30) and Sore (15:00-23:00) apply to both bar and kitchen positions.
+- Middle (11:00-19:00) applies only to kitchen position and is typically used when a kitchen colleague is off.
+- Overlap between Pagi and Sore supports handover periods.
+- Time validation enforced via CHECK constraints ensuring HH:MM format.
 
 ```mermaid
 classDiagram
 class ShiftType {
 +uuid id
-+string code
-+time start_time
-+time end_time
-+json applicable_positions
++ShiftCode code
++string startTime
++string endTime
++EmployeePosition[] positions
++DateTime created_at
++DateTime updated_at
++uuid created_by
+}
+class ShiftCode {
+<<enumeration>>
+PAGI
+SORE
+MIDDLE
+}
+class EmployeePosition {
+<<enumeration>>
+bar
+kitchen
 }
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:169-178](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L169-L178)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [shift_type.prisma:1-5](file://api/prisma/schema/shift_type.prisma#L1-L5)
+- [shift_type.prisma:16-27](file://api/prisma/schema/shift_type.prisma#L16-L27)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:169-178](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L169-L178)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)
 
-### ScheduleWeek
-ScheduleWeek is the weekly container for all assignments and requests.
+## Database Implementation Details
 
-- Identifier: UUID primary key.
-- Start date: Monday anchor for the week.
-- Status: draft or published.
-- Request deadline: closes the request window.
-- Publication metadata: published_at and published_by.
-- Copy source: copied_from_week_id references the previous week used as a template.
+### Enum Definitions
+The database uses PostgreSQL ENUM types for type safety and consistency:
 
-Lifecycle:
-- When a week is published, the next week’s request window opens.
-- Managers create drafts by copying the previous week and applying automatic rules.
-- Coverage validation runs before publish.
+- **EmployeePosition**: bar, kitchen
+- **EmployeeRole**: manager, staff  
+- **EmployeeStatus**: probation, tetap (Indonesian for permanent)
+- **ShiftCode**: PAGI, SORE, MIDDLE
 
+### Time Management Strategy
+**Critical Implementation Detail**: Shift times are stored as VARCHAR(5) rather than TIME columns to avoid timezone conversion issues.
+
+- Format: HH:MM (24-hour format)
+- Storage: Local WITA wall-clock times
+- Validation: CHECK constraints enforce valid time format
+- Rationale: Prisma round-trips TIME through Date objects, causing timezone casting issues
+
+### Audit Trail Implementation
+All tables include standard audit fields:
+- **created_at**: Timestamp when record was created
+- **updated_at**: Timestamp when record was last modified  
+- **created_by**: UUID of user who created the record
+
+### Soft Delete Pattern
+- **is_active**: Boolean field with default true
+- Allows historical data preservation while preventing new assignments
+- Indexed for efficient querying of active employees
+
+**Section sources**
+- [migration.sql:4-14](file://api/prisma/migrations/20261108120000_init/migration.sql#L4-L14)
+- [shift_type.prisma:7-15](file://api/prisma/schema/shift_type.prisma#L7-L15)
+
+## Security and Constraints
+
+### Row Level Security (RLS)
+**New Feature**: Database-level security has been implemented with Row Level Security policies.
+
+- All tables have RLS enabled
+- Default deny-all policies for anon and authenticated roles
+- API layer runs as table owner with full access
+- Browser clients cannot directly access these tables
+
+### Data Validation Constraints
+**Enhanced Security**: Additional database-level validation ensures data integrity.
+
+- **Time format validation**: CHECK constraints ensure HH:MM format for shift times
+- **Email uniqueness**: Unique constraint on employee email
+- **Shift code uniqueness**: Unique constraint on shift_type code
+- **Active employee indexing**: Performance index on is_active field
+
+### Security Architecture
 ```mermaid
 flowchart TD
-Start["Create ScheduleWeek"] --> Copy["Copy previous week<br/>if available"]
-Copy --> ApplyLeave["Apply approved leave"]
-ApplyLeave --> ApplyShiftRequests["Apply approved shift requests"]
-ApplyShiftRequests --> AutoMiddle["Auto middle kitchen<br/>when colleague is off"]
-AutoMiddle --> ValidateCoverage["Run coverage validation"]
-ValidateCoverage --> Publish{"Publish?"}
-Publish --> |Yes| OpenNext["Open next week request window"]
-Publish --> |No| Edit["Manager edits draft"]
-Edit --> ValidateCoverage
+Browser["Browser Client"] --> API["NestJS API"]
+API --> DB["PostgreSQL Database"]
+DB --> RLS["Row Level Security Policies"]
+RLLS --> DenyAll["Deny All Access"]
+DenyAll --> APIOnly["API Layer Only"]
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift_Kyne.md#L197-L217)
+- [hardening migration.sql:9-28](file://api/prisma/migrations/20261108120100_hardening/migration.sql#L9-L28)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [hardening migration.sql:1-29](file://api/prisma/migrations/20261108120100_hardening/migration.sql#L1-L29)
 
-### ShiftAssignment
-ShiftAssignment is the core scheduling table linking employees to dates and shifts.
+## Seed Data and Validation
 
-- Identifier: UUID primary key.
-- Week reference: week_id ties assignment to a ScheduleWeek.
-- Employee reference: employee_id identifies the staff member.
-- Date: date field marks the calendar day.
-- Shift: shift_type_id references ShiftType; null means leave.
-- Source: indicates how the assignment was created.
+### Shift Type Catalog
+The system seeds three predefined shift types with validated data:
 
-Source values:
-- copy: inherited from previous week.
-- request: applied from an approved shift request.
-- auto_middle: automatic middle kitchen rule.
-- manual: direct manager edit.
+| Code | Start Time | End Time | Positions | Description |
+|---|---|---|---|---|
+| PAGI | 07:30 | 15:30 | bar, kitchen | Morning shift |
+| SORE | 15:00 | 23:00 | bar, kitchen | Evening shift |
+| MIDDLE | 11:00 | 19:00 | kitchen | Middle shift for kitchen coverage |
 
-```mermaid
-classDiagram
-class ShiftAssignment {
-+uuid id
-+uuid week_id
-+uuid employee_id
-+date date
-+uuid shift_type_id
-+enum source
-}
-```
+### Validation Schema
+Comprehensive validation ensures data integrity at multiple layers:
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:206-206](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L206-L206)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L155)
+- **TypeScript types**: Compile-time type safety
+- **Zod schemas**: Runtime validation for seed data
+- **Database constraints**: Final validation at storage level
+
+### Seed Process
+The seeding process is idempotent and uses upsert operations:
+- Checks existing shift codes
+- Updates hours if codes exist
+- Creates new entries if missing
+- Validates against Zod schemas before insertion
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:206-206](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L206-L206)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L155)
-
-### OffRequest
-OffRequest captures leave submissions.
-
-- Identifier: UUID primary key.
-- Period: week_id and date define the requested day.
-- Employee: employee_id identifies the requester.
-- Status: pending, approved, or rejected.
-- Decision metadata: decided_by and decided_at record who approved or rejected and when.
-
-Constraints:
-- Maximum one leave per employee per week.
-- Allowed days are Monday through Thursday.
-- Probation staff do not see request menus.
-
-```mermaid
-classDiagram
-class OffRequest {
-+uuid id
-+uuid week_id
-+uuid employee_id
-+date date
-+enum status
-+uuid decided_by
-+timestamp decided_at
-}
-```
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:122-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L122-L131)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:122-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L122-L131)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-### ShiftRequest
-ShiftRequest captures preferred shift submissions.
-
-- Identifier: UUID primary key.
-- Period: week_id and date define the requested day.
-- Employee: employee_id identifies the requester.
-- Shift preference: shift_type_id indicates PAGI or SORE.
-- Status: pending, approved, or rejected.
-- Decision metadata: decided_by and decided_at.
-
-Constraints:
-- Up to one request per day per employee.
-- Preferred but not guaranteed; conflicts are resolved by the manager.
-- Conflicts occur when too many employees request the same shift type on the same day.
-
-```mermaid
-classDiagram
-class ShiftRequest {
-+uuid id
-+uuid week_id
-+uuid employee_id
-+date date
-+uuid shift_type_id
-+enum status
-+uuid decided_by
-+timestamp decided_at
-}
-```
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:122-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L122-L131)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:122-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L122-L131)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-### Setting
-Setting stores system-wide configuration.
-
-- Primary key: key.
-- Value: value stored as text.
-
-Example keys:
-- probation_can_request: controls whether probation staff can submit requests.
-- deadline_day: weekday when request window closes.
-- deadline_time: time of day for closing the request window.
-- timezone: expected to be Asia/Makassar for WITA.
-
-```mermaid
-classDiagram
-class Setting {
-+string key PK
-+string value
-}
-```
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:209-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L209-L209)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:226-226](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L226-L226)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:209-209](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L209-L209)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:226-226](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L226-L226)
+- [seed.ts:1-43](file://api/prisma/seed.ts#L1-L43)
+- [shift.ts:21-40](file://packages/types/src/shift.ts#L21-L40)
+- [shift.ts:14-19](file://packages/validators/src/shift.ts#L14-L19)
 
 ## Dependency Analysis
-The following diagram shows entity relationships and constraints relevant to scheduling.
+The current implementation establishes clear dependencies between the two core entities:
 
 ```mermaid
 graph LR
-ST["ShiftType"] --> SA["ShiftAssignment"]
-SW["ScheduleWeek"] --> SA
-SW --> OR["OffRequest"]
-SW --> SR["ShiftRequest"]
-E["Employee"] --> SA
-E --> OR
-E --> SR
-ST --> SR
+ST["ShiftType"] --> EP["EmployeePosition"]
+E["Employee"] --> EP
+E --> ER["EmployeeRole"]
+E --> ES["EmployeeStatus"]
+ST --> SC["ShiftCode"]
 ```
 
-Key dependencies:
-- ShiftAssignment depends on ScheduleWeek, Employee, and ShiftType.
-- OffRequest and ShiftRequest depend on ScheduleWeek and Employee.
-- ShiftRequest also depends on ShiftType.
-- ScheduleWeek may reference another ScheduleWeek via copied_from_week_id.
-
-```mermaid
-flowchart TD
-ConflictCheck["Check conflicts"] --> SamePositionSameDay{"Same position<br/>same day?"}
-SamePositionSameDay --> |Yes| MarkConflict["Mark conflict"]
-SamePositionSameDay --> |No| SlotCheck{"Exceeds slot limit?"}
-SlotCheck --> |Yes| MarkConflict
-SlotCheck --> |No| Accept["Accept request"]
-MarkConflict --> ManagerDecide["Manager decides winner"]
-ManagerDecide --> UpdateStatus["Update request status"]
-```
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:92-97](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L92-L97)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:92-97](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L92-L97)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+Key relationships:
+- Both Employee and ShiftType reference EmployeePosition enum
+- Employee has additional role and status enums
+- ShiftType uses ShiftCode enum for shift identification
+- No direct foreign key relationships yet (future scheduling entities will create these)
 
 ## Performance Considerations
-- Use UUIDs consistently to avoid sequential ID exposure and to prepare for ERP integration.
-- Index foreign keys: week_id, employee_id, shift_type_id, and copied_from_week_id.
-- Partition or archive old ScheduleWeek rows if historical queries become heavy.
-- Keep request_deadline checks server-side to prevent client bypass.
-- Cache frequently read configurations from Setting to reduce repeated lookups.
-- Avoid storing computed work hours in ShiftAssignment; calculate totals per week from ShiftType durations.
-
-[No sources needed since this section provides general guidance]
+- **UUID usage**: Consistent UUID primary keys prevent sequential ID exposure
+- **Indexing**: Strategic indexes on frequently queried fields (is_active, email)
+- **ENUM types**: Database-level enums provide better performance than string comparisons
+- **VARCHAR time format**: Avoids timezone conversion overhead
+- **RLS policies**: Minimal performance impact with deny-all policies
 
 ## Troubleshooting Guide
 Common issues and resolutions:
 
-- Request window closed unexpectedly:
-  - Verify request_deadline against current time using WITA.
-  - Confirm timezone setting is Asia/Makassar.
+### Authentication Issues
+- **Email not found**: Verify employee exists with matching Google email
+- **Inactive employee**: Check is_active flag and restore if needed
+- **Probation status**: Verify probation_end_date has passed for full access
 
-- Duplicate leave or shift requests:
-  - Enforce one OffRequest per employee per week.
-  - Enforce one ShiftRequest per employee per day.
+### Shift Type Issues
+- **Invalid time format**: Ensure HH:MM format (e.g., "07:30" not "7:30")
+- **Position restrictions**: Verify shift positions match employee position
+- **Duplicate codes**: Check for existing shift codes before creation
 
-- Kitchen coverage gaps:
-  - Ensure auto_middle logic runs when a kitchen colleague is off.
-  - Validate Friday–Sunday coverage rules before publish.
-
-- Probation staff seeing request menus:
-  - Check probation_end_date and probation_can_request setting.
-
-- Soft-deleted employees still appearing:
-  - Filter by is_active where appropriate.
-  - Preserve history for inactive employees.
+### Database Security
+- **RLS policy errors**: Confirm API layer permissions and database connection
+- **Constraint violations**: Validate time formats and required fields
+- **Migration issues**: Review hardening constraints for time format compliance
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:114-131](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L114-L131)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:165-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L165-L195)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:226-226](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L226-L226)
+- [employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
+- [hardening migration.sql:3-7](file://api/prisma/migrations/20261108120100_hardening/migration.sql#L3-L7)
 
 ## Conclusion
-The seven-entity data model provides a clear foundation for Kyne’s weekly shift scheduling workflow. It separates staff identity, shift definitions, weekly containers, assignments, requests, and configuration. With UUIDs, audit fields, soft delete patterns, and WITA timezone handling, the model is prepared for future ERP migration. Implementation should enforce business rules around request limits, conflict resolution, coverage validation, and publication workflows.
+The current Prisma implementation establishes a solid foundation for the Kyne shift scheduling application with two core entities: Employee and ShiftType. The design incorporates enterprise-grade features including UUID identifiers, comprehensive audit trails, soft delete patterns, row-level security, and strict data validation. The varchar(5) time format strategy effectively handles timezone considerations for WITA, while the enum-based approach ensures type safety throughout the application stack.
 
-[No sources needed since this section summarizes without analyzing specific files]
-
-## Appendices
-
-### Database Design Principles for ERP Migration
-- Identifier strategy:
-  - Use UUID for all primary keys.
-- Audit fields:
-  - Add created_at, updated_at, and created_by to tables that benefit from change tracking.
-- Soft delete pattern:
-  - Prefer is_active or deleted_at flags instead of hard deletes.
-- Timezone handling:
-  - Store dates as calendar dates.
-  - Store times as local WITA.
-  - Record timezone in Setting as Asia/Makassar.
-- Referential integrity:
-  - Foreign keys from ShiftAssignment to ScheduleWeek, Employee, and ShiftType.
-  - Foreign keys from OffRequest and ShiftRequest to ScheduleWeek and Employee.
-- Constraints:
-  - Unique constraints for OffRequest per employee per week.
-  - Unique constraints for ShiftRequest per employee per day.
-  - Enum constraints for status, role, position, and source.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:211-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L211-L217)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:226-226](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L226-L226)
+This foundation prepares the system for future expansion into weekly scheduling, shift assignments, and request management while maintaining ERP migration readiness through consistent naming conventions and structural patterns.

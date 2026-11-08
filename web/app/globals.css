@@ -5,6 +5,12 @@
   --font-display: 'SF Pro Display', system-ui, -apple-system, sans-serif;
   --font-text: 'SF Pro Text', system-ui, -apple-system, sans-serif;
 
+  /* DESIGN.md Colors: the single interactive accent, never a second one */
+  --color-primary: #0066cc;
+  --color-primary-focus: #0071e3;
+  --color-on-primary: #ffffff;
+  --color-hairline: #e0e0e0;
+
   /* DESIGN.md Typography › Hierarchy: {typography.display-lg} */
   --text-display-lg-size: 40px;
   --text-display-lg-weight: 600;
@@ -19,7 +25,14 @@
 
   /* DESIGN.md Layout › Spacing System */
   --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
   --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* DESIGN.md Shapes › Border Radius */
+  --rounded-lg: 18px;
+  --rounded-pill: 9999px;
 }
 
 *,
@@ -39,4 +52,41 @@ body {
   color: var(--color-ink);
   font-family: var(--font-text);
   -webkit-font-smoothing: antialiased;
+}
+
+/* DESIGN.md Do: every focused element shows the Action Blue focus signal. */
+:focus-visible {
+  outline: 2px solid var(--color-primary-focus);
+  outline-offset: 3px;
+}
+
+/* DESIGN.md Components › {component.button-primary} */
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 22px;
+  border: 0;
+  border-radius: var(--rounded-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+  cursor: pointer;
+}
+
+/* DESIGN.md Do: scale(0.95) is the system-wide press state. */
+.button-primary:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* A waiting action is not an action: it steps back to the neutral surface. */
+.button-primary:disabled {
+  background: var(--color-hairline);
+  color: var(--color-ink);
+  cursor: default;
 }

@@ -3,446 +3,484 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
-- [skills-lock.json](file://skills-lock.json)
-- [.gitignore](file://.gitignore)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
-- [SKILL.md](file://.agents/skills/antislop/SKILL.md)
-- [SKILL.md](file://.agents/skills/antislop-human/SKILL.md)
-- [SKILL.md](file://.agents/skills/setup-matt-pocock-skills/SKILL.md)
+- [package.json](file://package.json)
+- [turbo.json](file://turbo.json)
+- [.github/workflows/ci.yml](file://.github/workflows/ci.yml)
+- [supabase/config.toml](file://supabase/config.toml)
+- [api/package.json](file://api/package.json)
+- [web/package.json](file://web/package.json)
+- [api/vitest.config.ts](file://api/vitest.config.ts)
+- [api/test/jest-api.json](file://api/test/jest-api.json)
+- [api/src/env.ts](file://api/src/env.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive Agent Skills Infrastructure section documenting the 50+ specialized skill modules
-- Updated Project Structure to include the new `.agents/skills/` directory layout
-- Enhanced Environment Preparation with agent skills setup requirements
-- Added new sections for Agent Skills Management and AI-Assisted Development Workflow
-- Updated Troubleshooting Guide with agent skills-specific issues
-- Expanded Contributing Guidelines to include agent skills contribution standards
+- Updated environment preparation to reflect Bun 1.4.3, Docker/OrbStack, and Supabase CLI requirements
+- Added complete Supabase local stack setup with port configuration (5442x range)
+- Documented Turborepo monorepo structure with web and api workspaces
+- Added testing infrastructure documentation covering Vitest for unit tests and Jest for API integration tests
+- Included CI/CD pipeline setup with GitHub Actions workflow
+- Updated project structure to show actual implemented components (Next.js PWA, NestJS API, Prisma database)
+- Added database management commands and Prisma migration workflow
+- Enhanced troubleshooting guide with Supabase-specific issues and testing problems
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Project Structure](#project-structure)
-3. [Agent Skills Infrastructure](#agent-skills-infrastructure)
-4. [Core Components](#core-components)
-5. [Architecture Overview](#architecture-overview)
-6. [Detailed Component Analysis](#detailed-component-analysis)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
+2. [Prerequisites and Environment Setup](#prerequisites-and-environment-setup)
+3. [Project Structure](#project-structure)
+4. [Initial Setup and Configuration](#initial-setup-and-configuration)
+5. [Development Workflow](#development-workflow)
+6. [Testing Infrastructure](#testing-infrastructure)
+7. [Database Management](#database-management)
+8. [CI/CD Pipeline](#cicd-pipeline)
 9. [Troubleshooting Guide](#troubleshooting-guide)
 10. [Conclusion](#conclusion)
-11. [Appendices](#appendices)
 
 ## Introduction
-This guide helps you prepare the development environment for the Kyne shift scheduling application. At this stage, the repository is a scaffold with no application code yet, but it now includes an extensive agent skills infrastructure with 50+ specialized skill modules designed to enhance AI-assisted development workflows.
+This guide helps you set up the development environment for the Kyne shift scheduling application. The repository is now a fully functional monorepo using Bun workspaces and Turborepo, containing a Next.js PWA frontend, NestJS backend API, and Supabase PostgreSQL database.
 
-The product is a standalone PWA that will eventually live alongside an ERP monorepo. For now, treat this repo as the future home of the web frontend, API, shared packages, database schema, and deployment configuration once the stack is finalized.
+The application manages weekly shift scheduling for Kyne's team (6 bar & kitchen staff plus 1 manager). It follows a modern TypeScript-first architecture with comprehensive testing infrastructure and automated CI/CD pipelines.
 
-**Updated**: The repository now includes a comprehensive system of agent skills from miqdadbadjuber/anti-slop and mattpocock/skills repositories, providing antislop protection mechanisms, engineering workflows, productivity tools, and accessibility-focused capabilities with WCAG compliance references.
+**Updated**: The project has evolved from a scaffold to a complete development environment with working components, testing setup, and deployment automation.
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-10](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L10)
+- [README.md:1-20](file://README.md#L1-L20)
+
+## Prerequisites and Environment Setup
+
+### Required Tools
+Before starting development, ensure you have these tools installed:
+
+| Tool | Version | Purpose | Installation Notes |
+|---|---|---|---|
+| Bun | 1.4.3 | Package manager and runtime | Use official installer or package manager |
+| Docker | Latest | Running Supabase local stack | OrbStack recommended for macOS users |
+| Supabase CLI | Latest | Local database and services management | Install via npm: `npm install -g supabase` |
+| Git | Latest | Version control | Standard installation |
+
+### System Requirements
+- **Operating System**: macOS, Windows, or Linux
+- **Memory**: Minimum 4GB RAM (8GB recommended for Docker + development)
+- **Storage**: At least 2GB free space for dependencies and containers
+- **Network**: Internet access for initial dependency installation
+
+**Section sources**
+- [README.md:21-35](file://README.md#L21-L35)
 
 ## Project Structure
-Currently, the repository contains documentation, a generic `.gitignore`, and an extensive agent skills infrastructure. The expected future layout is described in the Product Requirements Document (PRD).
+The repository follows a monorepo structure with Bun workspaces and Turborepo orchestration:
 
 ```mermaid
 graph TB
-Root["Repository Root"]
-AgentsSkills[".agents/skills/<BR/>50+ Specialized Skill Modules"]
-Docs["docs/<BR/>Product Requirements<br/>and planning notes"]
-GitIgnore[".gitignore<BR/>Generic ignore rules"]
-Readme["README.md<BR/>Repo metadata and placeholder commands"]
-SkillsLock["skills-lock.json<BR/>Skills dependency manifest"]
-Root --> AgentsSkills
+Root["Repository Root<br/>Bun Workspaces"]
+Web["web/<BR/>Next.js 16 PWA<br/>Port 3000"]
+Api["api/<BR/>NestJS Backend<br/>Port 3001"]
+Packages["packages/<BR/>Shared Types & Validators"]
+Supabase["supabase/<BR/>Local Stack Config"]
+Docs["docs/<BR/>PRD & Architecture"]
+CI[".github/workflows/<BR/>CI/CD Pipeline"]
+Root --> Web
+Root --> Api
+Root --> Packages
+Root --> Supabase
 Root --> Docs
-Root --> GitIgnore
-Root --> Readme
-Root --> SkillsLock
+Root --> CI
+Web --> |"HTTP Requests"| Api
+Api --> |"Prisma Client"| Supabase
 ```
 
 **Diagram sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [.gitignore:1-34](file://.gitignore#L1-L34)
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+- [package.json:6-10](file://package.json#L6-L10)
+- [turbo.json:1-40](file://turbo.json#L1-L40)
+
+### Workspace Components
+
+#### Web Frontend (`web/`)
+- Next.js 16 with App Router
+- PWA capabilities for mobile and desktop
+- React 19 with TypeScript
+- Port 3000 for development
+
+#### API Backend (`api/`)
+- NestJS framework with Express adapter
+- Prisma ORM for database operations
+- JWT authentication and RBAC
+- Port 3001 for development
+
+#### Shared Packages (`packages/`)
+- `types/`: Shared TypeScript definitions including SHIFT_TYPE_CATALOG
+- `validators/`: Zod validation schemas used across the application
+
+#### Database Layer (`supabase/`)
+- Local Supabase stack configuration
+- PostgreSQL 17 with custom ports (5442x range)
+- Authentication and storage services
+- Migration management
 
 **Section sources**
-- [README.md:22-25](file://README.md#L22-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
+- [README.md:10-20](file://README.md#L10-L20)
+- [web/package.json:1-25](file://web/package.json#L1-L25)
+- [api/package.json:1-47](file://api/package.json#L1-L47)
 
-## Agent Skills Infrastructure
+## Initial Setup and Configuration
 
-### Overview
-The repository includes a comprehensive agent skills infrastructure consisting of 50+ specialized skill modules organized into two main categories:
+### Step 1: Clone and Install Dependencies
+```bash
+# Clone the repository
+git clone <repository-url>
+cd scheduling
 
-1. **Anti-Slop Skills** (from miqdadbadjuber/anti-slop): Core quality assurance and design anti-pattern prevention
-2. **Matt Pocock Skills** (from mattpocock/skills): Engineering workflows, productivity tools, and development best practices
-
-### Anti-Slop Protection System
-The anti-slop system provides comprehensive protection against generic AI-generated code patterns through multiple specialized modules:
-
-#### Core Anti-Slop Modules
-- **antislop**: Core filter and rules engine for preventing AI slop patterns
-- **antislop-code**: Code-specific anti-slop protection with programming language awareness
-- **antislop-copywriting**: Copywriting and content quality enforcement
-- **antislop-human**: Human-centered accessibility and usability guidelines
-- **antislop-layoutmobile**: Mobile-first responsive design patterns
-- **antislop-ui**: User interface design principles and anti-patterns
-
-#### Key Features
-- **WCAG Compliance**: Built-in accessibility standards with contrast checking tools
-- **Design Quality Gates**: Automated checks for design consistency and purpose-driven decisions
-- **Pattern Recognition**: Detection of common AI-generated design anti-patterns
-- **Human-Centered Design**: Focus on real user needs and accessibility requirements
-
-**Section sources**
-- [SKILL.md:1-701](file://.agents/skills/antislop/SKILL.md#L1-L701)
-- [SKILL.md:1-205](file://.agents/skills/antislop-human/SKILL.md#L1-L205)
-
-### Engineering Workflow Skills
-The Matt Pocock skills provide structured engineering workflows and productivity enhancements:
-
-#### Development Lifecycle Skills
-- **code-review**: Structured code review processes and checklists
-- **implement**: Implementation guidance and best practices
-- **prototype**: Rapid prototyping methodologies
-- **research**: Research-driven development approaches
-- **tdd**: Test-driven development workflows
-
-#### Project Management Skills
-- **triage**: Issue triage and prioritization systems
-- **domain-modeling**: Domain-driven design and modeling
-- **to-spec**: Specification writing and management
-- **to-tickets**: Ticket creation and management workflows
-
-#### Productivity Enhancement Skills
-- **grilling**: Critical thinking and problem-solving techniques
-- **teach**: Knowledge sharing and documentation practices
-- **handoff**: Smooth project handoff procedures
-- **retro**: Retrospective facilitation and improvement cycles
-
-**Section sources**
-- [SKILL.md:1-121](file://.agents/skills/setup-matt-pocock-skills/SKILL.md#L1-L121)
-- [skills-lock.json:40-267](file://skills-lock.json#L40-L267)
-
-### Skills Management
-The skills are managed through a centralized lock file (`skills-lock.json`) that tracks:
-- Source repositories (miqdadbadjuber/anti-slop, mattpocock/skills)
-- Skill paths and computed hashes for integrity verification
-- Version control and update mechanisms
-
-```mermaid
-graph LR
-SkillsLock["skills-lock.json<BR/>Central Skills Manifest"]
-AntiSlop["Anti-Slop Skills<br/>Quality & Accessibility"]
-MattPocock["Matt Pocock Skills<br/>Engineering Workflows"]
-AgentSkills[".agents/skills/<BR/>Installed Skills"]
-SkillsLock --> AntiSlop
-SkillsLock --> MattPocock
-AntiSlop --> AgentSkills
-MattPocock --> AgentSkills
+# Install all dependencies using Bun
+bun install
 ```
 
-**Diagram sources**
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+### Step 2: Start Local Database Services
+```bash
+# Start Supabase local stack
+bun run db:start
+
+# This starts:
+# - PostgreSQL on port 54422
+# - Supabase API on port 54421
+# - Studio on port 54423
+# - Realtime service on port 54425
+```
+
+### Step 3: Configure Environment Variables
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your configuration
+# For local development, the default values should work
+# For Supabase cloud, update DATABASE_URL and DIRECT_URL
+```
+
+### Step 4: Initialize Database Schema
+```bash
+# Generate Prisma client
+bun run db:generate
+
+# Apply database migrations
+bun run db:migrate
+
+# Seed initial data (shift types)
+bun run db:seed
+```
+
+### Step 5: Start Development Servers
+```bash
+# Start both web and API in watch mode
+bun run dev
+
+# Access applications:
+# - Web: http://localhost:3000
+# - API: http://localhost:3001
+# - Health check: GET http://localhost:3001/health
+```
 
 **Section sources**
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+- [README.md:21-35](file://README.md#L21-L35)
 
-## Core Components
-Until the technology stack is implemented, think of "components" as the areas you must prepare on your machine:
+## Development Workflow
 
-- Node.js runtime and package manager
-- PostgreSQL database server
-- Google Cloud Console account for authentication
-- Supabase project for Auth and Database
-- Local development tools such as Docker or PM2 for running NestJS later
-- Editor settings aligned with the PRD's monorepo expectations
-- **Agent skills environment** for AI-assisted development workflows
+### Available Commands
+The root `package.json` provides centralized commands through Turborepo:
 
-### Environment Preparation
-Prepare these before any code is added:
-
-1. Install Node.js using the version recommended by the final stack.
-2. Install a modern package manager: npm, yarn, pnpm, or Bun.
-3. Install PostgreSQL locally or use a managed service.
-4. Create a Google Cloud project and enable Google Sign-In.
-5. Create a Supabase project and configure Google OAuth.
-6. Prepare environment variables for local development.
-7. Verify that your browser can open links from WhatsApp without blocking login flows.
-8. **Set up agent skills environment** for AI-assisted development workflows.
-
-**Updated**: Added agent skills environment setup to support the comprehensive skill infrastructure.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L228)
-
-### Required Tools Installation
-| Tool | Purpose | Notes |
+| Command | Description | Scope |
 |---|---|---|
-| Node.js | Runtime for Next.js and NestJS | Use a stable LTS release unless the stack pins another version |
-| Package manager | Dependency management | Choose one tool consistently across the monorepo |
-| PostgreSQL | Application database | Store dates and times carefully; timezone handling matters |
-| Supabase | Auth and managed Postgres | Used for Google login and database access via Prisma |
-| Google Cloud Console | Google OAuth client configuration | Configure redirect URIs for local and production URLs |
-| Docker or PM2 | Backend process management | VPS hosting plan mentions Docker or PM2 |
-| Reverse proxy | HTTPS termination | Caddy or Nginx is mentioned for production |
-| Browser testing tools | Validate PWA and mobile behavior | Test on Android Chrome and iPhone Safari |
-| **Agent skills CLI** | Manage and run specialized skills | Supports npx-based skill installation and updates |
+| `bun run dev` | Start development servers | All packages |
+| `bun run build` | Build all packages | All packages |
+| `bun run typecheck` | TypeScript compilation check | All packages |
+| `bun run test` | Run unit tests | All packages |
+| `bun run test:api` | Run API integration tests | API package only |
+| `bun run format` | Format code with Prettier | All files |
+| `bun run format:check` | Check code formatting | All files |
 
-**Updated**: Added agent skills CLI to the required tools table.
+### Database Commands
+| Command | Description |
+|---|---|
+| `bun run db:start` | Start Supabase local stack |
+| `bun run db:stop` | Stop Supabase local stack |
+| `bun run db:generate` | Generate Prisma client |
+| `bun run db:migrate` | Apply database migrations |
+| `bun run db:seed` | Seed database with initial data |
 
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L228)
-
-### Initial Project Configuration
-When the stack is finalized, create these configuration artifacts:
-
-- `.env.example` with all required keys
-- `.env.local` for secrets that should never be committed
-- Database connection string pointing to local or test PostgreSQL
-- Supabase URL and anonymous/public keys if needed
-- Google OAuth client ID and secret for local development
-- Timezone setting for Asia/Makassar
-- Frontend base URL and backend API URL
-- Feature flags for probation request behavior and deadlines
-- **Agent skills configuration** for customizing skill behavior and preferences
-
-The existing `.gitignore` already excludes environment files, dependency folders, build outputs, logs, editor-specific files, and private key files. Keep this pattern when adding framework-specific ignores.
-
-**Updated**: Added agent skills configuration to the initial project setup requirements.
+### Development Best Practices
+1. **Use Turborepo commands**: Always use root commands for consistency
+2. **Run type checking**: Execute `bun run typecheck` before committing
+3. **Format code**: Run `bun run format` to maintain consistent code style
+4. **Test changes**: Run relevant tests before submitting pull requests
+5. **Database changes**: Always run migrations after schema modifications
 
 **Section sources**
-- [.gitignore:1-34](file://.gitignore#L1-L34)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L228)
+- [README.md:37-50](file://README.md#L37-L50)
+- [package.json:11-24](file://package.json#L11-L24)
 
-## Architecture Overview
-The planned architecture follows a monorepo structure similar to the ERP system. The frontend will be a Next.js PWA, the backend will be NestJS, and data will be stored in PostgreSQL through Supabase and accessed via Prisma. Authentication uses Supabase Auth with Google sign-in and PKCE redirect.
+## Testing Infrastructure
 
-```mermaid
-graph TB
-Client["Mobile and Desktop Clients<BR/>Next.js PWA"]
-WebFrontend["Web Frontend<BR/>Next.js"]
-ApiBackend["API Backend<BR/>NestJS"]
-Database["PostgreSQL<BR/>Supabase"]
-AuthProvider["Supabase Auth<BR/>Google OAuth"]
-Hosting["Hosting Layer<BR/>Vercel, Supabase, VPS"]
-AgentSkills["Agent Skills Layer<BR/>AI-Assisted Development"]
-Client --> WebFrontend
-WebFrontend --> AuthProvider
-WebFrontend --> ApiBackend
-ApiBackend --> Database
-Hosting --> WebFrontend
-Hosting --> ApiBackend
-Hosting --> Database
-AgentSkills --> WebFrontend
-AgentSkills --> ApiBackend
+### Test Frameworks
+The project uses a dual testing strategy:
+
+#### Unit Tests (Vitest)
+- **Framework**: Vitest v4.1.10
+- **Scope**: Pure logic functions and utilities
+- **Location**: `src/**/*.spec.ts`
+- **Configuration**: `api/vitest.config.ts`
+- **Execution**: `bun run test`
+
+#### Integration Tests (Jest)
+- **Framework**: Jest v30.4.2
+- **Scope**: API endpoints and database interactions
+- **Location**: `test/*.api-spec.ts`
+- **Configuration**: `api/test/jest-api.json`
+- **Execution**: `bun run test:api`
+
+### Test Configuration Details
+
+#### Vitest Configuration
+```typescript
+// api/vitest.config.ts
+export default defineConfig({
+  oxc: false,
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.spec.ts'],
+    pool: 'forks',
+  },
+  plugins: [swc.vite({...})],
+  resolve: {
+    alias: {
+      '@repo/types': path.resolve(__dirname, '../packages/types/src/index.ts'),
+      '@repo/validators': path.resolve(__dirname, '../packages/validators/src/index.ts'),
+    },
+  },
+});
 ```
 
-**Updated**: Added Agent Skills Layer to show how AI-assisted development integrates with the overall architecture.
-
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-
-## Detailed Component Analysis
-
-### Repository Metadata and Placeholder Commands
-The README identifies this as a new repository with no code yet. It also reserves placeholder command blocks for dependencies, development server, and tests. Treat these as placeholders until the stack is defined.
-
-Key points:
-- Remote repository URL is documented.
-- Main branch is `main`.
-- Getting started section is intentionally empty until stack selection.
-- Layout section warns that directory structure is not set yet.
-
-**Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-
-### Product Requirements and Stack Intent
-The PRD defines roles, business rules, weekly scheduling flow, functional modules, data model draft, non-functional requirements, and the target stack. It also documents security rules, hosting plans, and timeline expectations.
-
-Important setup implications:
-- Google login with email whitelist is mandatory.
-- Timezone is Asia/Makassar.
-- Mobile-first PWA behavior must work on Android and iPhone.
-- Database schema should use UUIDs, timestamps, soft deletes, and audit fields.
-- Backend runs on a VPS with Docker or PM2 and reverse proxy.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:27-66](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L27-L66)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-100](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L100)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L195)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L248)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:250-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L250-L267)
-
-### Branch Management Strategy
-At this time:
-- The main branch is `main`.
-- No feature branches are defined yet.
-- Once implementation starts, adopt a branching strategy consistent with the ERP monorepo.
-
-Recommended approach after stack selection:
-- Use short-lived feature branches named after features or fixes.
-- Require pull requests before merging into `main`.
-- Protect `main` with required reviews and status checks.
-- Tag releases when MVP milestones are reached.
-
-**Section sources**
-- [README.md:7-11](file://README.md#L7-L11)
-
-### Contributing Guidelines and Development Workflow
-Because this is a scaffold, formal contributing guidelines are not present yet. Until they are added, follow these safe defaults:
-
-- Do not commit secrets or `.env` files.
-- Keep changes small and focused.
-- Write clear commit messages describing what changed and why.
-- Update documentation when changing setup steps.
-- Test Google login flows early because opening links from WhatsApp is a known risk.
-- Follow the PRD's security rules: whitelist emails at the backend, enforce role-based access, and rely on server-side validation.
-- **Use agent skills responsibly**: Leverage the antislop skills for code quality and the engineering skills for structured development workflows.
-- **Respect accessibility standards**: Apply WCAG guidelines from the antislop-human skill when building UI components.
-
-**Updated**: Added guidelines for responsible use of agent skills and accessibility standards.
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:250-267](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L250-L267)
-
-## Dependency Analysis
-At this stage, there are no application dependencies. The repository depends conceptually on external services and tools described in the PRD, plus the agent skills infrastructure.
-
-```mermaid
-graph LR
-Repo["Scheduling Repository"]
-Node["Node.js Runtime"]
-PackageManager["Package Manager"]
-PostgreSQL["PostgreSQL / Supabase"]
-GoogleOAuth["Google OAuth"]
-SupabaseAuth["Supabase Auth"]
-NestJS["NestJS Backend"]
-NextJS["Next.js Frontend"]
-AgentSkills["Agent Skills Infrastructure"]
-Repo --> Node
-Repo --> PackageManager
-Repo --> PostgreSQL
-Repo --> GoogleOAuth
-Repo --> SupabaseAuth
-Repo --> NestJS
-Repo --> NextJS
-Repo --> AgentSkills
+#### Jest API Test Configuration
+```json
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".api-spec.ts$",
+  "maxWorkers": 1,
+  "testTimeout": 30000,
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", {...}]
+  }
+}
 ```
 
-**Updated**: Added Agent Skills Infrastructure to the dependency graph.
+### Running Tests
+```bash
+# Run all unit tests
+bun run test
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+# Run API integration tests
+bun run test:api
+
+# Run tests with coverage
+bun run test --coverage
+```
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+- [api/package.json:10-14](file://api/package.json#L10-L14)
+- [api/vitest.config.ts:1-33](file://api/vitest.config.ts#L1-L33)
+- [api/test/jest-api.json:1-34](file://api/test/jest-api.json#L1-L34)
 
-## Performance Considerations
-These are general recommendations until implementation begins:
+## Database Management
 
-- Prefer server-side validation and authorization.
-- Avoid storing redundant time data; calculate hours from shift definitions.
-- Handle timezone conversions explicitly around Asia/Makassar.
-- Cache read-heavy dashboard data where appropriate.
-- Monitor database queries once Prisma is configured.
-- Keep PWA assets optimized for mobile networks.
-- **Optimize agent skills usage**: Use skills selectively to avoid performance overhead during development.
-- **Apply antislop performance guidelines**: Follow R-40 performance mechanisms for optimal loading and rendering.
+### Database Architecture
+The application uses Supabase PostgreSQL with Prisma ORM:
 
-**Updated**: Added considerations for agent skills performance and antislop performance guidelines.
+- **PostgreSQL 17**: Primary database engine
+- **Supabase Auth**: User authentication and authorization
+- **Prisma Client**: Type-safe database queries
+- **RLS Policies**: Row-level security for data protection
+
+### Database Ports and Services
+| Service | Local Port | Description |
+|---|---:|---|
+| PostgreSQL | 54422 | Main database server |
+| Supabase API | 54421 | REST API endpoints |
+| Studio | 54423 | Database management UI |
+| Realtime | 54425 | WebSocket connections |
+| Analytics | 54427 | Usage analytics |
+
+### Database Operations
+
+#### Schema Management
+```bash
+# Generate Prisma client from schema
+bun run db:generate
+
+# Create new migration
+npx prisma migrate dev --name description_of_change
+
+# Apply pending migrations
+bun run db:migrate
+
+# Reset database (destructive)
+npx prisma migrate reset
+```
+
+#### Data Seeding
+```bash
+# Seed database with initial data
+bun run db:seed
+
+# Custom seed scripts can be added to prisma/seed.ts
+```
+
+### Security Considerations
+- **RLS deny-all**: Browser cannot directly access database tables
+- **API-only access**: All data operations go through the NestJS API
+- **Connection pooling**: Direct connections for API, pooled for development
+- **Timezone handling**: All times stored as WITA (Asia/Makassar)
+
+**Section sources**
+- [supabase/config.toml:35-85](file://supabase/config.toml#L35-L85)
+- [README.md:53-58](file://README.md#L53-L58)
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflow
+The project includes automated CI/CD with GitHub Actions:
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
+      - run: bun run db:generate
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run test:api
+      - run: bun run build
+```
+
+### CI Pipeline Stages
+1. **Checkout**: Clone repository code
+2. **Setup Bun**: Install Bun 1.4.3 runtime
+3. **Install Dependencies**: Install all workspace dependencies
+4. **Generate Prisma Client**: Create type-safe database client
+5. **Type Checking**: Validate TypeScript compilation
+6. **Unit Testing**: Run Vitest unit tests
+7. **Integration Testing**: Run Jest API tests
+8. **Build**: Compile all packages for production
+
+### Turborepo Configuration
+```json
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "stream",
+  "globalPassThroughEnv": ["DATABASE_URL", "DIRECT_URL"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["db:generate"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+**Section sources**
+- [.github/workflows/ci.yml:1-22](file://.github/workflows/ci.yml#L1-L22)
+- [turbo.json:1-40](file://turbo.json#L1-L40)
 
 ## Troubleshooting Guide
 
 ### Common Setup Issues
-| Problem | Likely Cause | Resolution |
-|---|---|---|
-| Cannot run commands from README | Placeholder script blocks are not implemented yet | Wait for stack definition; do not expect working scripts now |
-| Secrets accidentally committed | Missing `.env` exclusion | Remove secrets from history and rotate them immediately |
-| Google login fails from WhatsApp link | In-app browser restrictions | Open in Chrome or Safari, or install the PWA first |
-| Login works but user is rejected | Email not whitelisted in backend | Add the user's email to the employee whitelist |
-| Time-related bugs | Wrong timezone handling | Ensure WITA timezone is used for deadlines and shift times |
-| Database connection fails | Incorrect credentials or network access | Verify connection string, permissions, and firewall rules |
-| Build output pollutes repository | Missing ignore rules | Extend `.gitignore` for framework-specific outputs |
-| **Agent skills not loading** | Skills not properly installed or configured | Check skills-lock.json and reinstall skills using npx |
-| **Antislop rules not applying** | Mode not properly configured | Run antislop mode selection or check global preferences |
-| **Accessibility violations** | WCAG guidelines not followed | Use antislop-human skill and contrast checker tools |
 
-**Updated**: Added troubleshooting entries for agent skills and antislop-related issues.
+#### Supabase Local Stack Problems
+| Problem | Solution |
+|---|---|
+| Port conflicts (5442x) | Ensure no other services use ports 54421-54429 |
+| Docker not running | Start Docker Desktop or OrbStack |
+| Database connection fails | Verify `.env` contains correct `DATABASE_URL` |
+| Supabase CLI not found | Install globally: `npm install -g supabase` |
 
-**Section sources**
-- [README.md:12-20](file://README.md#L12-L20)
-- [.gitignore:1-34](file://.gitignore#L1-L34)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L228)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
+#### Dependency Installation Issues
+| Problem | Solution |
+|---|---|
+| Bun version mismatch | Install exact version: `curl -fsSL https://bun.sh/install | bash -s -- 1.4.3` |
+| Permission errors | Run with appropriate permissions or use sudo |
+| Network timeouts | Check proxy settings and firewall configuration |
+| Corrupted lock file | Delete `bun.lock` and run `bun install` |
+
+#### Database Migration Issues
+| Problem | Solution |
+|---|---|
+| Migration conflicts | Drop and recreate database: `npx prisma migrate reset` |
+| Prisma client outdated | Regenerate: `bun run db:generate` |
+| Connection string invalid | Verify `DATABASE_URL` format and credentials |
+| Timezone issues | Ensure database timezone matches Asia/Makassar |
+
+#### Testing Problems
+| Problem | Solution |
+|---|---|
+| Vitest not finding tests | Check test file naming pattern (*.spec.ts) |
+| Jest timeout errors | Increase timeout in jest-api.json |
+| Database not available during tests | Start Supabase stack before running tests |
+| Coverage reports missing | Ensure coverage directories exist |
+
+#### Development Server Issues
+| Problem | Solution |
+|---|---|
+| Port 3000/3001 already in use | Kill existing processes or change ports |
+| Hot reload not working | Restart development servers |
+| TypeScript errors blocking dev | Fix type errors or disable strict mode temporarily |
+| Module resolution failures | Run `bun install` to sync dependencies |
 
 ### Environment Configuration Checklist
-Before starting development:
+Before starting development, verify:
 
-- Confirm Node.js and package manager versions.
-- Confirm PostgreSQL is reachable locally or remotely.
-- Confirm Supabase project exists and is initialized.
-- Configure Google OAuth client with correct redirect URIs.
-- Populate `.env.local` with secrets.
-- Verify `.env.example` lists every required variable.
-- Test login from a normal browser and from WhatsApp links.
-- Validate that timezone handling uses Asia/Makassar.
-- **Verify agent skills installation**: Check that skills-lock.json is valid and skills are accessible.
-- **Test antislop functionality**: Ensure antislop rules are active and accessibility checks are working.
-
-**Updated**: Added agent skills and antislop verification to the environment checklist.
+- [ ] Bun 1.4.3 is installed and accessible
+- [ ] Docker/OrbStack is running
+- [ ] Supabase CLI is installed
+- [ ] `.env` file exists with required variables
+- [ ] Supabase local stack is running (`bun run db:start`)
+- [ ] Database migrations are applied (`bun run db:migrate`)
+- [ ] Database is seeded (`bun run db:seed`)
+- [ ] Development servers start successfully (`bun run dev`)
+- [ ] Health endpoint responds (`GET http://localhost:3001/health`)
+- [ ] Tests pass (`bun run test && bun run test:api`)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:218-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L218-L228)
+- [README.md:21-35](file://README.md#L21-L35)
+- [supabase/config.toml:7-8](file://supabase/config.toml#L7-L8)
 
 ## Conclusion
-This repository is currently a scaffold. Your immediate task is to prepare the development environment, align with the intended stack, and follow safe contribution practices. When the stack is finalized, replace placeholder commands with real installation, build, test, and deployment instructions. Until then, focus on environment readiness, secure configuration, and understanding the product requirements.
+The Kyne shift scheduling application now provides a complete development environment with modern tooling, comprehensive testing, and automated CI/CD. The monorepo structure with Bun workspaces and Turborepo ensures efficient development workflows, while the Supabase local stack enables rapid iteration without external dependencies.
 
-**Updated**: The repository now includes a powerful agent skills infrastructure that can significantly enhance your development workflow. Leverage the antislop skills for quality assurance and the engineering skills for structured development practices while maintaining focus on accessibility and user experience.
+Key achievements:
+- **Complete setup**: All prerequisites and configuration documented
+- **Working components**: Next.js PWA, NestJS API, and Supabase database
+- **Testing infrastructure**: Dual testing strategy with Vitest and Jest
+- **Automated CI/CD**: GitHub Actions pipeline for quality assurance
+- **Developer experience**: Comprehensive command structure and troubleshooting guidance
 
-## Appendices
+The foundation is now ready for feature development, with clear patterns established for adding new functionality, maintaining code quality, and ensuring reliable deployments.
 
-### Expected Future Directory Layout
-Once the stack is selected, expect something like:
-
-- `web/` — Next.js PWA frontend
-- `api/` — NestJS backend
-- Shared packages for types and validation
-- Database migrations and seed data
-- Deployment configuration for Vercel, Supabase, and VPS
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
-
-### Agent Skills Quick Reference
-For quick reference to the most important agent skills:
-
-#### Essential Anti-Slop Skills
-- **antislop**: Core quality filter - always load first
-- **antislop-human**: Accessibility and human-centered design
-- **antislop-ui**: UI design patterns and anti-patterns
-
-#### Essential Engineering Skills  
-- **setup-matt-pocock-skills**: Initialize engineering workflow configuration
-- **code-review**: Structured code review processes
-- **tdd**: Test-driven development workflows
-
-#### Productivity Skills
-- **grilling**: Critical thinking and problem-solving
-- **triage**: Issue management and prioritization
-- **handoff**: Project handoff procedures
-
-**Section sources**
-- [SKILL.md:1-701](file://.agents/skills/antislop/SKILL.md#L1-L701)
-- [SKILL.md:1-121](file://.agents/skills/setup-matt-pocock-skills/SKILL.md#L1-L121)
-- [skills-lock.json:1-270](file://skills-lock.json#L1-L270)
+**Updated**: The project has evolved significantly from its scaffold state to a production-ready development environment that supports the full software development lifecycle.

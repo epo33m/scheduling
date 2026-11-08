@@ -5,6 +5,14 @@
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
 - [README.md](file://README.md)
 - [DESIGN.md](file://DESIGN.md)
+- [employee.ts](file://packages/types/src/employee.ts)
+- [shift.ts](file://packages/types/src/shift.ts)
+- [index.ts](file://packages/types/src/index.ts)
+- [shift.ts](file://packages/validators/src/shift.ts)
+- [index.ts](file://packages/validators/src/index.ts)
+- [shift.spec.ts](file://packages/types/src/shift.spec.ts)
+- [employee.prisma](file://api/prisma/schema/employee.prisma)
+- [shift_type.prisma](file://api/prisma/schema/shift_type.prisma)
 </cite>
 
 ## Update Summary
@@ -16,23 +24,25 @@
 - Updated success metrics, timeline milestones, and acceptance criteria based on comprehensive PRD specifications
 - Added technical constraints and business rules governing scheduling logic
 - Enhanced architecture overview with PWA-based system specifications
+- **Updated**: Added foundation documentation for shared type definitions and validation utilities that establish the core data model for all functional modules (F1-F7)
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Shared Type Definitions Foundation](#shared-type-definitions-foundation)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document defines the product requirements for the Kyne café shift scheduling application MVP. It captures the business problem, scope, user roles, functional modules, business rules, data model, technical constraints, success metrics, timeline milestones, and acceptance criteria. The goal is to replace manual, chat-based scheduling with a structured weekly process: staff submit leave and shift preference requests; the manager builds a draft schedule from the previous week; automated middle-kitchen logic applies; coverage validation runs; and the manager publishes the schedule for staff to view on mobile devices.
 
-The repository is currently a scaffold without implementation code. All specifications below are derived from the project's comprehensive PRD and initial README.
+The repository now contains a solid foundation with shared type definitions and validation utilities that establish the core data model for all seven functional modules (F1-F7), ensuring consistency across the entire application stack.
 
 **Section sources**
 - [README.md:1-25](file://README.md#L1-L25)
@@ -43,6 +53,8 @@ At this stage, the repository contains:
 - A documentation folder with the comprehensive Kyne shift scheduling PRD detailing PWA-based specifications.
 - A root README indicating that the repository is new and scaffolding has not yet been defined.
 - Design specifications for Apple-inspired UI patterns (though not directly applicable to this project).
+- **New**: Shared type definitions in `packages/types` establishing core domain models for employees and shifts.
+- **New**: Validation utilities in `packages/validators` providing Zod schemas for data integrity across all modules.
 
 ```mermaid
 graph TB
@@ -50,11 +62,19 @@ Repo["Repository Root"] --> Docs["docs/"]
 Docs --> PRD["PRD-Aplikasi-Penjadwalan-Shift-Kyne.md"]
 Repo --> Readme["README.md"]
 Repo --> Design["DESIGN.md"]
+Repo --> Types["packages/types/<br/>Shared Domain Models"]
+Repo --> Validators["packages/validators/<br/>Validation Utilities"]
+Types --> EmployeeTypes["Employee Types<br/>Positions & Roles"]
+Types --> ShiftTypes["Shift Types<br/>Codes & Catalog"]
+Validators --> ShiftValidators["Shift Validation<br/>Zod Schemas"]
 ```
 
 **Diagram sources**
 - [README.md:1-25](file://README.md#L1-L25)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-10](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L10)
+- [employee.ts:1-4](file://packages/types/src/employee.ts#L1-L4)
+- [shift.ts:1-41](file://packages/types/src/shift.ts#L1-L41)
+- [shift.ts:1-22](file://packages/validators/src/shift.ts#L1-L22)
 
 **Section sources**
 - [README.md:1-25](file://README.md#L1-L25)
@@ -95,6 +115,10 @@ subgraph "Data & Auth"
 DB["PostgreSQL (Supabase)<br/>Prisma ORM<br/>UUID Identifiers"]
 Auth["Supabase Auth<br/>Google OAuth (PKCE Redirect)"]
 end
+subgraph "Shared Foundation"
+Types["@repo/types<br/>Domain Models<br/>Employee & Shift Types"]
+Validators["@repo/validators<br/>Zod Schemas<br/>Data Validation"]
+end
 subgraph "Hosting"
 Vercel["Vercel<br/>Web Hosting"]
 VPS["VPS (NestJS)<br/>Docker/PM2<br/>HTTPS Auto-restart"]
@@ -105,13 +129,93 @@ Web --> Auth
 Auth --> API
 Web -.-> Vercel
 API -.-> VPS
+Types --> API
+Validators --> API
 ```
 
 **Diagram sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L241)
+- [index.ts:1-3](file://packages/types/src/index.ts#L1-L3)
+- [index.ts:1-2](file://packages/validators/src/index.ts#L1-L2)
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+
+## Shared Type Definitions Foundation
+
+**Updated** The foundation for all functional modules (F1-F7) has been established through shared type definitions and validation utilities that ensure data consistency across the entire application.
+
+### Core Domain Models
+The `@repo/types` package provides the foundational domain models that all functional modules depend on:
+
+#### Employee Types
+- **EmployeePosition**: Strictly typed positions ('bar' | 'kitchen') ensuring data consistency across all modules.
+- **EMPLOYEE_POSITIONS**: Constant array defining valid positions, used throughout the application for validation and UI rendering.
+
+#### Shift Types
+- **ShiftCode**: Enumerated shift codes ('PAGI' | 'SORE' | 'MIDDLE') representing the three shift types defined in the PRD.
+- **ShiftTypeDefinition**: Interface defining the complete shift type specification including code, time ranges, and applicable positions.
+- **SHIFT_TYPE_CATALOG**: Centralized catalog of all shift types with their exact specifications matching PRD requirements.
+
+```mermaid
+flowchart TD
+TypesPackage["@repo/types Package"] --> EmployeeModule["Employee Module<br/>EMPLOYEE_POSITIONS<br/>EmployeePosition Type"]
+TypesPackage --> ShiftModule["Shift Module<br/>SHIFT_CODES<br/>ShiftTypeDefinition<br/>SHIFT_TYPE_CATALOG"]
+EmployeeModule --> Positions["bar | kitchen"]
+ShiftModule --> Codes["PAGI | SORE | MIDDLE"]
+ShiftModule --> Catalog["Complete Shift Catalog<br/>with Time Ranges & Positions"]
+```
+
+**Diagram sources**
+- [employee.ts:1-4](file://packages/types/src/employee.ts#L1-L4)
+- [shift.ts:1-41](file://packages/types/src/shift.ts#L1-L41)
+
+### Validation Utilities
+The `@repo/validators` package provides Zod-based validation schemas that enforce data integrity across all functional modules:
+
+#### Validation Schemas
+- **shiftCodeSchema**: Validates shift codes against the enumerated values.
+- **employeePositionSchema**: Validates employee positions against allowed values.
+- **localTimeSchema**: Validates local WITA wall-clock time format (HH:MM).
+- **shiftTypeSeedSchema**: Complete schema for validating shift type seed data.
+
+#### Data Integrity Guarantees
+- All shift codes must match the PRD-defined set exactly.
+- Employee positions are strictly constrained to bar/kitchen roles.
+- Time formats are validated to ensure proper WITA timezone handling.
+- Seed data validation ensures database consistency with type definitions.
+
+```mermaid
+sequenceDiagram
+participant App as "Application Modules"
+participant Validators as "@repo/validators"
+participant Zod as "Zod Engine"
+participant Types as "@repo/types"
+App->>Validators : Validate shift data
+Validators->>Zod : Apply shiftCodeSchema
+Zod->>Types : Reference SHIFT_CODES
+Zod-->>Validators : Valid/Invalid result
+Validators-->>App : Validation result
+Note over App,Types : All modules share same validation rules
+```
+
+**Diagram sources**
+- [shift.ts:1-22](file://packages/validators/src/shift.ts#L1-L22)
+- [shift.ts:1-41](file://packages/types/src/shift.ts#L1-L41)
+
+### Test Coverage
+The foundation includes comprehensive test coverage ensuring type safety and validation correctness:
+
+#### Type Definition Tests
+- Verifies SHIFT_TYPE_CATALOG contains exactly three shifts matching PRD specifications.
+- Validates time ranges for each shift type (PAGI: 07:30-15:30, SORE: 15:00-23:00, MIDDLE: 11:00-19:00).
+- Confirms position assignments (PAGI/SORE for both bar/kitchen, MIDDLE for kitchen only).
+
+**Section sources**
+- [employee.ts:1-4](file://packages/types/src/employee.ts#L1-L4)
+- [shift.ts:1-41](file://packages/types/src/shift.ts#L1-L41)
+- [shift.ts:1-22](file://packages/validators/src/shift.ts#L1-L22)
+- [shift.spec.ts:1-39](file://packages/types/src/shift.spec.ts#L1-L39)
 
 ## Detailed Component Analysis
 
@@ -301,19 +405,34 @@ Key dependencies across components with clear separation of concerns:
 - Schedule creation depends on copying previous weeks, applying requests, and middle-kitchen automation logic.
 - Publishing depends on visibility toggles and WhatsApp sharing integration.
 - Staff view depends on filtering by employee identity and computing totals accurately.
+- **New**: All modules depend on shared type definitions and validation utilities for data consistency.
 
 ```mermaid
 graph LR
-Auth["Authentication<br/>JWT + Whitelist"] --> Emp["Employee Management<br/>CRUD Operations"]
-Auth --> Req["Leave & Shift Requests<br/>Validation & Conflict Detection"]
-Emp --> Sched["Schedule Creation<br/>Automation & Manual Adjustments"]
+Types["@repo/types<br/>Shared Types"] --> Auth["Authentication<br/>JWT + Whitelist"]
+Types --> Emp["Employee Management<br/>CRUD Operations"]
+Types --> Req["Leave & Shift Requests<br/>Validation & Conflict Detection"]
+Types --> Sched["Schedule Creation<br/>Automation & Manual Adjustments"]
+Types --> Pub["Publishing<br/>Visibility & Sharing"]
+Types --> View["Staff Schedule View<br/>Personalized Display"]
+Validators["@repo/validators<br/>Validation Schemas"] --> Auth
+Validators --> Emp
+Validators --> Req
+Validators --> Sched
+Validators --> Pub
+Validators --> View
+Auth --> Emp
+Auth --> Req
+Emp --> Sched
 Req --> Sched
-Sched --> Pub["Publishing<br/>Visibility & Sharing"]
-Pub --> View["Staff Schedule View<br/>Personalized Display"]
+Sched --> Pub
+Pub --> View
 ```
 
 **Diagram sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
+- [index.ts:1-3](file://packages/types/src/index.ts#L1-L3)
+- [index.ts:1-2](file://packages/validators/src/index.ts#L1-L2)
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
@@ -325,6 +444,7 @@ Pub --> View["Staff Schedule View<br/>Personalized Display"]
 - Minimize network calls by batching data retrieval for dashboards and schedule views.
 - Ensure timezone handling uses WITA consistently to avoid scheduling miscalculations.
 - Implement proper error handling for in-app browser limitations and Google OAuth edge cases.
+- **New**: Leverage shared type definitions to reduce runtime validation overhead and improve type safety across all modules.
 
 [No sources needed since this section provides general guidance]
 
@@ -336,13 +456,17 @@ Common issues and mitigations with specific solutions:
 - RLS misconfiguration: keep Row Level Security deny-all and route all reads/writes through NestJS.
 - Deadline edge cases: enforce request lockout based on current time vs. weekly deadline in WITA timezone.
 - iPhone standalone mode issues: use redirect flow instead of popup for Google OAuth authentication.
+- **New**: Type definition mismatches: ensure all modules import from shared @repo/types package to maintain consistency.
+- **New**: Validation failures: verify Zod schemas align with database constraints and business rules.
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:222-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L222-L228)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L249)
 
 ## Conclusion
-The Kyne shift scheduling MVP replaces ad-hoc scheduling with a clear weekly cycle: staff submit requests through a mobile-friendly PWA; the manager drafts and validates a schedule with automated assistance; and the published schedule is accessible to staff on mobile devices. The architecture aligns with the ERP stack to enable future migration while providing immediate value through reduced manual work and improved communication. Success hinges on strict adherence to business rules, robust authentication and authorization, reliable coverage validation, and excellent mobile user experience.
+The Kyne shift scheduling MVP replaces ad-hoc scheduling with a clear weekly cycle: staff submit requests through a mobile-friendly PWA; the manager drafts and validates a schedule with automated assistance; and the published schedule is accessible to staff on mobile devices. The architecture aligns with the ERP stack to enable future migration while providing immediate value through reduced manual work and improved communication. 
+
+**Updated** The establishment of shared type definitions and validation utilities provides a solid foundation for all seven functional modules, ensuring data consistency, type safety, and maintainability across the entire application. Success hinges on strict adherence to business rules, robust authentication and authorization, reliable coverage validation, excellent mobile user experience, and consistent use of the shared type system.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -430,3 +554,30 @@ Comprehensive acceptance criteria for each functional module:
 
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
+
+### Shared Type System Implementation
+The foundation layer provides type-safe, validated data structures used across all functional modules:
+
+#### Type Definitions
+- **EmployeePosition**: Strictly typed enum ensuring only 'bar' or 'kitchen' positions are accepted.
+- **ShiftCode**: Enumerated shift types (PAGI, SORE, MIDDLE) with exact PRD compliance.
+- **ShiftTypeDefinition**: Complete shift specification including time ranges and position applicability.
+- **SHIFT_TYPE_CATALOG**: Centralized catalog ensuring consistency between frontend, backend, and database.
+
+#### Validation Layer
+- **Zod Schemas**: Runtime validation ensuring data integrity before database operations.
+- **Local Time Validation**: WITA timezone-aware time format validation (HH:MM).
+- **Position Validation**: Ensures employee positions match allowed values.
+- **Shift Code Validation**: Prevents invalid shift codes from entering the system.
+
+#### Database Integration
+- **Prisma Schema Alignment**: Database enums match TypeScript type definitions exactly.
+- **Seed Data Consistency**: Database seed values derived from shared type definitions.
+- **Constraint Enforcement**: Database-level constraints complement application-level validation.
+
+**Section sources**
+- [employee.ts:1-4](file://packages/types/src/employee.ts#L1-L4)
+- [shift.ts:1-41](file://packages/types/src/shift.ts#L1-L41)
+- [shift.ts:1-22](file://packages/validators/src/shift.ts#L1-L22)
+- [employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)

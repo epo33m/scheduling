@@ -6,8 +6,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 
 /**
  * Integration seam for the api: boots the real Nest module and drives it over
- * HTTP. T1 has no database-backed endpoint yet, so Prisma is stubbed out; DB
- * fixtures arrive with the first vertical slice (T2).
+ * HTTP. /health is the one public route, so it needs no employee behind it.
  */
 describe('GET /health', () => {
   let app: INestApplication;
