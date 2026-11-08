@@ -1,1 +1,0 @@
-Prompt-driven agent skills that bootstrap a repo's engineering setup (issue tracker, pre-commit hooks, git guardrails), and provide workflow templates for PRs, TypeScript migrations, exercise scaffolding, teaching, and deep-module dependency analysis.

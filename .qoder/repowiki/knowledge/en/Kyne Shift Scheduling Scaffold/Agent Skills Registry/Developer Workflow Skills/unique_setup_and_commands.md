@@ -1,1 +1,0 @@
-Skills are invoked through the parent agent's Skill tool rather than executed directly. The diagnosing-bugs skill's HITL loop is run as `bash hitl-loop.template.sh`; the prototype skill expects project task runners like `pnpm <name>` / `python <path>` / `bun <path>` to launch generated artifacts.

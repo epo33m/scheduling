@@ -1,4 +1,0 @@
-- Every skill directory follows the same layout: a top-level `SKILL.md` with YAML front-matter (`name`, `description`, optional `metadata.credits`) followed by numbered procedural steps, and an `agents/openai.yaml` sibling file.
-- Skills begin with an exploration phase that inspects the host repo (e.g. `git remote -v`, presence of `CLAUDE.md`/`AGENTS.md`, lockfiles, existing docs) before making any changes, then present findings and ask the user for confirmation.
-- User-facing decisions are presented as explicit choices with a recommended default, and the skill waits for a one-word acceptance before writing files.
-- When editing existing host files (`CLAUDE.md`, `AGENTS.md`, `.claude/settings.json`), skills update in-place and merge new entries rather than overwriting the whole file.

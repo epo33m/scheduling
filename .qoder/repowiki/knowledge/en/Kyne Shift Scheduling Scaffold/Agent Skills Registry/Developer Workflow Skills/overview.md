@@ -1,1 +1,0 @@
-A collection of agent skill definitions that guide an AI through the full software delivery lifecycle — from triage and research through design, implementation, review, and bug diagnosis.

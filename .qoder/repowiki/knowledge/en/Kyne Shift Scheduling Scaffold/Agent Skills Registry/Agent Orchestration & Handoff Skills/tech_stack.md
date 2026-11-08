@@ -1,1 +1,0 @@
-Bash wizard template using POSIX shell builtins plus `tput` for terminal colors, `xdg-open`/`open`/`explorer.exe`/`wslview` for cross-platform browser launching, and the `gh` CLI for GitHub Actions secrets/variables; skills are consumed by an OpenAI-compatible agent runtime via `agents/openai.yaml` interface manifests.

@@ -1,1 +1,0 @@
-Pre-implementation scaffold for the Kyne shift scheduling application, holding the PRD, numbered ADRs, and an agent-skill registry that pins third-party Markdown skills to drive future AI-assisted development.

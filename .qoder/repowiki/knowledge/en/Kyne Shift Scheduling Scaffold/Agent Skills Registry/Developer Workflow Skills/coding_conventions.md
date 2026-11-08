@@ -1,6 +1,0 @@
-- Each skill declares its identity via a YAML front-matter block at the top of `SKILL.md` containing `name` and `description`, followed by the playbook prose.
-- Every skill ships an `agents/openai.yaml` with `interface.display_name` and `interface.short_description` so the skill registry can surface it.
-- Cross-cutting concepts are centralized in the `codebase-design` skill's vocabulary (module, interface, seam, adapter, leverage, locality) and referenced by other skills instead of redefining terms locally.
-- Long-running or parallelizable work is delegated to sub-agents launched with fresh context windows, with results aggregated back in the orchestrator skill.
-- Domain terminology is sourced from `GLOSSARY.md` and ADRs in `docs/adr/` before any design or implementation decision is made, keeping suggestions aligned with existing decisions.
-- Artifacts produced by skills (HTML reports, prototypes, research notes) are written outside the repo tree (temp directory, scratch branch, or a clearly throwaway location) unless they represent a validated decision.

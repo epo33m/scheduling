@@ -1,0 +1,1 @@
+Repository root documentation and pre-implementation scaffold for the Kyne shift-scheduling PWA: product requirements, numbered architectural decisions, and an agent-skill registry.
