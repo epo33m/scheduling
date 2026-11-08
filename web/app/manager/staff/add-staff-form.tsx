@@ -2,21 +2,13 @@
 
 import { useId, useState, useActionState } from 'react';
 import { EMPLOYEE_POSITIONS, EMPLOYEE_ROLES, EMPLOYEE_STATUSES } from '@repo/types';
+import {
+  POSITION_LABEL,
+  ROLE_LABEL,
+  STATUS_LABEL,
+} from '@/lib/employee-labels';
 import { createEmployeeAction, type ActionState } from './actions';
 import styles from './staff.module.css';
-
-const POSITION_LABEL: Record<string, string> = {
-  bar: 'Bar',
-  kitchen: 'Kitchen',
-};
-const ROLE_LABEL: Record<string, string> = {
-  staff: 'Staf',
-  manager: 'Manager',
-};
-const STATUS_LABEL: Record<string, string> = {
-  probation: 'Probation',
-  tetap: 'Tetap',
-};
 
 const initialState: ActionState = { ok: false, message: '' };
 

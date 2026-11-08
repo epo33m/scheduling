@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import type { ManagedEmployee } from '@repo/types';
 import { ApiError, listEmployees } from '@/lib/api';
+import {
+  POSITION_LABEL,
+  ROLE_LABEL,
+  STATUS_LABEL,
+} from '@/lib/employee-labels';
 import { AddStaffForm } from './add-staff-form';
 import { setActiveAction } from './actions';
 import styles from './staff.module.css';
@@ -12,19 +17,6 @@ export const metadata: Metadata = {
 // The roster is read straight from the api on every request, so a manager
 // always sees the current staff and any probation that has just advanced.
 export const dynamic = 'force-dynamic';
-
-const POSITION_LABEL: Record<string, string> = {
-  bar: 'Bar',
-  kitchen: 'Kitchen',
-};
-const ROLE_LABEL: Record<string, string> = {
-  staff: 'Staf',
-  manager: 'Manager',
-};
-const STATUS_LABEL: Record<string, string> = {
-  probation: 'Probation',
-  tetap: 'Tetap',
-};
 
 /**
  * Manager-only screen for F2: add staff and deactivate/reactivate them. The

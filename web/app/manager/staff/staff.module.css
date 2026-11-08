@@ -27,9 +27,11 @@
 
 .sectionTitle {
   margin: var(--spacing-xl) 0 var(--spacing-md);
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.19;
+  font-family: var(--font-display);
+  font-size: var(--text-tagline-size);
+  font-weight: var(--text-tagline-weight);
+  line-height: var(--text-tagline-line-height);
+  letter-spacing: var(--text-tagline-tracking);
 }
 
 /* DESIGN.md Components › store-utility-card: hairline on a parchment surface. */
@@ -53,18 +55,19 @@
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.29;
-  letter-spacing: -0.224px;
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
 }
 
 .input,
 .select {
   min-height: 44px;
   padding: 10px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--rounded-sm);
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-text);
@@ -116,16 +119,20 @@
 
 .name {
   margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.24;
-  letter-spacing: -0.374px;
+  font-family: var(--font-text);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
 }
 
 .state {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.43;
+  font-family: var(--font-text);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
   color: var(--color-ink);
 }
 
@@ -137,9 +144,11 @@
 }
 
 .detailTerm {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.224px;
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
 }
 
 .detailValue {
