@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type {
   DashboardOffRequest,
   DashboardShiftRequest,
+  EmployeePosition,
   RequestsDashboard,
 } from '@repo/types';
 import { ApiError, getRequestsDashboard } from '@/lib/api';
@@ -50,23 +51,64 @@ const OUTCOME_LABEL = {
   rejected: 'Ditolak',
 } as const;
 
-function byDayThenName(
-  a: { tanggal: string; employeeName: string },
-  b: { tanggal: string; employeeName: string },
-): number {
-  return (
-    a.tanggal.localeCompare(b.tanggal) ||
-    a.employeeName.localeCompare(b.employeeName)
-  );
+/** One staff member and everything they asked for this minggu. */
+interface StaffGroup {
+  employeeId: string;
+  employeeName: string;
+  position: EmployeePosition;
+  /** Their request libur, if any; the schema caps it at one per week. */
+  off: DashboardOffRequest | null;
+  /** Their shift preferences, ordered by day. */
+  shifts: DashboardShiftRequest[];
+}
+
+/**
+ * Fold the flat request lists into one entry per staff member, which is how
+ * F4 words it ("semua request libur dan shift per staf"). Only staff who
+ * asked for something appear; the silent ones live in the reminder list.
+ */
+function groupByStaff(dashboard: RequestsDashboard): StaffGroup[] {
+  const groups = new Map<string, StaffGroup>();
+  const touch = (request: {
+    employeeId: string;
+    employeeName: string;
+    position: EmployeePosition;
+  }): StaffGroup => {
+    const existing = groups.get(request.employeeId);
+    if (existing) return existing;
+    const created: StaffGroup = {
+      employeeId: request.employeeId,
+      employeeName: request.employeeName,
+      position: request.position,
+      off: null,
+      shifts: [],
+    };
+    groups.set(request.employeeId, created);
+    return created;
+  };
+
+  for (const off of dashboard.offRequests) {
+    touch(off).off = off;
+  }
+  for (const shift of dashboard.shiftRequests) {
+    touch(shift).shifts.push(shift);
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      shifts: group.shifts.sort((a, b) => a.tanggal.localeCompare(b.tanggal)),
+    }))
+    .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
 }
 
 /**
  * The manager dashboard (F4). Every read here goes through the api, which
  * enforces the manager role: a staff caller gets the "khusus manager" refusal
- * in the error state instead of the list. The screen shows all libur and shift
- * requests of the minggu target with the system's bentrok marks, lets the
- * manager approve or reject each pending request, and reminds them of the
- * staff who have not requested yet.
+ * in the error state instead of the list. The screen groups every request of
+ * the minggu target per staff member, marks the ones the system flags bentrok,
+ * lets the manager approve or reject each pending request, and reminds them of
+ * the staff who have not requested yet.
  */
 export default async function DashboardPage() {
   let dashboard: RequestsDashboard | null = null;
@@ -85,8 +127,8 @@ export default async function DashboardPage() {
     <main className={styles.page}>
       <h1 className={styles.title}>Dashboard manager</h1>
       <p className={styles.lead}>
-        Semua request libur dan shift untuk minggu target, ditandai saat
-        bentrok, siap Anda setujui atau tolak.
+        Semua request libur dan shift untuk minggu target, dikelompokkan per
+        staf dan ditandai saat bentrok, siap Anda setujui atau tolak.
       </p>
 
       {loadError ? (
@@ -112,6 +154,7 @@ function Dashboard({ dashboard }: { dashboard: RequestsDashboard }) {
 
   const offConflicted = new Set(dashboard.offConflicted);
   const shiftConflicted = new Set(dashboard.shiftConflicted);
+  const staff = groupByStaff(dashboard);
 
   return (
     <>
@@ -137,47 +180,25 @@ function Dashboard({ dashboard }: { dashboard: RequestsDashboard }) {
         </p>
       )}
 
-      <section aria-labelledby="libur-heading">
-        <h2 id="libur-heading" className={styles.sectionTitle}>
-          Request libur
+      <section aria-labelledby="request-heading">
+        <h2 id="request-heading" className={styles.sectionTitle}>
+          Request staf
         </h2>
         <p className={styles.sectionLead}>
-          Bentrok bila dua staf posisi sama mengambil hari libur yang sama.
+          Bentrok muncul saat dua permintaan tidak bisa sama-sama dikabulkan.
+          Setujui atau tolak salah satunya untuk melepaskannya.
         </p>
-        {dashboard.offRequests.length === 0 ? (
-          <p className={styles.empty}>Belum ada request libur.</p>
+        {staff.length === 0 ? (
+          <p className={styles.empty}>Belum ada request dari staf.</p>
         ) : (
           <ul className={styles.list}>
-            {[...dashboard.offRequests].sort(byDayThenName).map((request) => (
-              <OffCard
-                key={request.id}
-                request={request}
+            {staff.map((group) => (
+              <StaffCard
+                key={group.employeeId}
+                group={group}
                 weekStartDate={weekStartDate}
-                conflicted={offConflicted.has(request.id)}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="shift-heading">
-        <h2 id="shift-heading" className={styles.sectionTitle}>
-          Request shift
-        </h2>
-        <p className={styles.sectionLead}>
-          Bentrok bila request untuk satu shift melebihi slot yang tersedia hari
-          itu.
-        </p>
-        {dashboard.shiftRequests.length === 0 ? (
-          <p className={styles.empty}>Belum ada request shift.</p>
-        ) : (
-          <ul className={styles.list}>
-            {[...dashboard.shiftRequests].sort(byDayThenName).map((request) => (
-              <ShiftCard
-                key={request.id}
-                request={request}
-                weekStartDate={weekStartDate}
-                conflicted={shiftConflicted.has(request.id)}
+                offConflicted={offConflicted}
+                shiftConflicted={shiftConflicted}
               />
             ))}
           </ul>
@@ -207,83 +228,72 @@ function Dashboard({ dashboard }: { dashboard: RequestsDashboard }) {
   );
 }
 
-function OffCard({
-  request,
+function StaffCard({
+  group,
   weekStartDate,
-  conflicted,
+  offConflicted,
+  shiftConflicted,
 }: {
-  request: DashboardOffRequest;
+  group: StaffGroup;
   weekStartDate: string;
-  conflicted: boolean;
+  offConflicted: Set<string>;
+  shiftConflicted: Set<string>;
 }) {
-  const day = dayName(weekStartDate, request.tanggal) ?? request.tanggal;
+  const lines: {
+    key: string;
+    kind: 'off' | 'shift';
+    text: string;
+    conflicted: boolean;
+    request: DashboardOffRequest | DashboardShiftRequest;
+  }[] = [];
 
-  return (
-    <li
-      className={
-        conflicted
-          ? `${styles.requestCard} ${styles.conflicted}`
-          : styles.requestCard
-      }
-    >
-      <div className={styles.cardHead}>
-        <h3 className={styles.name}>{request.employeeName}</h3>
-        {conflicted ? <p className={styles.bentrok}>Bentrok</p> : null}
-      </div>
-      <p className={styles.meta}>
-        {POSITION_LABEL[request.position]} · Libur {day}
-      </p>
-      <RequestDecision kind="off" request={request} />
-    </li>
-  );
-}
-
-function ShiftCard({
-  request,
-  weekStartDate,
-  conflicted,
-}: {
-  request: DashboardShiftRequest;
-  weekStartDate: string;
-  conflicted: boolean;
-}) {
-  const day = dayName(weekStartDate, request.tanggal) ?? request.tanggal;
-
-  return (
-    <li
-      className={
-        conflicted
-          ? `${styles.requestCard} ${styles.conflicted}`
-          : styles.requestCard
-      }
-    >
-      <div className={styles.cardHead}>
-        <h3 className={styles.name}>{request.employeeName}</h3>
-        {conflicted ? <p className={styles.bentrok}>Bentrok</p> : null}
-      </div>
-      <p className={styles.meta}>
-        {POSITION_LABEL[request.position]} · Shift{' '}
-        {SHIFT_LABEL[request.shiftCode]} · {day}
-      </p>
-      <RequestDecision kind="shift" request={request} />
-    </li>
-  );
-}
-
-/**
- * Pending requests get the decision controls; a decided one collapses to its
- * outcome so the manager sees at a glance what is still open. The api holds
- * the truth, so this only chooses between the control and the label.
- */
-function RequestDecision({
-  kind,
-  request,
-}: {
-  kind: 'off' | 'shift';
-  request: DashboardOffRequest | DashboardShiftRequest;
-}) {
-  if (request.status === 'pending') {
-    return <DecideControls kind={kind} id={request.id} />;
+  if (group.off) {
+    const day = dayName(weekStartDate, group.off.tanggal) ?? group.off.tanggal;
+    lines.push({
+      key: group.off.id,
+      kind: 'off',
+      text: `Libur ${day}`,
+      conflicted: offConflicted.has(group.off.id),
+      request: group.off,
+    });
   }
-  return <p className={styles.outcome}>{OUTCOME_LABEL[request.status]}</p>;
+  for (const shift of group.shifts) {
+    const day = dayName(weekStartDate, shift.tanggal) ?? shift.tanggal;
+    lines.push({
+      key: shift.id,
+      kind: 'shift',
+      text: `Shift ${SHIFT_LABEL[shift.shiftCode]} · ${day}`,
+      conflicted: shiftConflicted.has(shift.id),
+      request: shift,
+    });
+  }
+
+  return (
+    <li className={styles.requestCard}>
+      <div className={styles.cardHead}>
+        <h3 className={styles.name}>{group.employeeName}</h3>
+        <p className={styles.meta}>{POSITION_LABEL[group.position]}</p>
+      </div>
+
+      <div className={styles.lines}>
+        {lines.map((line) => (
+          <div key={line.key} className={styles.line}>
+            <p className={styles.lineText}>
+              {line.text}
+              {line.conflicted ? (
+                <span className={styles.bentrok}>Bentrok</span>
+              ) : null}
+            </p>
+            {line.request.status === 'pending' ? (
+              <DecideControls kind={line.kind} id={line.request.id} />
+            ) : (
+              <p className={styles.outcome}>
+                {OUTCOME_LABEL[line.request.status]}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </li>
+  );
 }
