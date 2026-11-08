@@ -1,8 +1,24 @@
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+
 /**
- * Placeholder root route: proves the app renders and the DESIGN.md token layer
- * loads. The staff view (T9) and manager dashboard (T5) replace it.
+ * Placeholder root route: middleware already guarantees a session, so this
+ * greets whoever is signed in. The staff view (T9) and manager dashboard (T5)
+ * replace it.
  */
-export default function Home() {
+export default async function Home() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const body = {
+    margin: 'var(--spacing-xs) 0 0',
+    fontSize: 'var(--text-body-size)',
+    fontWeight: 'var(--text-body-weight)',
+    lineHeight: 'var(--text-body-line-height)',
+    letterSpacing: 'var(--text-body-tracking)',
+  } as const;
+
   return (
     <main style={{ padding: 'var(--spacing-lg)' }}>
       <h1
@@ -17,17 +33,11 @@ export default function Home() {
       >
         Kyne
       </h1>
-      <p
-        style={{
-          margin: 'var(--spacing-xs) 0 0',
-          fontSize: 'var(--text-body-size)',
-          fontWeight: 'var(--text-body-weight)',
-          lineHeight: 'var(--text-body-line-height)',
-          letterSpacing: 'var(--text-body-tracking)',
-        }}
-      >
-        Jadwal shift mingguan untuk enam staf bar dan kitchen.
+      <p style={body}>Jadwal shift mingguan untuk enam staf bar dan kitchen.</p>
+      <p style={{ ...body, marginTop: 'var(--spacing-lg)' }}>
+        Masuk sebagai {user?.email ?? 'akun tanpa email'}.
       </p>
+      <p style={body}>Dashboard manager dan tampilan jadwal staf menyusul.</p>
     </main>
   );
 }
