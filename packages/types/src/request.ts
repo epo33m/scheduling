@@ -96,3 +96,13 @@ export interface DashboardStaff {
   name: string;
   position: EmployeePosition;
 }
+
+/**
+ * What a decision endpoint echoes back: the row it changed and the status it
+ * now carries. Shared so the controller, service, and web client agree on one
+ * shape instead of each re-declaring it.
+ */
+export interface RequestDecisionResult {
+  id: string;
+  status: RequestStatus;
+}

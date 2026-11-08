@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   EmployeePosition,
-  RequestStatus,
+  RequestDecisionResult,
   RequestsDashboard,
   SessionEmployee,
 } from '@repo/types';
@@ -9,7 +9,11 @@ import type { RequestDecisionInput } from '@repo/validators';
 import { advanceProbation } from '../employee/probation';
 import { PrismaService } from '../prisma/prisma.service';
 import { detectConflicts } from './conflicts';
-import { isWindowOpen, mostRecentWeek, resolveOpenWindow } from './request-window';
+import {
+  isWindowOpen,
+  mostRecentWeek,
+  resolveOpenWindow,
+} from './request-window';
 import { toCalendarDate } from './request.service';
 
 /** A resolved `schedule_week` row, the fields the dashboard reads. */
@@ -59,19 +63,24 @@ export class DashboardService {
     const positionOf = (employeeId: string): EmployeePosition =>
       byId.get(employeeId)?.position ?? 'bar';
 
-    // The people behind the slots: active staf past probation. Probation is
-    // recomputed lazily (ADR 0003), so someone whose masa probation just
-    // ended counts towards coverage without waiting for a write anywhere.
-    const requestable = employees.filter((e) => {
-      if (e.role !== 'staff' || !e.isActive) return false;
+    // Everyone who works the minggu target: active staf, probation included.
+    // A probation staf has no hari libur (ADR 0003), so they are on duty every
+    // day and their slot counts towards shift coverage; leaving them out would
+    // understate capacity and flag requests that actually fit as bentrok.
+    const working = employees.filter((e) => e.role === 'staff' && e.isActive);
+    const staffByPosition = {
+      bar: working.filter((e) => e.position === 'bar').length,
+      kitchen: working.filter((e) => e.position === 'kitchen').length,
+    };
+
+    // The people allowed to request: active staf past probation, recomputed
+    // lazily (ADR 0003) so someone whose masa probation just ended counts
+    // without waiting for a write. Only these belong on the reminder list.
+    const requestable = working.filter((e) => {
       const status =
         advanceProbation(e.status, e.probationEndDate, now) ?? e.status;
       return status !== 'probation';
     });
-    const staffByPosition = {
-      bar: requestable.filter((e) => e.position === 'bar').length,
-      kitchen: requestable.filter((e) => e.position === 'kitchen').length,
-    };
 
     const conflicts = detectConflicts({
       offRequests: offs.map((off) => ({
@@ -136,7 +145,7 @@ export class DashboardService {
     decision: RequestDecisionInput['decision'],
     actor: SessionEmployee,
     now = new Date(),
-  ): Promise<{ id: string; status: RequestStatus }> {
+  ): Promise<RequestDecisionResult> {
     const row = await this.prisma.offRequest.findUnique({ where: { id } });
     if (!row) {
       throw new NotFoundException('Request tidak ditemukan.');
@@ -158,7 +167,7 @@ export class DashboardService {
     decision: RequestDecisionInput['decision'],
     actor: SessionEmployee,
     now = new Date(),
-  ): Promise<{ id: string; status: RequestStatus }> {
+  ): Promise<RequestDecisionResult> {
     const row = await this.prisma.shiftRequest.findUnique({ where: { id } });
     if (!row) {
       throw new NotFoundException('Request tidak ditemukan.');

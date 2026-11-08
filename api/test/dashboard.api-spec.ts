@@ -64,7 +64,7 @@ function date(iso: string): Date {
 /** The Monday of the minggu target: the next Monday strictly after `now`. */
 function nextMonday(now: Date): Date {
   const midnight = date(now.toISOString().slice(0, 10));
-  const daysToMonday = ((8 - midnight.getUTCDay()) % 7) || 7;
+  const daysToMonday = (8 - midnight.getUTCDay()) % 7 || 7;
   return new Date(midnight.getTime() + daysToMonday * DAY_MS);
 }
 
@@ -155,17 +155,16 @@ describe('manager dashboard over HTTP', () => {
       .overrideProvider(PrismaService)
       .useValue({
         employee: {
-          findUnique: ({
-            where,
-          }: {
-            where: { email?: string; id?: string };
-          }) =>
+          findUnique: ({ where }: { where: { email?: string; id?: string } }) =>
             employees.find((e) =>
-              where.email !== undefined ? e.email === where.email : e.id === where.id,
+              where.email !== undefined
+                ? e.email === where.email
+                : e.id === where.id,
             ) ?? null,
           findMany: ({ where }: { where?: { isActive?: boolean } } = {}) =>
             employees.filter(
-              (e) => where?.isActive === undefined || e.isActive === where.isActive,
+              (e) =>
+                where?.isActive === undefined || e.isActive === where.isActive,
             ),
         },
         scheduleWeek: {
@@ -263,8 +262,24 @@ describe('manager dashboard over HTTP', () => {
       addStaff('k2', 'Kana', 'kitchen');
       addStaff('p1', 'Probo', 'kitchen', 'probation');
       offs.push(
-        { id: 'o1', weekId: 'w-open', employeeId: 'k1', tanggal: selasa, status: 'pending', decidedBy: null, decidedAt: null },
-        { id: 'o2', weekId: 'w-open', employeeId: 'k2', tanggal: selasa, status: 'pending', decidedBy: null, decidedAt: null },
+        {
+          id: 'o1',
+          weekId: 'w-open',
+          employeeId: 'k1',
+          tanggal: selasa,
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
+        {
+          id: 'o2',
+          weekId: 'w-open',
+          employeeId: 'k2',
+          tanggal: selasa,
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
       );
       shifts.push({
         id: 's1',
@@ -283,22 +298,84 @@ describe('manager dashboard over HTTP', () => {
         .expect(200);
 
       expect(response.body.offRequests).toEqual([
-        { id: 'o1', employeeId: 'k1', employeeName: 'Kiki', position: 'kitchen', tanggal: isoDay(selasa), status: 'pending' },
-        { id: 'o2', employeeId: 'k2', employeeName: 'Kana', position: 'kitchen', tanggal: isoDay(selasa), status: 'pending' },
+        {
+          id: 'o1',
+          employeeId: 'k1',
+          employeeName: 'Kiki',
+          position: 'kitchen',
+          tanggal: isoDay(selasa),
+          status: 'pending',
+        },
+        {
+          id: 'o2',
+          employeeId: 'k2',
+          employeeName: 'Kana',
+          position: 'kitchen',
+          tanggal: isoDay(selasa),
+          status: 'pending',
+        },
       ]);
       expect(response.body.offConflicted.sort()).toEqual(['o1', 'o2']);
       expect(response.body.shiftRequests).toEqual([
-        { id: 's1', employeeId: 'b1', employeeName: 'Budi', position: 'bar', tanggal: isoDay(sabtu), shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 's1',
+          employeeId: 'b1',
+          employeeName: 'Budi',
+          position: 'bar',
+          tanggal: isoDay(sabtu),
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ]);
       // One PAGI pick among four bar staff fits the Sabtu slots easily.
       expect(response.body.shiftConflicted).toEqual([]);
       // b1 requested a shift, k1/k2 requested libur, p1 is on probation,
       // Maya is the manager: only the silent bar staff need reminding.
-      expect(response.body.staffWithoutRequest.map((s: { id: string }) => s.id)).toEqual([
-        'b2',
-        'b3',
-        'b4',
-      ]);
+      expect(
+        response.body.staffWithoutRequest.map((s: { id: string }) => s.id),
+      ).toEqual(['b2', 'b3', 'b4']);
+    });
+
+    it('counts probation staff in shift coverage: they work every day, so requests that fit are not bentrok', async () => {
+      seedOpenWeek();
+      const sabtu = new Date(monday.getTime() + 5 * DAY_MS);
+      addStaff('b1', 'Budi', 'bar');
+      addStaff('b2', 'Bayu', 'bar');
+      addStaff('b3', 'Bela', 'bar');
+      addStaff('p1', 'Probo', 'bar', 'probation');
+      // Three tetap plus one probation bar means four on duty, so two PAGI
+      // picks fit inside the busy-day reserve of two. If probation were
+      // excluded from coverage the capacity would drop to one and this pair
+      // would be mis-marked as bentrok.
+      shifts.push(
+        {
+          id: 's1',
+          weekId: 'w-open',
+          employeeId: 'b1',
+          tanggal: sabtu,
+          shiftCode: 'PAGI',
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
+        {
+          id: 's2',
+          weekId: 'w-open',
+          employeeId: 'b2',
+          tanggal: sabtu,
+          shiftCode: 'PAGI',
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
+      );
+
+      const response = await request(app.getHttpServer())
+        .get('/dashboard/requests')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+
+      expect(response.body.shiftConflicted).toEqual([]);
     });
   });
 
@@ -342,8 +419,24 @@ describe('manager dashboard over HTTP', () => {
       addStaff('k2', 'Kana', 'kitchen');
       const selasa = new Date(monday.getTime() + DAY_MS);
       offs.push(
-        { id: 'o1', weekId: 'w-open', employeeId: 'k1', tanggal: selasa, status: 'pending', decidedBy: null, decidedAt: null },
-        { id: 'o2', weekId: 'w-open', employeeId: 'k2', tanggal: selasa, status: 'pending', decidedBy: null, decidedAt: null },
+        {
+          id: 'o1',
+          weekId: 'w-open',
+          employeeId: 'k1',
+          tanggal: selasa,
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
+        {
+          id: 'o2',
+          weekId: 'w-open',
+          employeeId: 'k2',
+          tanggal: selasa,
+          status: 'pending',
+          decidedBy: null,
+          decidedAt: null,
+        },
       );
       return selasa;
     };
@@ -368,7 +461,10 @@ describe('manager dashboard over HTTP', () => {
         .get('/dashboard/requests')
         .set('Authorization', await managerAuth())
         .expect(200);
-      expect(dashboard.body.offRequests.find((o: { id: string }) => o.id === 'o1')?.status).toBe('approved');
+      expect(
+        dashboard.body.offRequests.find((o: { id: string }) => o.id === 'o1')
+          ?.status,
+      ).toBe('approved');
     });
 
     it('ends the bentrok mark once the manager rejects one of the pair', async () => {
@@ -388,7 +484,9 @@ describe('manager dashboard over HTTP', () => {
       // A rejected libur still counts as "sudah request": Kana drops off the
       // reminder list only when she submits something new, per F4's rule that
       // she is then treated like the staff who let the manager pick.
-      expect(dashboard.body.staffWithoutRequest.map((s: { id: string }) => s.id)).toEqual([]);
+      expect(
+        dashboard.body.staffWithoutRequest.map((s: { id: string }) => s.id),
+      ).toEqual([]);
     });
 
     it('records an approval on a shift request', async () => {

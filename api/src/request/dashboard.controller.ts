@@ -7,7 +7,7 @@ import {
   Patch,
 } from '@nestjs/common';
 import type {
-  RequestStatus,
+  RequestDecisionResult,
   RequestsDashboard,
   SessionEmployee,
 } from '@repo/types';
@@ -35,7 +35,7 @@ export class DashboardController {
     @Param('id') id: string,
     @Body() body: unknown,
     @CurrentEmployee() actor: SessionEmployee,
-  ): Promise<{ id: string; status: RequestStatus }> {
+  ): Promise<RequestDecisionResult> {
     const parsed = parseRequestDecision(body);
     if (!parsed.ok) {
       throw new BadRequestException(parsed.message);
@@ -48,7 +48,7 @@ export class DashboardController {
     @Param('id') id: string,
     @Body() body: unknown,
     @CurrentEmployee() actor: SessionEmployee,
-  ): Promise<{ id: string; status: RequestStatus }> {
+  ): Promise<RequestDecisionResult> {
     const parsed = parseRequestDecision(body);
     if (!parsed.ok) {
       throw new BadRequestException(parsed.message);
