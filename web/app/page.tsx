@@ -1,36 +1,29 @@
+/**
+ * Placeholder root route: proves the app renders and the DESIGN.md token layer
+ * loads. The staff view (T9) and manager dashboard (T5) replace it.
+ */
 export default function Home() {
   return (
-    <main
-      style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 'var(--spacing-xs)',
-        padding: 'var(--spacing-lg)',
-      }}
-    >
-      {/* DESIGN.md {typography.display-lg}: 40px / 600 / 1.10 / 0 tracking */}
+    <main style={{ padding: 'var(--spacing-lg)' }}>
       <h1
         style={{
           margin: 0,
           fontFamily: 'var(--font-display)',
-          fontSize: '40px',
-          fontWeight: 600,
-          lineHeight: 1.1,
+          fontSize: 'var(--text-display-lg-size)',
+          fontWeight: 'var(--text-display-lg-weight)',
+          lineHeight: 'var(--text-display-lg-line-height)',
+          letterSpacing: 'var(--text-display-lg-tracking)',
         }}
       >
         Kyne
       </h1>
-      {/* DESIGN.md {typography.body}: 17px / 400 / 1.47 / -0.374px */}
       <p
         style={{
-          margin: 0,
-          fontFamily: 'var(--font-text)',
-          fontSize: '17px',
-          fontWeight: 400,
-          lineHeight: 1.47,
-          letterSpacing: '-0.374px',
+          margin: 'var(--spacing-xs) 0 0',
+          fontSize: 'var(--text-body-size)',
+          fontWeight: 'var(--text-body-weight)',
+          lineHeight: 'var(--text-body-line-height)',
+          letterSpacing: 'var(--text-body-tracking)',
         }}
       >
         Jadwal shift mingguan untuk enam staf bar dan kitchen.

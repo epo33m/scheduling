@@ -16,7 +16,7 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "db:generate"]
     },
     "dev": {
       "dependsOn": ["db:generate"],
@@ -29,7 +29,7 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "db:generate"]
     },
     "test:api": {
       "dependsOn": ["^build", "db:generate"],

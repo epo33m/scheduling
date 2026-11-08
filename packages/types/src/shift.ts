@@ -16,7 +16,7 @@ export interface ShiftTypeDefinition {
 
 /**
  * The three shifts from PRD §Jenis shift. Single source for the `shift_type`
- * seed, so the hours the api writes and the hours the web shows cannot diverge.
+ * seed, and the catalog web reads once web depends on @repo/types.
  */
 export const SHIFT_TYPE_CATALOG: readonly ShiftTypeDefinition[] = [
   {

@@ -1,16 +1,9 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Kyne — Penjadwalan Shift',
   description: 'Jadwal shift mingguan untuk tim Kyne.',
-  manifest: '/manifest.webmanifest',
-};
-
-export const viewport: Viewport = {
-  themeColor: '#ffffff',
-  width: 'device-width',
-  initialScale: 1,
 };
 
 export default function RootLayout({
