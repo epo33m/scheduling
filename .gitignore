@@ -1,6 +1,3 @@
-# Stack belum ditetapkan, jadi ignore ditulis agnostik — hapus blok yang tidak terpakai
-# setelah tooling proyek dipilih.
-
 # env / secrets
 .env
 .env.*
@@ -8,9 +5,6 @@
 
 # dependencies
 node_modules/
-vendor/
-.venv/
-venv/
 
 # build output
 dist/
@@ -18,6 +12,13 @@ build/
 out/
 coverage/
 *.tsbuildinfo
+
+# next.js / turborepo
+.next/
+.turbo/
+
+# generated prisma client (rebuilt by `bun run db:generate`)
+api/src/generated/
 
 # logs / debug
 *.log

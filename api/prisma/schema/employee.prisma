@@ -1,0 +1,36 @@
+/// Where a staff member works. Named generically so it maps onto an HR position
+/// in the ERP later.
+enum EmployeePosition {
+  bar
+  kitchen
+}
+
+enum EmployeeRole {
+  manager
+  staff
+}
+
+/// Probation flips to tetap once probation_end_date has passed (ADR 0003).
+enum EmployeeStatus {
+  probation
+  tetap
+}
+
+/// Also the login whitelist: Supabase Auth lets any Google account through, so
+/// the api rejects emails that have no row here (403).
+model Employee {
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String
+  email            String           @unique
+  position         EmployeePosition
+  role             EmployeeRole     @default(staff)
+  status           EmployeeStatus   @default(probation)
+  probationEndDate DateTime?        @map("probation_end_date") @db.Date
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  createdBy        String?          @map("created_by") @db.Uuid
+
+  @@index([isActive])
+  @@map("employee")
+}

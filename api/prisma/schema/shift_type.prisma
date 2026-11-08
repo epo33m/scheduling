@@ -1,0 +1,26 @@
+enum ShiftCode {
+  PAGI
+  SORE
+  MIDDLE
+}
+
+/// Shift hours live here only; working time is always derived from this row
+/// (PRD §Model data). start_time/end_time are local WITA wall-clock times as
+/// `HH:MM` strings rather than `time` columns, because Prisma round-trips `time`
+/// through a Date and the database casts it in the session time zone. The
+/// migration holds both columns to the HH:MM format with CHECK constraints.
+///
+/// Seed values come from SHIFT_TYPE_CATALOG in @repo/types; the seed's typed
+/// upsert is what keeps this enum and that catalog from drifting apart.
+model ShiftType {
+  id        String             @id @default(uuid()) @db.Uuid
+  code      ShiftCode          @unique
+  startTime String             @map("start_time") @db.VarChar(5)
+  endTime   String             @map("end_time") @db.VarChar(5)
+  positions EmployeePosition[] @map("posisi_berlaku")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  createdBy String?            @map("created_by") @db.Uuid
+
+  @@map("shift_type")
+}

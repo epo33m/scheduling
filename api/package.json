@@ -1,0 +1,46 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:api": "jest --config test/jest-api.json",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.27",
+    "@nestjs/core": "^11.1.27",
+    "@nestjs/platform-express": "^11.1.27",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "@repo/types": "*",
+    "@repo/validators": "*",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.1.28",
+    "@swc/core": "^1.13.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.1",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^7.2.1",
+    "dotenv": "^17.2.3",
+    "jest": "^30.4.2",
+    "prisma": "7.10.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
+    "typescript": "^6.0.3",
+    "unplugin-swc": "^1.5.7",
+    "vitest": "^4.1.10"
+  }
+}

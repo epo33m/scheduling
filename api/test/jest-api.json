@@ -1,0 +1,33 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".api-spec.ts$",
+  "maxWorkers": 1,
+  "testTimeout": 30000,
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "rootDir": "..",
+          "module": "commonjs",
+          "moduleResolution": "node",
+          "experimentalDecorators": true,
+          "emitDecoratorMetadata": true,
+          "esModuleInterop": true,
+          "skipLibCheck": true
+        }
+      }
+    ]
+  },
+  "collectCoverageFrom": [
+    "<rootDir>/../src/**/*.ts",
+    "!<rootDir>/../src/**/*.spec.ts",
+    "!<rootDir>/../src/**/*.api-spec.ts",
+    "!<rootDir>/../src/generated/**",
+    "!<rootDir>/../src/main.ts"
+  ],
+  "coverageDirectory": "<rootDir>/../coverage-api",
+  "coverageReporters": ["text", "lcov", "cobertura"]
+}
