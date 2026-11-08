@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-11-07T20:44:02Z"
+exported_at: "2026-11-08T00:46:01Z"
 modules:
     "":
-        dir_name: Shift Scheduling App (Pre-Implementation Scaffold)
-        title: Shift Scheduling App (Pre-Implementation Scaffold)
+        dir_name: Shift Scheduling App — Pre-Implementation Scaffold
+        title: Shift Scheduling App — Pre-Implementation Scaffold
         scope:
             - README.md
             - .gitignore
