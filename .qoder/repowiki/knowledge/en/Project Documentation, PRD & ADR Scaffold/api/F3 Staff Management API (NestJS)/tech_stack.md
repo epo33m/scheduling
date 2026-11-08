@@ -1,0 +1,1 @@
+NestJS with TypeScript, Prisma ORM against Postgres, Supabase JWT for authentication, and WITA timezone handling for probation/request-window date calculations.

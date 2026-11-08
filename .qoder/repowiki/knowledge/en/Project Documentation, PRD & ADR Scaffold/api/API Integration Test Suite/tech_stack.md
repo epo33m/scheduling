@@ -1,0 +1,1 @@
+Jest + ts-jest for TypeScript compilation, supertest for HTTP calls, jose for ES256 JWT signing and local JWK set generation, NestJS `@nestjs/testing` `Test` factory for module composition.

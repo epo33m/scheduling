@@ -1,0 +1,1 @@
+Prisma 7 with PostgreSQL provider, `@prisma/adapter-pg` for seeding against a raw `pg.Pool`, and TypeScript-generated client emitted to `src/generated/prisma` in CommonJS format.

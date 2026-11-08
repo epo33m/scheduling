@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api/app_source/auth
+title: Supabase JWT Authentication & Role-Based Access Control
+scope:
+    - api/src/auth/
+source_files: []
+depends_on: []
+related_to: []

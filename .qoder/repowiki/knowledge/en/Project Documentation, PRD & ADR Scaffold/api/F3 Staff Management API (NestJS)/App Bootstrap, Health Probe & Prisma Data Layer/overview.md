@@ -1,0 +1,1 @@
+NestJS application root wiring that registers the global Prisma Postgres client and a public /health probe, plus the health and database sub-modules.

@@ -1,0 +1,1 @@
+NestJS guards/decorators with `@nestjs/core` Reflector for metadata; `jose` library for ES256 JWT verification against a remote JWKS; Prisma client for employee lookup; Supabase as the external OIDC provider.

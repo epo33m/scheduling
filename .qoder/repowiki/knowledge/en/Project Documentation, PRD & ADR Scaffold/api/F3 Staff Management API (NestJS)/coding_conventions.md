@@ -1,0 +1,3 @@
+- Feature endpoints are grouped per domain under `src/<domain>/` with co-located controller, service, module, and spec files.
+- Protected routes opt into authentication by applying the shared `AuthGuard` and optional `Roles` decorator rather than re-implementing token validation.
+- Database access is funneled exclusively through the singleton `PrismaService` provided by `PrismaModule`, never instantiated directly.

@@ -1,0 +1,1 @@
+NestJS (`@nestjs/common`, `@nestjs/core`) with Prisma Client using the PostgreSQL adapter (`@prisma/adapter-pg`) over the `pg` connection pool; environment-driven via `process.env.DATABASE_URL`.

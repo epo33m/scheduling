@@ -1,0 +1,5 @@
+Three cooperating pieces form the app's bootstrap surface:
+- `app.module.ts` is the NestJS root module; it imports `PrismaModule`, `AuthModule`, `HealthModule`, `EmployeeModule`, `RequestModule` and registers `AuthGuard` then `RolesGuard` via `APP_GUARD` (order matters so roles can read the authenticated employee), making every route closed until opted out with `@Public()`.
+- `health/` exposes a single `HealthController` returning `{ status: 'ok' }`, decorated with `@Public()` so uptime monitors can reach it before authentication.
+- `prisma/` provides a `Global` `PrismaModule` exporting `PrismaService`, which extends generated `PrismaClient` and wraps a `pg.Pool` configured with `@prisma/adapter-pg`. The service connects lazily (on first query) so the API starts even when Postgres is down, and disconnects the pool in `onModuleDestroy`. It is the sole path to Postgres because Supabase RLS denies all data for client roles — this connection runs as the table owner.
+Dependency direction is one-way: `app.module.ts` depends on both sub-modules; sub-modules do not depend on each other.
