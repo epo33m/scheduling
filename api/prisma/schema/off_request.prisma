@@ -1,0 +1,34 @@
+/// A staff member's request to take one day off in a week (PRD §Model data).
+/// A request moves through the manager's decision: pending, then approved or
+/// rejected. New requests land as `pending`; the decision fields are filled
+/// later by the dashboard (F4), so they stay null through F3.
+enum RequestStatus {
+  pending
+  approved
+  rejected
+}
+
+/// Requested day off. The week holds at most one per staff member (unique below),
+/// and the day is a Monday–Thursday date: Friday–Sunday are busy days with no
+/// leave (PRD §Aturan bisnis). The date is a `@db.Date` calendar day; the
+/// Mon–Thu rule is checked in the api and, defence-in-depth, by a CHECK in the
+/// migration.
+model OffRequest {
+  id         String        @id @default(uuid()) @db.Uuid
+  weekId     String        @map("week_id") @db.Uuid
+  employeeId String        @map("employee_id") @db.Uuid
+  tanggal    DateTime      @db.Date
+  status     RequestStatus @default(pending)
+  decidedBy  String?       @map("decided_by") @db.Uuid
+  decidedAt  DateTime?     @map("decided_at")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  createdBy  String?       @map("created_by") @db.Uuid
+
+  week     ScheduleWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, employeeId])
+  @@index([employeeId])
+  @@map("off_request")
+}
