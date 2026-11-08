@@ -1,0 +1,1 @@
+Seeding runs via `bun run seed.ts` (importing `../src/env` first); the generated Prisma client is written to `../../src/generated/prisma` so consumers import it from `../src/generated/prisma/client` rather than through the `prisma` CLI at runtime.

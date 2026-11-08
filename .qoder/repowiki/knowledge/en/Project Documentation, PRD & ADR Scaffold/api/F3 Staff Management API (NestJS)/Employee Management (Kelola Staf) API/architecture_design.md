@@ -1,0 +1,6 @@
+Standard NestJS feature module split into three layers inside `api/src/employee/`:
+- `employee.controller.ts` declares the REST surface under `/employees`, gated by `@Roles('manager')` from `../auth/auth.decorators` and `AuthGuard`/`RolesGuard`; handlers are thin, delegating all logic to the service.
+- `employee.service.ts` is the business layer: it talks to Prisma via `PrismaService`, enforces soft-delete semantics (`isActive` toggle, never delete), prevents a manager from deactivating themselves, deduplicates email creation, and drives probation advancement on every read.
+- `probation.ts` is a pure-function domain helper implementing ADR 0003's rule — advancing `probation` → `tetap` once the calendar day after `probation_end_date` passes in `Asia/Makassar` (WITA), using `Intl.DateTimeFormat` rather than hard-coded offsets; its behavior is covered by `probation.spec.ts`.
+
+Dependency direction is one-way: controller → service → (Prisma + probation helper). The module depends outward on `@repo/types`, `@repo/validators`, `../auth/*`, and `../prisma/prisma.service`, but exposes no internal types beyond what the controller returns as `ManagedEmployee`.

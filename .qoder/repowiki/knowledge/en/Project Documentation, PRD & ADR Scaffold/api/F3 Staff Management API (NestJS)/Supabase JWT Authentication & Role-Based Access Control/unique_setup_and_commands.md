@@ -1,0 +1,1 @@
+Requires the `SUPABASE_URL` environment variable at runtime — `supabaseUrl()` throws if unset. The JWKS key set is created lazily per process via `createRemoteJWKSet` using the URL derived from that env var.

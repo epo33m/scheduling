@@ -1,0 +1,4 @@
+- Route metadata keys are centralized as string constants in `auth-metadata.ts` (`auth:public`, `auth:roles`) and referenced by both decorators and guards rather than inline.
+- Guards implement `CanActivate` and throw localized Indonesian `ForbiddenException` / `UnauthorizedException` messages instead of generic errors.
+- External configuration is exposed through small helper functions (`supabaseUrl`, `supabaseIssuer`, `supabaseJwksUrl`) that derive values from `process.env` instead of reading env directly throughout the codebase.
+- Authenticated user state is propagated by attaching the resolved `SessionEmployee` to a custom `AuthenticatedRequest` interface extended onto the NestJS request object.

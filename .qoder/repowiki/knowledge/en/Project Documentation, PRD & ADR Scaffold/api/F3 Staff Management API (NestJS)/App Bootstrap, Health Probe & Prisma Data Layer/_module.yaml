@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: api/app_source/app_infra
+title: App Bootstrap, Health Probe & Prisma Data Layer
+scope:
+    - api/src/health/
+    - api/src/prisma/
+    - api/src/app.module.ts
+source_files: []
+depends_on: []
+related_to: []

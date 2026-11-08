@@ -15,7 +15,11 @@ import type { ShiftRequestInput } from '@repo/validators';
 import { advanceProbation } from '../employee/probation';
 import { PrismaService } from '../prisma/prisma.service';
 import { isOffDayAllowed } from './off-day';
-import { isWindowOpen, resolveOpenWindow } from './request-window';
+import {
+  isWindowOpen,
+  mostRecentWeek,
+  resolveOpenWindow,
+} from './request-window';
 
 const DAY_MS = 86_400_000;
 
@@ -24,7 +28,7 @@ function toDate(date: string): Date {
   return new Date(`${date}T00:00:00.000Z`);
 }
 
-function toCalendarDate(date: Date): string {
+export function toCalendarDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
@@ -59,12 +63,7 @@ export class RequestService {
     // The live window if one is open, otherwise the most recent week so a
     // just-closed window still shows the staff member what they had submitted.
     const target =
-      resolveOpenWindow(weeks, now) ??
-      weeks.reduce<Week | null>(
-        (latest, week) =>
-          !latest || week.startDate > latest.startDate ? week : latest,
-        null,
-      );
+      resolveOpenWindow(weeks, now) ?? mostRecentWeek(weeks);
 
     if (!target) {
       return {

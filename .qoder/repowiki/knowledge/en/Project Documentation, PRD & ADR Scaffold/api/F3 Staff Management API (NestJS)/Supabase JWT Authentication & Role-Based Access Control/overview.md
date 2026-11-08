@@ -1,0 +1,1 @@
+NestJS authentication module that validates Supabase access tokens, whitelists employees from the database, and enforces role-based route access via guards and decorators.

@@ -14,6 +14,7 @@
 - [request-labels.ts](file://web/lib/request-labels.ts)
 - [request.api-spec.ts](file://api/test/request.api-spec.ts)
 - [0002-jendela-request-dikunci-tanpa-cron.md](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md)
+- [0003-probation-tanpa-hari-libur.md](file://docs/adr/0003-probation-tanpa-hari-libur.md)
 </cite>
 
 ## Update Summary

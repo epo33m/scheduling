@@ -1,0 +1,1 @@
+NestJS module exposing manager-only endpoints to list, create, deactivate, and reactivate staff employees, with probation status auto-advancement based on WITA timezone.

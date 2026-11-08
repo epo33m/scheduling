@@ -1,0 +1,1 @@
+NestJS integration tests that boot the real AppModule over HTTP via supertest, with in-memory Prisma and local JWT keys to exercise auth, employee RBAC, and health endpoints.

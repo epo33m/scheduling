@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isWindowOpen, resolveOpenWindow } from './request-window';
+import { isWindowOpen, mostRecentWeek, resolveOpenWindow } from './request-window';
 
 /**
  * The window-lock from ADR 0002: no cron, no stored open/closed flag. A request
@@ -42,5 +42,14 @@ describe('the open minggu target', () => {
   it('is null when every window is locked', () => {
     const now = new Date('2026-11-30T00:00:00Z');
     expect(resolveOpenWindow([pastWeek, nextWeek], now)).toBeNull();
+  });
+});
+
+describe('mostRecentWeek', () => {
+  it('picks the latest startDate so a just-closed week stays visible', () => {
+    const older = { id: 'w1', startDate: new Date('2026-11-02T00:00:00Z') };
+    const newer = { id: 'w2', startDate: new Date('2026-11-09T00:00:00Z') };
+    expect(mostRecentWeek([older, newer])?.id).toBe('w2');
+    expect(mostRecentWeek([])).toBeNull();
   });
 });

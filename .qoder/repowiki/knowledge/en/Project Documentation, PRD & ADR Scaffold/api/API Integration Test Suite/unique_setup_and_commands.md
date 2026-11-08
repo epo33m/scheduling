@@ -1,0 +1,1 @@
+Run with the project's API test runner (e.g. `npm run test:api`); the suite requires `SUPABASE_URL=http://127.0.0.1:54421` so the issuer matches the token verification path, and it runs serially (`maxWorkers: 1`) because each spec boots its own Nest application instance.

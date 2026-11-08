@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api/app_source
+title: F3 Staff Management API (NestJS)
+scope:
+    - api/src/
+source_files: []
+depends_on: []
+related_to: []

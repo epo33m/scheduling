@@ -49,3 +49,21 @@ export function parseShiftRequest(
     ? { ok: true, value: result.data }
     : { ok: false, message: 'Request shift tidak valid. Pilih pagi atau sore.' };
 }
+
+/**
+ * The manager's call on one request (F4): approve or reject. The decision
+ * lands on the request row itself — its status is the record.
+ */
+export const requestDecisionSchema = z.object({
+  decision: z.enum(['approve', 'reject']),
+});
+export type RequestDecisionInput = z.infer<typeof requestDecisionSchema>;
+
+export function parseRequestDecision(
+  body: unknown,
+): { ok: true; value: RequestDecisionInput } | { ok: false; message: string } {
+  const result = requestDecisionSchema.safeParse(body);
+  return result.success
+    ? { ok: true, value: result.data }
+    : { ok: false, message: 'Keputusan tidak valid. Setujui atau tolak.' };
+}

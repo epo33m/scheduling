@@ -1,0 +1,4 @@
+- Controller handlers stay thin: they parse input via `parseCreateEmployee` from `@repo/validators`, convert validation failures to `BadRequestException`, and delegate domain work to the injected service.
+- Business errors are surfaced as typed NestJS exceptions (`ConflictException`, `NotFoundException`, `BadRequestException`) with Indonesian user-facing messages rather than raw database errors.
+- Probation state transitions are isolated in pure functions (`advanceProbation`, `witaDate`) that take explicit `now` parameters, enabling deterministic unit tests without mocking system time.
+- Time comparisons use WITA (`Asia/Makassar`) via `Intl.DateTimeFormat` so 'today' is defined per Makassar calendar, not UTC, and `@db.Date` columns are treated as midnight-UTC dates whose ISO prefix gives the calendar day.

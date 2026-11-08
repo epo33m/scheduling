@@ -1,0 +1,5 @@
+- Each spec boots the full `AppModule` via `Test.createTestingModule` and drives routes through `supertest(app.getHttpServer())` rather than calling service methods directly.
+- External dependencies are replaced using `overrideProvider` on the Nest `Test` builder — `SUPABASE_JWKS` is swapped with a locally generated ES256 JWK set and `PrismaService` with an in-memory fake implementing only the queried methods.
+- JWTs are minted in-process with `jose.SignJWT` using a per-suite generated ES256 key pair, setting issuer to `http://127.0.0.1:54421/auth/v1`, audience `authenticated`, subject `google-user`, and a 1h expiry.
+- Test data is seeded into an in-memory array inside `beforeAll` and exposed via helper functions (e.g. `row`, `findRow`, `accessToken`) scoped to the describe block.
+- Assertions combine HTTP status checks via supertest `.expect(code)` with body shape assertions using `toEqual` / `toMatchObject` / `expect.objectContaining`.

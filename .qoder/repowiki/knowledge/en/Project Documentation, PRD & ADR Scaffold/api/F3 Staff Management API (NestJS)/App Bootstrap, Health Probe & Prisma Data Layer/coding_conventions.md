@@ -1,0 +1,2 @@
+- Feature modules are split into a thin `*.module.ts` declaring controllers/providers and a sibling controller/service file, keeping Nest metadata separate from business logic.
+- Cross-cutting services intended for consumption by any feature module are exposed through a `@Global()` module that both providers and exports the service, rather than importing per-feature.
