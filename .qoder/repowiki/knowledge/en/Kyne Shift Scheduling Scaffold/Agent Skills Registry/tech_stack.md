@@ -1,1 +1,0 @@
-Markdown + YAML-only skill definitions consumed by an external agent runtime; Python helpers (`contrast-check.py`, `contrast-mcp.py`) live only inside the accessibility skill.

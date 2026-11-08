@@ -1,1 +1,0 @@
-Pure Markdown skill manifests consumed by Claude Code, Cursor, Codex, Cline, Kimi Code, Antigravity, Oh My Pi, and Pi package installers; Python scripts (`contrast-check.py`, `contrast-mcp.py`) implement WCAG contrast-ratio computation using the WCAG 2.x relative-luminance formula.

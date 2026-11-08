@@ -17,3 +17,5 @@ node_modules/
 bun.lock
 api/src/generated/
 **/*.prisma
+# Rewritten by `next build`/`next dev` on every run; not hand-authored.
+next-env.d.ts

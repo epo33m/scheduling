@@ -1,0 +1,2 @@
+- Architectural decisions are recorded as sequentially numbered Markdown files under `docs/adr/` using the `NNNN-title.md` naming scheme.
+- Agent skills are registered as flat entries under `docs/agents/`, each pairing a descriptive Markdown file with an `agents/openai.yaml` profile and referenced from a `skills-lock.json` manifest.

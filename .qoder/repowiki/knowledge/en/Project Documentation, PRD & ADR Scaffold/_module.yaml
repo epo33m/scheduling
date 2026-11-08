@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: ""
+title: Project Documentation, PRD & ADR Scaffold
+scope:
+    - docs/
+    - .gitignore
+    - README.md
+source_files: []
+depends_on: []
+related_to: []

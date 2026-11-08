@@ -1,1 +1,0 @@
-A set of agent-facing writing skills that guide the model through exploring raw fragments, shaping them into beats or paragraphs, and authoring documents consumed by agents.

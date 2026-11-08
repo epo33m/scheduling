@@ -83,8 +83,8 @@ describe('RolesGuard', () => {
   });
 
   it('reads the roles from @Roles, not from the request', () => {
-    expect(Reflect.getMetadata(ROLES_KEY, ManagerRoute.prototype.handle)).toEqual([
-      'manager',
-    ]);
+    expect(
+      Reflect.getMetadata(ROLES_KEY, ManagerRoute.prototype.handle),
+    ).toEqual(['manager']);
   });
 });

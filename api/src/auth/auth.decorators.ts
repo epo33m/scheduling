@@ -9,4 +9,5 @@ import { PUBLIC_ROUTE_KEY, ROLES_KEY } from './auth-metadata';
 export const Public = () => SetMetadata(PUBLIC_ROUTE_KEY, true);
 
 /** Restricts a route to the given roles, read from the `employee` table. */
-export const Roles = (...roles: EmployeeRole[]) => SetMetadata(ROLES_KEY, roles);
+export const Roles = (...roles: EmployeeRole[]) =>
+  SetMetadata(ROLES_KEY, roles);

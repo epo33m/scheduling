@@ -33,6 +33,33 @@
   /* DESIGN.md Shapes › Border Radius */
   --rounded-lg: 18px;
   --rounded-pill: 9999px;
+
+  /* DESIGN.md Components › search-input border (soft hairline on an input) */
+  --color-input-border: rgba(0, 0, 0, 0.08);
+
+  /* DESIGN.md Shapes › {rounded.sm}: the compact utility radius on inputs */
+  --rounded-sm: 8px;
+
+  /* DESIGN.md Typography › Hierarchy: the slots the staff screen draws on */
+  --text-tagline-size: 21px;
+  --text-tagline-weight: 600;
+  --text-tagline-line-height: 1.19;
+  --text-tagline-tracking: 0.231px;
+
+  --text-body-strong-size: 17px;
+  --text-body-strong-weight: 600;
+  --text-body-strong-line-height: 1.24;
+  --text-body-strong-tracking: -0.374px;
+
+  --text-caption-size: 14px;
+  --text-caption-weight: 400;
+  --text-caption-line-height: 1.43;
+  --text-caption-tracking: -0.224px;
+
+  --text-caption-strong-size: 14px;
+  --text-caption-strong-weight: 600;
+  --text-caption-strong-line-height: 1.29;
+  --text-caption-strong-tracking: -0.224px;
 }
 
 *,
@@ -87,6 +114,36 @@ body {
 /* A waiting action is not an action: it steps back to the neutral surface. */
 .button-primary:disabled {
   background: var(--color-hairline);
+  color: var(--color-ink);
+  cursor: default;
+}
+
+/* DESIGN.md Components › {component.button-secondary-pill}: the ghost pill
+   that sits beside a primary action. Same grammar, inverted color. */
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 22px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--rounded-pill);
+  background: transparent;
+  color: var(--color-primary);
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+  cursor: pointer;
+}
+
+.button-secondary:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.button-secondary:disabled {
+  border-color: var(--color-hairline);
   color: var(--color-ink);
   cursor: default;
 }

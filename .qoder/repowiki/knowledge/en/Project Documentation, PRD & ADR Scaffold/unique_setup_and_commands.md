@@ -1,0 +1,1 @@
+No setup is needed for this module itself. The parent project requires Bun 1.4.3, Docker (OrbStack), and the Supabase CLI; bootstrap via `bun install`, `bun run db:start`, `cp .env.example .env`, `bun run db:generate`, `bun run db:migrate`, `bun run db:seed`, then `bun run dev`.

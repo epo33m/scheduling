@@ -1,2 +1,0 @@
-- Architectural decisions are recorded as numbered ADR files under docs/adr/ following the ADR-0001 convention.
-- Agent skills are registered as flat directories under agents/, each pairing a SKILL.md description with an agents/openai.yaml profile and referenced from skills-lock.json.

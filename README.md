@@ -11,12 +11,12 @@ Aplikasi penjadwalan shift mingguan untuk tim Kyne (6 staf bar & kitchen plus 1 
 
 Monorepo Bun workspaces + Turborepo (ADR 0001).
 
-| Direktori | Isi |
-| --- | --- |
-| `web` | Next.js 16 (App Router) sebagai PWA: tampilan staf dan dashboard manager |
-| `api` | NestJS: seluruh aturan bisnis, RBAC, validasi; Prisma ke Supabase Postgres |
-| `packages/types` | Tipe bersama, termasuk `SHIFT_TYPE_CATALOG` (jam shift dari PRD) |
-| `packages/validators` | Skema zod yang dipakai api dan seed |
+| Direktori             | Isi                                                                        |
+| --------------------- | -------------------------------------------------------------------------- |
+| `web`                 | Next.js 16 (App Router) sebagai PWA: tampilan staf dan dashboard manager   |
+| `api`                 | NestJS: seluruh aturan bisnis, RBAC, validasi; Prisma ke Supabase Postgres |
+| `packages/types`      | Tipe bersama, termasuk `SHIFT_TYPE_CATALOG` (jam shift dari PRD)           |
+| `packages/validators` | Skema zod yang dipakai api dan seed                                        |
 
 ## Getting started
 
@@ -36,17 +36,17 @@ Port Supabase lokal digeser ke 5442x (`supabase/config.toml`) supaya bisa jalan 
 
 ## Perintah
 
-| Perintah | Efek |
-| --- | --- |
-| `bun run dev` | web dan api mode watch |
-| `bun run build` | build semua paket |
-| `bun run typecheck` | `tsc --noEmit` di semua paket |
-| `bun run test` | unit test (vitest) |
-| `bun run test:api` | integration test api (jest) |
-| `bun run db:start` / `db:stop` | Supabase lokal hidup / mati |
-| `bun run db:migrate` | terapkan migrasi Prisma |
-| `bun run db:seed` | seed `shift_type` dari PRD |
-| `bun run format` | prettier |
+| Perintah                       | Efek                          |
+| ------------------------------ | ----------------------------- |
+| `bun run dev`                  | web dan api mode watch        |
+| `bun run build`                | build semua paket             |
+| `bun run typecheck`            | `tsc --noEmit` di semua paket |
+| `bun run test`                 | unit test (vitest)            |
+| `bun run test:api`             | integration test api (jest)   |
+| `bun run db:start` / `db:stop` | Supabase lokal hidup / mati   |
+| `bun run db:migrate`           | terapkan migrasi Prisma       |
+| `bun run db:seed`              | seed `shift_type` dari PRD    |
+| `bun run format`               | prettier                      |
 
 `GET http://localhost:3001/health` mengembalikan `{"status":"ok"}`. Endpoint ini cek liveness saja, belum menyentuh database.
 

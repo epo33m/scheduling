@@ -30,7 +30,9 @@ describe('prisma schema vocabulary', () => {
   });
 
   it('matches EMPLOYEE_ROLES', () => {
-    expect(Object.keys(EmployeeRole).sort()).toEqual([...EMPLOYEE_ROLES].sort());
+    expect(Object.keys(EmployeeRole).sort()).toEqual(
+      [...EMPLOYEE_ROLES].sort(),
+    );
   });
 
   it('matches EMPLOYEE_STATUSES', () => {

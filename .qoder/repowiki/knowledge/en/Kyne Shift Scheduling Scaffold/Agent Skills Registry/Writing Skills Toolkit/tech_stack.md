@@ -1,1 +1,0 @@
-OpenAI skill manifest format (`agents/openai.yaml`) with `interface.display_name`, `short_description`, and `policy.allow_implicit_invocation`; skills are plain Markdown files using the framework's `<what-to-do>` / `<supporting-info>` block convention.

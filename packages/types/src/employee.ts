@@ -24,3 +24,20 @@ export interface SessionEmployee {
   status: EmployeeStatus;
   isActive: boolean;
 }
+
+/**
+ * A staff row as the manager sees it on the Kelola staf screen (F2). Carries
+ * the fields the manager edits plus `probationEndDate`, which the session view
+ * has no use for. `probationEndDate` is a `YYYY-MM-DD` calendar date, or null
+ * for a tetap staff member with no tracked probation.
+ */
+export interface ManagedEmployee {
+  id: string;
+  name: string;
+  email: string;
+  position: EmployeePosition;
+  role: EmployeeRole;
+  status: EmployeeStatus;
+  probationEndDate: string | null;
+  isActive: boolean;
+}
