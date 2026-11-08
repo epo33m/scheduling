@@ -1,0 +1,232 @@
+/* The manager reads and decides this screen on a laptop but must be able to
+   act on a phone between shifts, so it is a single centered column with a
+   fluid cap, never a fixed grid or a wide table (antislop-layoutmobile R-03). */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-lg) 80px;
+}
+
+/* DESIGN.md Typography › {typography.display-lg} */
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg-size);
+  font-weight: var(--text-display-lg-weight);
+  line-height: var(--text-display-lg-line-height);
+  letter-spacing: var(--text-display-lg-tracking);
+}
+
+/* DESIGN.md Typography › {typography.body} */
+.lead {
+  margin: var(--spacing-sm) 0 var(--spacing-xl);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.sectionTitle {
+  margin: var(--spacing-xl) 0 var(--spacing-md);
+  font-family: var(--font-display);
+  font-size: var(--text-tagline-size);
+  font-weight: var(--text-tagline-weight);
+  line-height: var(--text-tagline-line-height);
+  letter-spacing: var(--text-tagline-tracking);
+}
+
+.sectionLead {
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+/* The minggu target and the deadline that closed it. The manager acts after
+   the window shuts, so this bar orientates rather than gates. */
+.windowBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+}
+
+.windowLabel {
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+  color: var(--color-ink);
+}
+
+.windowValue {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* One request per card. The roster reflows as a stack, not a wide table. */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.requestCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas);
+}
+
+/* Bentrok requests step back to the parchment surface so the group of cards
+   is scannable: the clash carries weight in the label text, not a colored
+   pill (DESIGN.md single accent; antislop-human R-27). */
+.conflicted {
+  background: var(--color-canvas-parchment);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
+}
+
+.meta {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+/* "Bentrok" is carried by a bold caption, so the clash reads even without
+   colour. It sits beside the staff name where the eye lands first. */
+.bentrok {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+  color: var(--color-ink);
+}
+
+/* Decided requests read back their outcome as text; only pending ones show
+   the controls, so the accent stays on the choices still open. */
+.outcome {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+  color: var(--color-ink);
+}
+
+.decideRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.decideRow button {
+  min-width: 104px;
+}
+
+.notice {
+  margin: var(--spacing-sm) 0 0;
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+/* The "belum request" reminder list: names only, one line each. */
+.reminder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.reminderItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas);
+}
+
+.reminderName {
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.reminderPosition {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+}
+
+/* antislop-human R-27: the three non-happy states each get their own surface. */
+.empty,
+.error,
+.locked {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.empty {
+  margin: 0 0 var(--spacing-lg);
+  color: var(--color-ink);
+}
+
+.error {
+  margin: 0 0 var(--spacing-lg);
+}
+
+.locked {
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-ink);
+}

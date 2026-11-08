@@ -1,6 +1,8 @@
 import type {
   ManagedEmployee,
   OffRequestView,
+  RequestStatus,
+  RequestsDashboard,
   ShiftRequestView,
   StaffRequests,
 } from '@repo/types';
@@ -114,9 +116,7 @@ export function getRequests(): Promise<StaffRequests> {
 }
 
 /** Capture or replace the single request libur for the open window. */
-export function setOffRequest(
-  tanggal: string,
-): Promise<OffRequestView> {
+export function setOffRequest(tanggal: string): Promise<OffRequestView> {
   return authorizedFetch('/requests/off', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
@@ -147,4 +147,28 @@ export function cancelShiftRequest(tanggal: string): Promise<void> {
     `/requests/shift?tanggal=${encodeURIComponent(tanggal)}`,
     { method: 'DELETE' },
   ).then(() => undefined);
+}
+
+/**
+ * The manager dashboard read (F4): every request of the minggu target, the
+ * ids the system marks bentrok, and the staff who have not requested. Manager
+ * only; a staff caller gets the "khusus manager" refusal.
+ */
+export function getRequestsDashboard(): Promise<RequestsDashboard> {
+  return authorizedFetch('/dashboard/requests', { method: 'GET' }).then(
+    (r) => r.json() as Promise<RequestsDashboard>,
+  );
+}
+
+/** The manager's approve/reject on one request (libur or shift). */
+export function decideRequest(
+  kind: 'off' | 'shift',
+  id: string,
+  decision: 'approve' | 'reject',
+): Promise<{ id: string; status: RequestStatus }> {
+  return authorizedFetch(`/dashboard/requests/${kind}/${id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ decision }),
+  }).then((r) => r.json() as Promise<{ id: string; status: RequestStatus }>);
 }
