@@ -1,21 +1,30 @@
-Based on my analysis of the repository and the DESIGN.md file, I can now update the Technical Architecture documentation to incorporate the Apple-inspired design system. The DESIGN.md file establishes a comprehensive design system with color palette centered around Action Blue (#0066cc), SF Pro typography, responsive breakpoints, and component definitions that should be integrated into the frontend architecture section.
-
 # Technical Architecture
 
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
 - [DESIGN.md](file://DESIGN.md)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
+- [package.json](file://package.json)
+- [api/package.json](file://api/package.json)
+- [web/package.json](file://web/package.json)
+- [api/src/app.module.ts](file://api/src/app.module.ts)
+- [api/src/main.ts](file://api/src/main.ts)
+- [api/src/env.ts](file://api/src/env.ts)
+- [api/prisma/schema/schema.prisma](file://api/prisma/schema/schema.prisma)
+- [api/prisma/schema/employee.prisma](file://api/prisma/schema/employee.prisma)
+- [api/prisma/schema/shift_type.prisma](file://api/prisma/schema/shift_type.prisma)
+- [supabase/config.toml](file://supabase/config.toml)
+- [web/app/layout.tsx](file://web/app/layout.tsx)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added new Design System section documenting the Apple-inspired design system from DESIGN.md
-- Updated Frontend Architecture section to include design tokens, color palette, and typography specifications
-- Enhanced Component Architecture section with specific UI components defined in DESIGN.md
-- Added Responsive Design considerations based on the breakpoint system in DESIGN.md
-- Updated Technology Stack decisions to include design system implementation details
+- Updated architecture overview to reflect the established NestJS backend, Next.js frontend, Prisma database layer, and Supabase integration
+- Revised project structure documentation based on actual monorepo layout with Bun workspaces and Turborepo
+- Added detailed technical specifications for NestJS modules, Prisma schema design, and Supabase configuration
+- Updated technology stack decisions with specific version information from package manifests
+- Enhanced system boundaries to include actual deployment ports and local development setup
+- Added comprehensive data model documentation based on Prisma schema definitions
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -31,7 +40,7 @@ Based on my analysis of the repository and the DESIGN.md file, I can now update 
 11. [Appendices](#appendices)
 
 ## Introduction
-This document describes the planned technical architecture for the Kyne shift scheduling application. The system is a standalone, mobile-first Progressive Web Application (PWA) that helps managers create weekly shift schedules for six staff members across bar and kitchen roles. It uses Next.js for the frontend with an Apple-inspired design system, NestJS for the backend API, and PostgreSQL via Supabase for data storage. Authentication is handled through Google OAuth with Supabase Auth, and role-based access control is enforced on the backend. The monorepo structure separates frontend and backend modules so that the NestJS module can later be moved into an ERP repository with minimal changes.
+This document describes the planned technical architecture for the Kyne shift scheduling application. The system is a standalone, mobile-first Progressive Web Application (PWA) that helps managers create weekly shift schedules for six staff members across bar and kitchen roles. It uses Next.js 16 for the frontend with an Apple-inspired design system, NestJS 11 for the backend API, and PostgreSQL via Supabase for data storage. Authentication is handled through Google OAuth with Supabase Auth, and role-based access control is enforced on the backend. The monorepo structure separates frontend and backend modules using Bun workspaces and Turborepo, enabling future migration of the NestJS module into an ERP repository with minimal changes.
 
 The MVP scope includes:
 - Google login with email whitelist
@@ -44,37 +53,39 @@ The MVP scope includes:
 
 **Section sources**
 - [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:5-26](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L5-L26)
 
 ## Project Structure
-At this stage, the repository is a new scaffold without source code. The intended structure follows a monorepo pattern aligned with the ERP project:
-- `web`: Next.js PWA frontend with Apple-inspired design system
-- `api`: NestJS backend API
-- Shared packages for types and validation used by both frontend and backend
+At this stage, the repository follows a well-established monorepo pattern aligned with the ERP project using Bun workspaces and Turborepo:
+- `web`: Next.js 16 PWA frontend with Apple-inspired design system
+- `api`: NestJS 11 backend API with Prisma database layer
+- `packages/types`: Shared TypeScript types including SHIFT_TYPE_CATALOG
+- `packages/validators`: Zod validation schemas used by both frontend and backend
+- `supabase`: Local Supabase configuration for development environment
 
 ```mermaid
 graph TB
-Repo["Monorepo Root"]
-Web["web<br/>Next.js PWA + Design System"]
-Api["api<br/>NestJS Backend"]
-Shared["Shared Packages<br/>Types and Validation"]
-Docs["docs<br/>Product Requirements"]
-Design["DESIGN.md<br/>Apple Design System"]
-Readme["README.md"]
+Repo["Monorepo Root<br/>Bun Workspaces + Turborepo"]
+Web["web<br/>Next.js 16 PWA + Design System"]
+Api["api<br/>NestJS 11 Backend + Prisma"]
+SharedTypes["packages/types<br/>Shared TypeScript Types"]
+SharedValidators["packages/validators<br/>Zod Validation Schemas"]
+Supabase["supabase<br/>Local Dev Configuration"]
+Docs["docs<br/>Product Requirements & ADRs"]
 Repo --> Web
 Repo --> Api
-Repo --> Shared
+Repo --> SharedTypes
+Repo --> SharedValidators
+Repo --> Supabase
 Repo --> Docs
-Repo --> Design
-Repo --> Readme
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [package.json:6-10](file://package.json#L6-L10)
+- [README.md:14-19](file://README.md#L14-L19)
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [README.md:10-19](file://README.md#L10-L19)
+- [package.json:6-10](file://package.json#L6-L10)
 
 ## Core Components
 The core components are organized around authentication, employee management, request handling, schedule creation, coverage validation, publishing, and staff viewing.
@@ -88,7 +99,7 @@ The core components are organized around authentication, employee management, re
 - **Staff View**: Each staff member sees only their own schedule, including middle kitchen indicators and total weekly hours.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:102-164](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L102-L164)
+- [README.md:1-25](file://README.md#L1-L25)
 
 ## Architecture Overview
 The system boundary includes the Next.js frontend with Apple-inspired design system, NestJS backend, Supabase Auth, PostgreSQL database, and external WhatsApp integration.
@@ -109,18 +120,15 @@ NestJS --> PostgreSQL
 NestJS --> WhatsApp
 ```
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
-
 ### System Boundaries
-- **Frontend Boundary**: Next.js PWA handles user interfaces for staff and manager dashboards with Apple-inspired design system. It delegates authentication to Supabase Auth and calls NestJS APIs for business logic.
-- **Backend Boundary**: NestJS enforces RBAC, validates requests, manages schedule state, and applies business rules. It communicates with PostgreSQL via Prisma.
+- **Frontend Boundary**: Next.js 16 PWA handles user interfaces for staff and manager dashboards with Apple-inspired design system. It delegates authentication to Supabase Auth and calls NestJS APIs for business logic.
+- **Backend Boundary**: NestJS 11 enforces RBAC, validates requests, manages schedule state, and applies business rules. It communicates with PostgreSQL via Prisma adapter.
 - **External Services**:
   - **Supabase Auth**: Issues JWTs after Google OAuth.
   - **WhatsApp**: Used for sharing schedule links and deadlines.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [README.md:10-19](file://README.md#L10-L19)
 
 ## Design System Architecture
 The frontend implements an Apple-inspired design system that provides consistent visual language across the shift scheduling interface. This design system establishes the foundation for all user-facing components and ensures a cohesive, professional appearance.
@@ -207,13 +215,8 @@ Backend->>Backend : Enforce email whitelist and role
 Backend-->>Frontend : Authorized response
 ```
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:106-113](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L106-L113)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
-
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:106-113](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L106-L113)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
+- [README.md:10-19](file://README.md#L10-L19)
 
 ### Role-Based Access Control Implementation
 Roles are determined from the employee table:
@@ -235,13 +238,8 @@ CheckPermission --> |No| Deny
 CheckPermission --> |Yes| Proceed["Process Business Logic"]
 ```
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:27-38](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L27-L38)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
-
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:27-38](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L27-L38)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:243-248](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L243-L248)
+- [api/prisma/schema/employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
 
 ### Data Model Relationships
 The MVP data model includes seven entities designed for future ERP migration. Key relationships:
@@ -322,10 +320,8 @@ EMPLOYEE ||--o{ SHIFT_REQUEST : "submits"
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
-
-**Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [api/prisma/schema/employee.prisma:21-36](file://api/prisma/schema/employee.prisma#L21-L36)
+- [api/prisma/schema/shift_type.prisma:16-27](file://api/prisma/schema/shift_type.prisma#L16-L27)
 
 ### Weekly Schedule Workflow
 The weekly workflow governs request windows, drafting, validation, and publishing.
@@ -349,21 +345,15 @@ Publish --> ShareWhatsApp["Share Link to WhatsApp"]
 ShareWhatsApp --> End(["Week Cycle Complete"])
 ```
 
-**Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-156](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L156)
-
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-156](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L156)
+- [README.md:1-25](file://README.md#L1-L25)
 
 ### Integration Patterns with External Services
 - **Supabase Auth**: Handles Google OAuth PKCE redirect and JWT issuance. NestJS verifies tokens and enforces whitelist and role policies.
 - **WhatsApp**: The publish flow provides a share button that prepopulates a message containing the schedule period, link, and next request deadline. No direct API call is required unless automated messaging is added later.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-156](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L156)
+- [README.md:10-19](file://README.md#L10-L19)
 
 ## Dependency Analysis
 High-level dependencies:
@@ -373,17 +363,19 @@ High-level dependencies:
 
 ```mermaid
 graph LR
-Frontend["Next.js Frontend<br/>+ Design System"] --> Auth["Supabase Auth"]
-Frontend --> Backend["NestJS Backend"]
+Frontend["Next.js 16 Frontend<br/>+ Design System"] --> Auth["Supabase Auth"]
+Frontend --> Backend["NestJS 11 Backend"]
 Backend --> DB["PostgreSQL via Prisma"]
 Backend --> WhatsApp["WhatsApp Share"]
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [api/package.json:16-27](file://api/package.json#L16-L27)
+- [web/package.json:12-16](file://web/package.json#L12-L16)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
+- [api/package.json:16-27](file://api/package.json#L16-L27)
+- [web/package.json:12-16](file://web/package.json#L12-L16)
 
 ## Performance Considerations
 - **Frontend**: Use Next.js static generation where possible and client-side hydration for interactive pages. Cache schedule data efficiently and minimize re-renders on mobile devices. Implement the design system with CSS variables for optimal performance.
@@ -392,8 +384,6 @@ Backend --> WhatsApp["WhatsApp Share"]
 - **Timezone Handling**: Store dates and times consistently in WITA (Asia/Makassar) and convert only at presentation boundaries.
 - **Scalability**: NestJS on VPS can scale horizontally behind a reverse proxy. Consider connection pooling for PostgreSQL and caching for read-heavy endpoints like staff schedule views.
 - **Design System Performance**: Leverage CSS custom properties for design tokens, minimize JavaScript bundle size by using static design assets, and optimize images with responsive srcset patterns.
-
-[No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
 Common operational issues and mitigations:
@@ -404,36 +394,34 @@ Common operational issues and mitigations:
 - **Design System Issues**: Verify CSS custom properties are properly loaded, check font loading for SF Pro alternatives, and ensure responsive breakpoints are working correctly across devices.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L228)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:188-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L188-L195)
+- [README.md:21-35](file://README.md#L21-L35)
 
 ## Conclusion
-The Kyne shift scheduling application is designed as a secure, mobile-first PWA backed by a NestJS API and PostgreSQL database. The frontend implements an Apple-inspired design system that provides consistent visual language with Action Blue (#0066cc) as the primary interactive color, SF Pro typography, and comprehensive responsive breakpoints. Authentication relies on Google OAuth via Supabase, with strict email whitelisting and role-based access control enforced on the backend. The monorepo structure separates frontend and backend modules, enabling future migration of the NestJS module into an ERP repository. Security practices include deny-all Row Level Security, server-side authorization, and timezone-aware deadline handling. Deployment spans Vercel for the frontend and a VPS for the backend, with WhatsApp used for sharing schedule links. The MVP focuses on essential scheduling workflows while laying groundwork for scalability and ERP integration.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The Kyne shift scheduling application is designed as a secure, mobile-first PWA backed by a NestJS API and PostgreSQL database. The frontend implements an Apple-inspired design system that provides consistent visual language with Action Blue (#0066cc) as the primary interactive color, SF Pro typography, and comprehensive responsive breakpoints. Authentication relies on Google OAuth via Supabase, with strict email whitelisting and role-based access control enforced on the backend. The monorepo structure separates frontend and backend modules using Bun workspaces and Turborepo, enabling future migration of the NestJS module into an ERP repository. Security practices include deny-all Row Level Security, server-side authorization, and timezone-aware deadline handling. Deployment spans Vercel for the frontend and a VPS for the backend, with WhatsApp used for sharing schedule links. The MVP focuses on essential scheduling workflows while laying groundwork for scalability and ERP integration.
 
 ## Appendices
 
 ### Technology Stack Decisions
-- **Frontend**: Next.js PWA with Apple-inspired design system, mobile-first design, Supabase Auth for login.
+- **Frontend**: Next.js 16 PWA with Apple-inspired design system, mobile-first design, Supabase Auth for login.
 - **Design System**: Comprehensive design tokens including color palette centered around Action Blue (#0066cc), SF Pro typography, responsive breakpoints, and component library.
-- **Backend**: NestJS with modular services for Auth, Employee, Request, Schedule, and Publish.
-- **Database**: PostgreSQL via Supabase, accessed through Prisma.
+- **Backend**: NestJS 11 with modular services for Auth, Employee, Request, Schedule, and Publish.
+- **Database**: PostgreSQL via Supabase, accessed through Prisma 7 with pg adapter.
 - **Hosting**: Vercel for web, Supabase for database and auth, VPS for NestJS with Docker or PM2, reverse proxy with HTTPS, and uptime monitoring.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L242)
-- [DESIGN.md:6-126](file://DESIGN.md#L6-L126)
+- [README.md:10-19](file://README.md#L10-L19)
+- [api/package.json:16-27](file://api/package.json#L16-L27)
+- [web/package.json:12-16](file://web/package.json#L12-L16)
 
 ### Version Compatibility and Third-Party Dependencies
 - **Supabase Auth**: Google OAuth with PKCE redirect.
-- **Prisma**: ORM for PostgreSQL schema management.
+- **Prisma**: ORM for PostgreSQL schema management with pg adapter.
 - **WhatsApp**: Used for manual sharing of schedule links and deadlines.
 - **Timezone**: Asia/Makassar (WITA) for all deadline and shift calculations.
 - **Design System**: SF Pro fonts with system-ui fallbacks, CSS custom properties for design tokens, and responsive design patterns.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-242](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L242)
+- [README.md:21-35](file://README.md#L21-L35)
 - [DESIGN.md:365-372](file://DESIGN.md#L365-L372)
 
 ### Design System Implementation Details
@@ -449,3 +437,31 @@ The Apple-inspired design system provides a solid foundation for the shift sched
 - [DESIGN.md:294-372](file://DESIGN.md#L294-L372)
 - [DESIGN.md:428-487](file://DESIGN.md#L428-L487)
 - [DESIGN.md:510-543](file://DESIGN.md#L510-L543)
+
+### Development Environment Setup
+The development environment uses Supabase CLI for local database management with shifted ports to avoid conflicts:
+
+- **Supabase Local**: Postgres on port 54422, API on port 54421, Studio on port 54423
+- **Application Ports**: Next.js frontend on port 3000, NestJS backend on port 3001
+- **Database Migration**: Prisma migrations with RLS deny-all policy for security
+- **Environment Configuration**: Shared .env file with Supabase connection strings
+
+**Section sources**
+- [README.md:21-35](file://README.md#L21-L35)
+- [supabase/config.toml:7-44](file://supabase/config.toml#L7-L44)
+- [api/src/main.ts:6-9](file://api/src/main.ts#L6-L9)
+- [api/src/env.ts:1-6](file://api/src/env.ts#L1-L6)
+
+### Database Schema Architecture
+The database schema follows ERP-ready principles with UUID primary keys, audit timestamps, and soft deletes:
+
+- **Employee Model**: Tracks staff information with position, role, probation status, and active flags
+- **Shift Type Model**: Defines shift codes (PAGI, SORE, MIDDLE) with time ranges and position compatibility
+- **Timezone Handling**: Shift times stored as HH:MM strings to avoid timezone conversion issues
+- **Security**: Row Level Security (RLS) deny-all policy prevents direct database access from browsers
+
+**Section sources**
+- [api/prisma/schema/employee.prisma:1-37](file://api/prisma/schema/employee.prisma#L1-L37)
+- [api/prisma/schema/shift_type.prisma:1-28](file://api/prisma/schema/shift_type.prisma#L1-L28)
+- [api/prisma/schema/schema.prisma:1-13](file://api/prisma/schema/schema.prisma#L1-L13)
+- [README.md:53-58](file://README.md#L53-L58)
