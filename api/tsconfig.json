@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2023",
+    "outDir": "./dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "strictNullChecks": true,
+    "paths": {
+      "@repo/types": ["../packages/types/dist/index.d.ts"],
+      "@repo/validators": ["../packages/validators/dist/index.d.ts"]
+    },
+    "types": ["node", "jest"]
+  },
+  "include": ["src", "test", "prisma", "prisma.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

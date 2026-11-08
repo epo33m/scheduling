@@ -1,0 +1,19 @@
+# Docs are hand-written and the PRD must not be rewritten by a formatter.
+docs/
+GLOSSARY.md
+DESIGN.md
+AGENTS.md
+CLAUDE.md
+
+# Vendored agent skills and generated knowledge graph
+.agents/
+agent/skills/
+.qoder/
+graphify-out/
+skills-lock.json
+
+# Generated / binary
+node_modules/
+bun.lock
+api/src/generated/
+**/*.prisma

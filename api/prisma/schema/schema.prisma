@@ -1,0 +1,12 @@
+// Prisma 7 keeps the connection string out of the schema: see prisma.config.ts.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../../src/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
