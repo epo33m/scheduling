@@ -10,8 +10,9 @@ enum ShiftCode {
 /// through a Date and the database casts it in the session time zone. The
 /// migration holds both columns to the HH:MM format with CHECK constraints.
 ///
-/// Seed values come from SHIFT_TYPE_CATALOG in @repo/types; the seed's typed
-/// upsert is what keeps this enum and that catalog from drifting apart.
+/// Seed values come from SHIFT_TYPE_CATALOG in @repo/types.
+/// src/prisma/schema-vocabulary.contract.spec.ts holds this enum equal to
+/// SHIFT_CODES, so adding a code to one side only fails `bun run test`.
 model ShiftType {
   id        String             @id @default(uuid()) @db.Uuid
   code      ShiftCode          @unique
