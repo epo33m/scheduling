@@ -47,7 +47,8 @@ describe('SupabaseTokenService', () => {
   }
 
   function accessToken(options: TokenOptions = {}): Promise<string> {
-    const claims = options.email === null ? {} : { email: options.email ?? EMAIL };
+    const claims =
+      options.email === null ? {} : { email: options.email ?? EMAIL };
 
     return new SignJWT(claims)
       .setProtectedHeader({ alg: 'ES256', kid: KID })
@@ -75,7 +76,9 @@ describe('SupabaseTokenService', () => {
   it('rejects a token issued for another Supabase project', async () => {
     await expect(
       service.verify(
-        await accessToken({ issuer: 'https://another-project.supabase.co/auth/v1' }),
+        await accessToken({
+          issuer: 'https://another-project.supabase.co/auth/v1',
+        }),
       ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
