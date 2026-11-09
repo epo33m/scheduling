@@ -35,3 +35,7 @@ graphify-out/
 .vscode/
 *.swp
 *.pem
+
+# Playwright artifacts
+test-results/
+playwright-report/

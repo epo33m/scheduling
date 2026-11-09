@@ -43,12 +43,15 @@ Port Supabase lokal digeser ke 5442x (`supabase/config.toml`) supaya bisa jalan 
 | `bun run typecheck`            | `tsc --noEmit` di semua paket |
 | `bun run test`                 | unit test (vitest)            |
 | `bun run test:api`             | integration test api (jest)   |
+| `bun run test:e2e`             | end-to-end test (Playwright)  |
 | `bun run db:start` / `db:stop` | Supabase lokal hidup / mati   |
 | `bun run db:migrate`           | terapkan migrasi Prisma       |
 | `bun run db:seed`              | seed `shift_type` dari PRD    |
 | `bun run format`               | prettier                      |
 
 `GET http://localhost:3001/health` mengembalikan `{"status":"ok"}`. Endpoint ini cek liveness saja, belum menyentuh database.
+
+`bun run test:e2e` menjalankan siklus mingguan penuh (request → approve → draft → publish → jadwal staf) di atas stack nyata: Supabase lokal harus hidup (`db:start`, `db:migrate`) dan browser Playwright sudah terpasang (`bunx playwright install chromium`). Suite ini menata ulang baris fixture-nya sendiri di database dev dan tidak ikut CI karena CI tidak punya Supabase.
 
 ## Database
 
