@@ -585,7 +585,7 @@ describe('schedule draft over HTTP', () => {
       });
     });
 
-    it('refuses middle for a bar staff and on Jumat–Minggu', async () => {
+    it('refuses middle for a bar staff and libur or middle on Jumat–Minggu', async () => {
       addStaff(barA, 'Rian', 'bar');
       addStaff(kitA, 'Kiki', 'kitchen');
       seedPreviousWeek();
@@ -613,6 +613,17 @@ describe('schedule draft over HTTP', () => {
           employeeId: kitA,
           tanggal: isoDay(addDays(monday, 5)),
           shiftCode: 'MIDDLE',
+        })
+        .expect(400);
+
+      // Jumat–Minggu is busy and everyone works, so no day off can be written.
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({
+          employeeId: barA,
+          tanggal: isoDay(addDays(monday, 5)),
+          shiftCode: null,
         })
         .expect(400);
     });

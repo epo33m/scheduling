@@ -83,6 +83,24 @@ function cellKey(employeeId: string, tanggal: string): string {
 }
 
 /**
+ * Middle exists because a kitchen peer is libur, and libur only exists Senin–Kamis
+ * (PRD §Aturan bisnis), so middle never lands Jumat–Minggu (GLOSSARY › Middle).
+ */
+function isMiddleDay(tanggal: string): boolean {
+  const weekday = new Date(`${tanggal}T00:00:00.000Z`).getUTCDay();
+  return weekday >= 1 && weekday <= 4;
+}
+
+/**
+ * A day the staff member is genuinely libur: an approved request emptied it.
+ * An unfilled day (no history, no request) is not a libur yet, just undecided,
+ * so it never promotes a colleague to middle.
+ */
+function isLibur(row: CompiledAssignment): boolean {
+  return row.shiftCode === null && row.source === 'request';
+}
+
+/**
  * The shift the staff member held most often last week, among pagi and sore.
  * Middle is skipped: it exists only because a kitchen peer was off (4.4), so it
  * is never a pattern to fall back on. A staff member with no history has no
@@ -168,16 +186,21 @@ export function compileDraft(input: CompileInput): CompiledAssignment[] {
     }
   }
 
-  // 4.4: a kitchen staff member working alone on a day a colleague is off
-  // becomes middle, and any shift request they held for that day is voided —
-  // the requested shift is never what gets written.
+  // 4.4: a kitchen staff member becomes middle on a day a kitchen colleague is
+  // libur, provided they are the only one working that day — the requested
+  // shift they held is voided, since it is never what gets written.
   for (const tanggal of days) {
+    if (!isMiddleDay(tanggal)) {
+      continue;
+    }
+
     const kitchen = [...rows.values()].filter(
       (row) => row.tanggal === tanggal && row.position === 'kitchen',
     );
+    const onLibur = kitchen.filter(isLibur);
     const working = kitchen.filter((row) => row.shiftCode !== null);
 
-    if (kitchen.length > working.length && working.length === 1) {
+    if (onLibur.length > 0 && working.length === 1) {
       const lone = working[0];
       lone.shiftCode = 'MIDDLE';
       lone.source = 'auto_middle';

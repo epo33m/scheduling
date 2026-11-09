@@ -274,6 +274,38 @@ describe('step 4.4 — middle for the lone kitchen staff', () => {
     });
   });
 
+  it('does not promote a kitchen staff whose peer is not scheduled yet', () => {
+    const assignments = compileDraft(
+      input({
+        staff: [kitA, kitB],
+        // Komang has no history: their days are still undecided, not libur.
+        previousWeek: weekOf(kitA.id, 'PAGI'),
+      }),
+    );
+
+    expect(place(assignments, kitA.id, day(0))).toEqual({
+      shiftCode: 'PAGI',
+      source: 'copy',
+    });
+    expect(place(assignments, kitB.id, day(0)).shiftCode).toBeNull();
+  });
+
+  it('never places middle Jumat–Minggu, not even over an approved libur', () => {
+    const assignments = compileDraft(
+      input({
+        staff: [kitA, kitB],
+        previousWeek: [...weekOf(kitA.id, 'PAGI'), ...weekOf(kitB.id, 'PAGI')],
+        offRequests: [{ employeeId: kitA.id, tanggal: day(5) }],
+      }),
+    );
+
+    expect(place(assignments, kitA.id, day(5)).shiftCode).toBeNull();
+    expect(place(assignments, kitB.id, day(5))).toEqual({
+      shiftCode: 'PAGI',
+      source: 'copy',
+    });
+  });
+
   it('leaves two working kitchen staff on their own shifts', () => {
     const assignments = compileDraft(
       input({

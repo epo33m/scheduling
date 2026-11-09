@@ -225,12 +225,19 @@ export class ScheduleService {
       );
     }
 
+    // Libur only exists Senin–Kamis (PRD §Aturan bisnis); Jumat–Minggu is busy
+    // and everyone works, so a day off there is not a placement the manager can
+    // make.
+    if (input.shiftCode === null && !isOffDayAllowed(tanggal)) {
+      throw new BadRequestException('Libur hanya Senin sampai Kamis.');
+    }
+
     if (input.shiftCode === 'MIDDLE') {
       if (employee.position !== 'kitchen') {
         throw new BadRequestException('Shift middle hanya untuk staf kitchen.');
       }
-      // Middle exists only when a kitchen peer is off, and libur only exists
-      // Senin–Kamis (PRD §Jenis shift), so Jumat–Minggu has no middle.
+      // Middle exists because a kitchen peer is libur, and libur only falls
+      // Senin–Kamis, so middle never appears Jumat–Minggu (GLOSSARY › Middle).
       if (!isOffDayAllowed(tanggal)) {
         throw new BadRequestException('Shift middle hanya Senin sampai Kamis.');
       }

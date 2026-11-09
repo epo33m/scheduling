@@ -1,5 +1,17 @@
 -- Hand-written hardening for the F5 schedule table. Prisma generates the DDL;
--- this pass adds what it cannot express: RLS.
+-- this pass adds what it cannot express: the day rules and RLS.
+
+-- Pagi and sore can be placed any day, while libur and middle only exist
+-- Senin–Kamis (PRD §Aturan bisnis, GLOSSARY › Middle). The api checks the same
+-- rule; this CHECK is defence-in-depth so a direct write cannot park a middle
+-- or a libur on a busy day. ISODOW numbers Mon=1..Sun=7. "shift_code" IS NULL
+-- is libur, so COALESCE keeps the null case out of the true branch.
+ALTER TABLE "shift_assignment"
+  ADD CONSTRAINT "shift_assignment_day_rule"
+    CHECK (
+      COALESCE("shift_code" IN ('PAGI', 'SORE'), false)
+      OR EXTRACT(ISODOW FROM "tanggal") BETWEEN 1 AND 4
+    );
 
 -- RLS deny-all (PRD §Aturan keamanan): the browser never reads the schedule
 -- either, the NestJS api over the direct connection (table owner) is the only
