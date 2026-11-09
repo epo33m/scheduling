@@ -1,4 +1,4 @@
-import { addDays, targetMondayIso } from '@repo/weeks';
+import { addDays, runningMondayIso, targetMondayIso } from '@repo/weeks';
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -11,6 +11,17 @@ const HOUR_MS = 3_600_000;
  */
 export function nextMonday(now: Date): Date {
   return new Date(`${targetMondayIso(now)}T00:00:00.000Z`);
+}
+
+/**
+ * The minggu berjalan (issue #20, ADR 0005): the Monday the staff are living
+ * through, i.e. the week holding today's WITA calendar day. It is exactly the
+ * minggu target minus seven days, and it is what the running tab of the
+ * manager draft screen resolves to. Same `@db.Date` midnight-UTC shape as
+ * `nextMonday`, so a stored `start_date` compares against it directly.
+ */
+export function runningMonday(now: Date): Date {
+  return new Date(`${runningMondayIso(now)}T00:00:00.000Z`);
 }
 
 /** The shared whole-day shift, re-exported so schedule callers keep one home. */

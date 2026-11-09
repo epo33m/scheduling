@@ -1096,4 +1096,206 @@ describe('schedule draft over HTTP', () => {
       }
     });
   });
+
+  /**
+   * Minggu berjalan toggle (issue #20, ADR 0005). The clock is pinned to Rabu
+   * 11 November 2026 10.00 WITA (02.00 UTC) so the running week (Senin 9 Nov,
+   * the one the staff are living through) and the minggu target (Senin 16 Nov,
+   * the one being composed) are fixed regardless of when CI runs — the exact
+   * Monday-rollover case that shipped untested and stranded the running week.
+   */
+  describe('minggu berjalan toggle (issue #20)', () => {
+    const PINNED = new Date('2026-11-11T02:00:00.000Z'); // Rabu 10.00 WITA
+    const RUNNING = '2026-11-09';
+    const TARGET = '2026-11-16';
+
+    beforeAll(() => {
+      jest.useFakeTimers();
+    });
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+    beforeEach(() => {
+      jest.setSystemTime(PINNED);
+    });
+
+    function seedRunning(weekStatus: 'draft' | 'published') {
+      weeks = [
+        {
+          id: 'w-running',
+          startDate: date(RUNNING),
+          requestDeadline: new Date('2026-11-08T04:00:00.000Z'),
+          status: weekStatus,
+          copiedFromWeekId: null,
+          publishedAt: weekStatus === 'published' ? date(RUNNING) : null,
+        },
+        {
+          id: 'w-target',
+          startDate: date(TARGET),
+          requestDeadline: new Date('2026-11-15T04:00:00.000Z'),
+          status: 'draft',
+          copiedFromWeekId: null,
+        },
+      ];
+      for (let offset = 0; offset < 7; offset += 1) {
+        assignments.push({
+          id: `run-${offset}`,
+          weekId: 'w-running',
+          employeeId: barA,
+          tanggal: addDays(date(RUNNING), offset),
+          shiftCode: 'PAGI',
+          source: 'copy',
+        });
+      }
+    }
+
+    it('reaches the running published week and the bare target by alias', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedRunning('published');
+
+      const running = await request(app.getHttpServer())
+        .get('/schedule/draft?week=running')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+      expect(running.body.weekStartDate).toBe(RUNNING);
+      expect(running.body.status).toBe('published');
+      expect(running.body.assignments).toHaveLength(7);
+
+      const target = await request(app.getHttpServer())
+        .get('/schedule/draft?week=target')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+      expect(target.body.weekStartDate).toBe(TARGET);
+      expect(target.body.status).toBe('draft');
+      expect(target.body.assignments).toHaveLength(0);
+
+      // Omitted week stays the target, so every pre-toggle caller is unchanged.
+      const defaulted = await request(app.getHttpServer())
+        .get('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+      expect(defaulted.body.weekStartDate).toBe(TARGET);
+    });
+
+    it('refuses an unknown week on every manager route, and defaults when omitted', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedRunning('published');
+
+      await request(app.getHttpServer())
+        .get('/schedule/draft?week=selasa')
+        .set('Authorization', await managerAuth())
+        .expect(400);
+      await request(app.getHttpServer())
+        .post('/schedule/draft?week=selasa')
+        .set('Authorization', await managerAuth())
+        .expect(400);
+      await request(app.getHttpServer())
+        .post('/schedule/publish?week=selasa')
+        .set('Authorization', await managerAuth())
+        .expect(400);
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment?week=selasa')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: RUNNING, shiftCode: 'PAGI' })
+        .expect(400);
+    });
+
+    it('blocks editing a day already past (WITA) on the running week, keeps today', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedRunning('published');
+
+      // Senin 9 Nov is before today (Rabu 11 Nov): the week is a fact, not a draft.
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment?week=running')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: RUNNING, shiftCode: 'SORE' })
+        .expect(400);
+
+      // Today is fair game, and the change lands on the same row staff read.
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment?week=running')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: '2026-11-11', shiftCode: 'SORE' })
+        .expect(200);
+
+      const rian = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', `Bearer ${await accessToken('rian@kyne.test')}`)
+        .expect(200);
+      const runningWeek = (
+        rian.body as {
+          weeks: {
+            weekStartDate: string;
+            assignments: { tanggal: string; shiftCode: string | null }[];
+          }[];
+        }
+      ).weeks.find((w) => w.weekStartDate === RUNNING);
+      expect(
+        runningWeek?.assignments.find((a) => a.tanggal === '2026-11-11'),
+      ).toMatchObject({ tanggal: '2026-11-11', shiftCode: 'SORE' });
+    });
+
+    it('refuses the bulk regenerate on the running week', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedRunning('published');
+
+      await request(app.getHttpServer())
+        .post('/schedule/draft?week=running')
+        .set('Authorization', await managerAuth())
+        .expect(400);
+    });
+
+    it('late-publishes a still-draft running week and opens the next window', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      // Only the running week exists, still a draft; no target row yet.
+      weeks = [
+        {
+          id: 'w-running',
+          startDate: date(RUNNING),
+          requestDeadline: new Date('2026-11-08T04:00:00.000Z'),
+          status: 'draft',
+          copiedFromWeekId: null,
+        },
+      ];
+
+      const published = await request(app.getHttpServer())
+        .post('/schedule/publish?week=running')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+      expect(published.body.status).toBe('published');
+      expect(published.body.publishedAt).toEqual(expect.any(String));
+
+      const created = weeks.find(
+        (w) => w.startDate.getTime() === date(TARGET).getTime(),
+      );
+      expect(created?.status).toBe('draft');
+      expect(published.body.nextWindow).toEqual({
+        weekStartDate: TARGET,
+        requestDeadline: new Date('2026-11-15T04:00:00.000Z').toISOString(),
+      });
+    });
+
+    it('renders the running empty state when no running week row exists', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      weeks = [
+        {
+          id: 'w-target',
+          startDate: date(TARGET),
+          requestDeadline: new Date('2026-11-15T04:00:00.000Z'),
+          status: 'draft',
+          copiedFromWeekId: null,
+        },
+      ];
+
+      const res = await request(app.getHttpServer())
+        .get('/schedule/draft?week=running')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+      expect(res.body).toMatchObject({
+        weekStartDate: null,
+        assignments: [],
+        status: null,
+      });
+    });
+  });
 });

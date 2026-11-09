@@ -12,9 +12,11 @@ import type {
   SessionEmployee,
   ShiftCode,
   ShiftTime,
+  WeekAlias,
   WeekStatus,
 } from '@repo/types';
 import type { AssignmentEditInput } from '@repo/validators';
+import { witaCalendarDate } from '@repo/weeks';
 import { PrismaService } from '../prisma/prisma.service';
 import { isOffDayAllowed } from '../request/off-day';
 import { toCalendarDate } from '../request/request.service';
@@ -25,7 +27,12 @@ import {
 } from './compiler';
 import { validateCoverage } from './coverage';
 import { shiftDurationHours } from './work-hours';
-import { nextMonday, publishedWeekBounds, requestDeadlineFor } from './weeks';
+import {
+  nextMonday,
+  publishedWeekBounds,
+  requestDeadlineFor,
+  runningMonday,
+} from './weeks';
 
 const DAY_MS = 86_400_000;
 
@@ -57,11 +64,16 @@ export class ScheduleService {
   /**
    * The draft the manager is working on, or an empty one when no week exists
    * yet. Reads are not a mutation: a manager who opens the screen before
-   * pressing the button simply sees nothing to edit.
+   * pressing the button simply sees nothing to edit. The `week` alias picks
+   * which minggu the draft screen shows (issue #20, ADR 0005); it defaults to
+   * the minggu target so every existing caller keeps the old behaviour.
    */
-  async draft(now = new Date()): Promise<DraftSchedule> {
+  async draft(
+    week: WeekAlias = 'target',
+    now = new Date(),
+  ): Promise<DraftSchedule> {
     const weeks = await this.prisma.scheduleWeek.findMany();
-    const target = this.targetWeek(weeks, now);
+    const target = this.weekFor(weeks, week, now);
 
     if (!target) {
       return {
@@ -126,12 +138,13 @@ export class ScheduleService {
    */
   async publish(
     actor: SessionEmployee,
+    week: WeekAlias = 'target',
     now = new Date(),
   ): Promise<DraftSchedule> {
     const weeks = await this.prisma.scheduleWeek.findMany();
-    const target = this.targetWeek(weeks, now);
+    const target = this.weekFor(weeks, week, now);
     if (!target) {
-      throw new NotFoundException('Belum ada minggu target untuk dipublish.');
+      throw new NotFoundException('Belum ada minggu untuk dipublish.');
     }
 
     if (target.status !== 'published') {
@@ -142,7 +155,7 @@ export class ScheduleService {
     }
 
     await this.openNextWindow(weeks, target, actor);
-    return this.draft(now);
+    return this.draft(week, now);
   }
 
   /**
@@ -222,11 +235,21 @@ export class ScheduleService {
    * this is the first time it is touched — which is also what opens its jendela
    * request — then replaces whatever draft it holds with a fresh compile.
    * Pressing it again after manual edits is a deliberate reset, not a merge.
+   * The bulk regeneration is a target-week action only (issue #20, ADR 0005):
+   * rebuilding a running week would overwrite placements the staff already
+   * live by, so the request is refused when the caller picks `running`.
    */
   async generate(
     actor: SessionEmployee,
+    week: WeekAlias = 'target',
     now = new Date(),
   ): Promise<DraftSchedule> {
+    if (week === 'running') {
+      throw new BadRequestException(
+        'Buat draft dari minggu lalu hanya untuk minggu target.',
+      );
+    }
+
     const weeks = await this.prisma.scheduleWeek.findMany();
     const target = await this.ensureTargetWeek(weeks, actor, now);
 
@@ -316,21 +339,33 @@ export class ScheduleService {
    * The manager's per-day edit (F5): pagi, sore, middle (kitchen only), or
    * libur. The row is stamped `manual` so the draft keeps saying where each
    * placement came from. Nothing cascades: the next read of the draft
-   * recomputes coverage and warns the manager.
+   * recomputes coverage and warns the manager. The selected `week` is the one
+   * the draft screen is showing (issue #20); a day already in the past (before
+   * today, WITA) can no longer be rewritten, which is a no-op on the always
+   * future minggu target and the emergency-edit guard on the running week.
    */
   async edit(
     actor: SessionEmployee,
     input: AssignmentEditInput,
+    week: WeekAlias = 'target',
     now = new Date(),
   ): Promise<DraftAssignment> {
     const weeks = await this.prisma.scheduleWeek.findMany();
-    const target = this.targetWeek(weeks, now);
+    const target = this.weekFor(weeks, week, now);
     if (!target) {
-      throw new NotFoundException('Belum ada minggu target untuk disusun.');
+      throw new NotFoundException('Belum ada minggu untuk disusun.');
     }
 
     const tanggal = toDate(input.tanggal);
     this.assertWithinWeek(tanggal, target);
+
+    // Days the staff already lived by are facts, not drafts. The check is
+    // uniform across both tabs, but only the running week can hold a past day.
+    if (input.tanggal < witaCalendarDate(now)) {
+      throw new BadRequestException(
+        'Hari yang sudah lewat tidak bisa diubah lagi.',
+      );
+    }
 
     const employee = await this.prisma.employee.findUnique({
       where: { id: input.employeeId },
@@ -402,6 +437,20 @@ export class ScheduleService {
   private targetWeek(weeks: Week[], now: Date): Week | null {
     const start = nextMonday(now).getTime();
     return weeks.find((week) => week.startDate.getTime() === start) ?? null;
+  }
+
+  /**
+   * The minggu the draft screen is showing, picked by alias (issue #20,
+   * ADR 0005). `target` is the minggu being composed, `running` is the one the
+   * staff are living through; both dates are derived here so a caller never
+   * sends one. Either alias resolves to null when that week's row does not
+   * exist yet, which is the empty-state shape the reads report.
+   */
+  private weekFor(weeks: Week[], week: WeekAlias, now: Date): Week | null {
+    const start = (week === 'running' ? runningMonday : nextMonday)(
+      now,
+    ).getTime();
+    return weeks.find((row) => row.startDate.getTime() === start) ?? null;
   }
 
   /**
