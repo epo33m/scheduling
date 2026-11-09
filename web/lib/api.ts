@@ -186,9 +186,9 @@ export function decideRequest(
  * publish.
  */
 export function getDraft(week: WeekAlias = 'target'): Promise<DraftSchedule> {
-  return authorizedFetch(`/schedule/draft?week=${week}`, { method: 'GET' }).then(
-    (r) => r.json() as Promise<DraftSchedule>,
-  );
+  return authorizedFetch(`/schedule/draft?week=${week}`, {
+    method: 'GET',
+  }).then((r) => r.json() as Promise<DraftSchedule>);
 }
 
 /** "Buat draft dari minggu lalu": runs alur 4.1–4.4 and replaces the draft. */
