@@ -1,7 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { ApiError, generateDraft, saveAssignment } from '@/lib/api';
+import {
+  ApiError,
+  generateDraft,
+  publishSchedule,
+  saveAssignment,
+} from '@/lib/api';
 
 const DRAFT_PATH = '/manager/draft';
 
@@ -29,6 +34,26 @@ export async function generateAction(
   }
 
   return { ok: true, message: 'Draft dibuat dari minggu lalu.' };
+}
+
+/**
+ * Publish (F6). The api flips the week and opens the next request window in one
+ * call, so a failure must still revalidate: the screen has to show whether the
+ * week is live, never the state it had before the press.
+ */
+export async function publishAction(
+  _previous: DraftActionState,
+  _formData: FormData,
+): Promise<DraftActionState> {
+  try {
+    await publishSchedule();
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  } finally {
+    revalidatePath(DRAFT_PATH);
+  }
+
+  return { ok: true, message: 'Jadwal sudah dipublish.' };
 }
 
 /**

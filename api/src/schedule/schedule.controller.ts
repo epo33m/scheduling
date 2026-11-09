@@ -9,6 +9,7 @@ import {
 import type {
   DraftAssignment,
   DraftSchedule,
+  PublishedWeek,
   SessionEmployee,
 } from '@repo/types';
 import { parseAssignmentEdit } from '@repo/validators';
@@ -34,6 +35,23 @@ export class ScheduleController {
   @Post('draft')
   generate(@CurrentEmployee() actor: SessionEmployee): Promise<DraftSchedule> {
     return this.schedule.generate(actor);
+  }
+
+  /** Publish (F6): the week becomes staff-visible and the next window opens. */
+  @Post('publish')
+  publish(@CurrentEmployee() actor: SessionEmployee): Promise<DraftSchedule> {
+    return this.schedule.publish(actor);
+  }
+
+  /**
+   * The published week as a staff member reads it (F6/F7). Method-level roles
+   * override the manager-only class: the staff surface is the published week,
+   * never the draft, and the service only returns the caller's own rows.
+   */
+  @Get('published')
+  @Roles('staff')
+  published(@CurrentEmployee() actor: SessionEmployee): Promise<PublishedWeek> {
+    return this.schedule.published(actor);
   }
 
   @Put('draft/assignment')

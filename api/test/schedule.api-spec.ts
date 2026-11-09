@@ -36,6 +36,8 @@ interface WeekRow {
   requestDeadline: Date;
   status: 'draft' | 'published';
   copiedFromWeekId: string | null;
+  publishedAt?: Date | null;
+  publishedBy?: string | null;
 }
 
 interface OffRow {
@@ -198,7 +200,12 @@ describe('schedule draft over HTTP', () => {
           findMany: () => employees.map((e) => ({ ...e })),
         },
         scheduleWeek: {
-          findMany: () => weeks.map((w) => ({ ...w })),
+          findMany: (args?: { where?: { status?: 'draft' | 'published' } }) =>
+            weeks
+              .filter(
+                (w) => !args?.where?.status || w.status === args.where.status,
+              )
+              .map((w) => ({ ...w })),
           create: ({
             data,
           }: {
@@ -208,6 +215,8 @@ describe('schedule draft over HTTP', () => {
               id: `w-${weeks.length + 1}`,
               status: 'draft',
               copiedFromWeekId: null,
+              publishedAt: null,
+              publishedBy: null,
               ...data,
             };
             weeks.push(created);
@@ -218,7 +227,12 @@ describe('schedule draft over HTTP', () => {
             data,
           }: {
             where: { id: string };
-            data: { copiedFromWeekId?: string | null };
+            data: Partial<
+              Pick<
+                WeekRow,
+                'copiedFromWeekId' | 'status' | 'publishedAt' | 'publishedBy'
+              >
+            >;
           }) => {
             const row = weeks.find((w) => w.id === where.id);
             if (!row) throw new Error('week not found');
@@ -235,9 +249,17 @@ describe('schedule draft over HTTP', () => {
             shifts.filter((s) => s.weekId === where.weekId),
         },
         shiftAssignment: {
-          findMany: ({ where }: { where: { weekId: string } }) =>
+          findMany: ({
+            where,
+          }: {
+            where: { weekId: string; employeeId?: string };
+          }) =>
             assignments
-              .filter((a) => a.weekId === where.weekId)
+              .filter(
+                (a) =>
+                  a.weekId === where.weekId &&
+                  (!where.employeeId || a.employeeId === where.employeeId),
+              )
               .sort(
                 (a, b) =>
                   a.tanggal.getTime() - b.tanggal.getTime() ||
@@ -709,6 +731,162 @@ describe('schedule draft over HTTP', () => {
           shiftCode: 'PAGI',
         })
         .expect(400);
+    });
+  });
+
+  /**
+   * Publish & share (F6). Publishing is the moment the draft becomes a fact for
+   * staff, and the same press opens the jendela request of the week after the
+   * one being published (ADR 0004).
+   */
+  describe('publish and share (F6)', () => {
+    function weekStarting(day: Date): WeekRow | undefined {
+      return weeks.find((w) => w.startDate.getTime() === day.getTime());
+    }
+
+    /** Minggu 12.00 WITA of the week that ends the day before `day`. */
+    function deadlineOf(day: Date): Date {
+      return new Date(`${isoDay(addDays(day, -1))}T04:00:00.000Z`);
+    }
+
+    const staffAuth = async (email: string) =>
+      `Bearer ${await accessToken(email)}`;
+
+    it('publishes the draft, makes it staff-visible, and opens the next window', async () => {
+      addStaff(barA, 'Rian', 'bar');
+
+      await request(app.getHttpServer())
+        .post('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      // A specific placement, so the staff read proves more than an empty week.
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: isoDay(monday), shiftCode: 'PAGI' })
+        .expect(200);
+
+      // Nothing is staff-visible before publish.
+      const before = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+      expect(before.body).toEqual({ weekStartDate: null, assignments: [] });
+
+      const published = await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      expect(published.body.status).toBe('published');
+      expect(published.body.publishedAt).toEqual(expect.any(String));
+      expect(weekStarting(monday)?.status).toBe('published');
+
+      const nextMondayTarget = addDays(monday, 7);
+      const next = weekStarting(nextMondayTarget);
+      expect(next).toBeDefined();
+      expect(next?.status).toBe('draft');
+      expect(next?.requestDeadline.toISOString()).toBe(
+        deadlineOf(nextMondayTarget).toISOString(),
+      );
+      expect(published.body.nextWindow).toEqual({
+        weekStartDate: isoDay(nextMondayTarget),
+        requestDeadline: deadlineOf(nextMondayTarget).toISOString(),
+      });
+
+      const after = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+
+      expect(after.body.weekStartDate).toBe(isoDay(monday));
+      expect(after.body.assignments).toHaveLength(7);
+      expect(after.body.assignments[0]).toEqual({
+        tanggal: isoDay(monday),
+        shiftCode: 'PAGI',
+      });
+    });
+
+    it('keeps post-publish edits visible, and only to the staff they belong to', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      addStaff(kitA, 'Kiki', 'kitchen');
+
+      await request(app.getHttpServer())
+        .post('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+      await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      const selasa = isoDay(addDays(monday, 1));
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: kitA, tanggal: selasa, shiftCode: 'SORE' })
+        .expect(200);
+
+      const rian = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+      expect(rian.body.assignments).toHaveLength(7);
+      expect(
+        rian.body.assignments.find(
+          (row: { tanggal: string }) => row.tanggal === selasa,
+        ),
+      ).toEqual({ tanggal: selasa, shiftCode: null });
+
+      const kiki = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('kiki@kyne.test'))
+        .expect(200);
+      expect(
+        kiki.body.assignments.find(
+          (row: { tanggal: string }) => row.tanggal === selasa,
+        ),
+      ).toEqual({ tanggal: selasa, shiftCode: 'SORE' });
+    });
+
+    it('opens the next window once even when published twice', async () => {
+      addStaff(barA, 'Rian', 'bar');
+
+      await request(app.getHttpServer())
+        .post('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      const first = await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+      const second = await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      expect(second.body.publishedAt).toBe(first.body.publishedAt);
+      expect(
+        weeks.filter(
+          (w) => w.startDate.getTime() === addDays(monday, 7).getTime(),
+        ),
+      ).toHaveLength(1);
+    });
+
+    it('refuses publish to staff, and refuses it when no week exists', async () => {
+      addStaff(barA, 'Rian', 'bar');
+
+      await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(403);
+
+      await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(404);
     });
   });
 });

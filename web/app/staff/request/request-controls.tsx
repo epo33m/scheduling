@@ -66,7 +66,9 @@ export function RequestControls({
             : 'Belum ada request libur.'}
         </p>
         <p className={styles.status}>
-          {offRequest ? REQUEST_STATUS_LABEL[offRequest.status] : 'Pilih satu hari.'}
+          {offRequest
+            ? REQUEST_STATUS_LABEL[offRequest.status]
+            : 'Pilih satu hari.'}
         </p>
 
         <form action={offFormAction}>
@@ -123,7 +125,9 @@ export function RequestControls({
 
         <div>
           {days.map((day) => {
-            const current = shiftRequests.find((s) => s.tanggal === day.tanggal);
+            const current = shiftRequests.find(
+              (s) => s.tanggal === day.tanggal,
+            );
             return (
               <form
                 key={day.tanggal}

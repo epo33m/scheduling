@@ -3,6 +3,7 @@ import type {
   DraftSchedule,
   ManagedEmployee,
   OffRequestView,
+  PublishedWeek,
   RequestDecisionResult,
   RequestsDashboard,
   ShiftCode,
@@ -190,6 +191,27 @@ export function getDraft(): Promise<DraftSchedule> {
 export function generateDraft(): Promise<DraftSchedule> {
   return authorizedFetch('/schedule/draft', { method: 'POST' }).then(
     (r) => r.json() as Promise<DraftSchedule>,
+  );
+}
+
+/**
+ * Publish (F6): the week becomes staff-visible and the request window of the
+ * following week opens. The api answers with the week as it now stands, which
+ * is also what carries the share link's deadline.
+ */
+export function publishSchedule(): Promise<DraftSchedule> {
+  return authorizedFetch('/schedule/publish', { method: 'POST' }).then(
+    (r) => r.json() as Promise<DraftSchedule>,
+  );
+}
+
+/**
+ * The staff schedule read (F7): the manager's published week, narrowed by the
+ * api to the caller's own days. The share link lands on this.
+ */
+export function getPublishedSchedule(): Promise<PublishedWeek> {
+  return authorizedFetch('/schedule/published', { method: 'GET' }).then(
+    (r) => r.json() as Promise<PublishedWeek>,
   );
 }
 

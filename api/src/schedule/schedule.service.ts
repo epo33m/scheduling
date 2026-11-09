@@ -6,12 +6,16 @@ import {
 import type {
   DraftAssignment,
   DraftSchedule,
+  OpenWindow,
+  PublishedWeek,
   SessionEmployee,
   ShiftCode,
+  WeekStatus,
 } from '@repo/types';
 import type { AssignmentEditInput } from '@repo/validators';
 import { PrismaService } from '../prisma/prisma.service';
 import { isOffDayAllowed } from '../request/off-day';
+import { mostRecentWeek } from '../request/request-window';
 import { toCalendarDate } from '../request/request.service';
 import {
   compileDraft,
@@ -34,6 +38,8 @@ interface Week {
   startDate: Date;
   requestDeadline: Date;
   copiedFromWeekId: string | null;
+  status: WeekStatus;
+  publishedAt: Date | null;
 }
 
 /**
@@ -61,6 +67,9 @@ export class ScheduleService {
         copiedFromWeekStartDate: null,
         assignments: [],
         warnings: [],
+        status: null,
+        publishedAt: null,
+        nextWindow: null,
       };
     }
 
@@ -100,6 +109,65 @@ export class ScheduleService {
         : null,
       assignments: draft,
       warnings: validateCoverage(toCalendarDate(target.startDate), draft),
+      status: target.status,
+      publishedAt: target.publishedAt ? target.publishedAt.toISOString() : null,
+      nextWindow: this.nextWindow(weeks, target),
+    };
+  }
+
+  /**
+   * Publish (F6): the draft becomes staff-visible and the jendela request of
+   * the week after it opens. Publishing twice is not an error, because the
+   * manager may simply be sharing again; it neither moves `publishedAt` nor
+   * opens a second window. Edits stay allowed afterwards, which is why this
+   * only flips the state rather than freezing the week.
+   */
+  async publish(
+    actor: SessionEmployee,
+    now = new Date(),
+  ): Promise<DraftSchedule> {
+    const weeks = await this.prisma.scheduleWeek.findMany();
+    const target = this.targetWeek(weeks, now);
+    if (!target) {
+      throw new NotFoundException('Belum ada minggu target untuk dipublish.');
+    }
+
+    if (target.status !== 'published') {
+      await this.prisma.scheduleWeek.update({
+        where: { id: target.id },
+        data: { status: 'published', publishedAt: now, publishedBy: actor.id },
+      });
+    }
+
+    await this.openNextWindow(weeks, target, actor);
+    return this.draft(now);
+  }
+
+  /**
+   * The week one staff member sees (F6/F7): the most recent published week and
+   * only their own placements. Staff read a week once it is published, so a
+   * draft is never returned here, not even to the staff it will hold.
+   */
+  async published(actor: SessionEmployee): Promise<PublishedWeek> {
+    const weeks = await this.prisma.scheduleWeek.findMany({
+      where: { status: 'published' },
+    });
+    const week = mostRecentWeek(weeks);
+    if (!week) {
+      return { weekStartDate: null, assignments: [] };
+    }
+
+    const rows = await this.prisma.shiftAssignment.findMany({
+      where: { weekId: week.id, employeeId: actor.id },
+      orderBy: { tanggal: 'asc' },
+    });
+
+    return {
+      weekStartDate: toCalendarDate(week.startDate),
+      assignments: rows.map((row) => ({
+        tanggal: toCalendarDate(row.tanggal),
+        shiftCode: row.shiftCode as ShiftCode | null,
+      })),
     };
   }
 
@@ -192,6 +260,9 @@ export class ScheduleService {
         : null,
       assignments,
       warnings: validateCoverage(toCalendarDate(target.startDate), assignments),
+      status: target.status,
+      publishedAt: target.publishedAt ? target.publishedAt.toISOString() : null,
+      nextWindow: this.nextWindow(weeks, target),
     };
   }
 
@@ -285,6 +356,49 @@ export class ScheduleService {
   private targetWeek(weeks: Week[], now: Date): Week | null {
     const start = nextMonday(now).getTime();
     return weeks.find((week) => week.startDate.getTime() === start) ?? null;
+  }
+
+  /**
+   * The jendela request a published week opens for the one after it: the week
+   * that starts seven days later, with the deadline its own row carries.
+   */
+  private nextWindow(weeks: Week[], target: Week): OpenWindow | null {
+    const start = target.startDate.getTime() + 7 * DAY_MS;
+    const next = weeks.find((week) => week.startDate.getTime() === start);
+
+    return next
+      ? {
+          weekStartDate: toCalendarDate(next.startDate),
+          requestDeadline: next.requestDeadline.toISOString(),
+        }
+      : null;
+  }
+
+  /**
+   * Open the next week's jendela request as part of publishing. The row is what
+   * makes the window exist: staff requests resolve the open window from those
+   * deadlines, so no cron has to flip anything (ADR 0002). A row that is already
+   * there, from an earlier publish, is left untouched.
+   */
+  private async openNextWindow(
+    weeks: Week[],
+    target: Week,
+    actor: SessionEmployee,
+  ): Promise<void> {
+    const startDate = new Date(target.startDate.getTime() + 7 * DAY_MS);
+    if (
+      weeks.some((week) => week.startDate.getTime() === startDate.getTime())
+    ) {
+      return;
+    }
+
+    await this.prisma.scheduleWeek.create({
+      data: {
+        startDate,
+        requestDeadline: requestDeadlineFor(startDate),
+        createdBy: actor.id,
+      },
+    });
   }
 
   /**

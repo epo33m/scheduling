@@ -9,9 +9,27 @@ describe('detectConflicts', () => {
     const conflicts = detectConflicts({
       offRequests: [],
       shiftRequests: [
-        { id: 'a', position: 'bar', tanggal: '2026-11-14', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'b', position: 'bar', tanggal: '2026-11-14', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'c', position: 'bar', tanggal: '2026-11-14', shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 'a',
+          position: 'bar',
+          tanggal: '2026-11-14',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'b',
+          position: 'bar',
+          tanggal: '2026-11-14',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'c',
+          position: 'bar',
+          tanggal: '2026-11-14',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ],
       staffByPosition: BAR4,
     });
@@ -23,8 +41,18 @@ describe('detectConflicts', () => {
   it('flags two kitchen staff requesting the same Selasa off, and stays quiet once one is rejected', () => {
     const input = {
       offRequests: [
-        { id: 'k1', position: 'kitchen' as const, tanggal: '2026-11-10', status: 'pending' as const },
-        { id: 'k2', position: 'kitchen' as const, tanggal: '2026-11-10', status: 'pending' as const },
+        {
+          id: 'k1',
+          position: 'kitchen' as const,
+          tanggal: '2026-11-10',
+          status: 'pending' as const,
+        },
+        {
+          id: 'k2',
+          position: 'kitchen' as const,
+          tanggal: '2026-11-10',
+          status: 'pending' as const,
+        },
       ],
       shiftRequests: [],
       staffByPosition: BAR4,
@@ -47,8 +75,20 @@ describe('detectConflicts', () => {
     const conflicts = detectConflicts({
       offRequests: [],
       shiftRequests: [
-        { id: 'a', position: 'bar', tanggal: '2026-11-09', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'b', position: 'bar', tanggal: '2026-11-09', shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 'a',
+          position: 'bar',
+          tanggal: '2026-11-09',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'b',
+          position: 'bar',
+          tanggal: '2026-11-09',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ],
       staffByPosition: BAR4,
     });
@@ -58,12 +98,35 @@ describe('detectConflicts', () => {
   it('shrinks the slots once a Kamis libur is approved: 3 remaining PAGI picks would empty SORE', () => {
     const conflicts = detectConflicts({
       offRequests: [
-        { id: 'o1', position: 'bar', tanggal: '2026-11-12', status: 'approved' },
+        {
+          id: 'o1',
+          position: 'bar',
+          tanggal: '2026-11-12',
+          status: 'approved',
+        },
       ],
       shiftRequests: [
-        { id: 'a', position: 'bar', tanggal: '2026-11-12', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'b', position: 'bar', tanggal: '2026-11-12', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'c', position: 'bar', tanggal: '2026-11-12', shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 'a',
+          position: 'bar',
+          tanggal: '2026-11-12',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'b',
+          position: 'bar',
+          tanggal: '2026-11-12',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'c',
+          position: 'bar',
+          tanggal: '2026-11-12',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ],
       staffByPosition: BAR4,
     });
@@ -74,8 +137,20 @@ describe('detectConflicts', () => {
     const conflicts = detectConflicts({
       offRequests: [],
       shiftRequests: [
-        { id: 'k1', position: 'kitchen', tanggal: '2026-11-10', shiftCode: 'PAGI', status: 'pending' },
-        { id: 'k2', position: 'kitchen', tanggal: '2026-11-10', shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 'k1',
+          position: 'kitchen',
+          tanggal: '2026-11-10',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
+        {
+          id: 'k2',
+          position: 'kitchen',
+          tanggal: '2026-11-10',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ],
       staffByPosition: BAR4,
     });
@@ -85,10 +160,21 @@ describe('detectConflicts', () => {
   it('quietly skips the last kitchen worker on a Kamis: they become MIDDLE and the request gugur anyway', () => {
     const conflicts = detectConflicts({
       offRequests: [
-        { id: 'o1', position: 'kitchen', tanggal: '2026-11-12', status: 'approved' },
+        {
+          id: 'o1',
+          position: 'kitchen',
+          tanggal: '2026-11-12',
+          status: 'approved',
+        },
       ],
       shiftRequests: [
-        { id: 'k1', position: 'kitchen', tanggal: '2026-11-12', shiftCode: 'PAGI', status: 'pending' },
+        {
+          id: 'k1',
+          position: 'kitchen',
+          tanggal: '2026-11-12',
+          shiftCode: 'PAGI',
+          status: 'pending',
+        },
       ],
       staffByPosition: BAR4,
     });

@@ -62,8 +62,7 @@ export class RequestService {
 
     // The live window if one is open, otherwise the most recent week so a
     // just-closed window still shows the staff member what they had submitted.
-    const target =
-      resolveOpenWindow(weeks, now) ?? mostRecentWeek(weeks);
+    const target = resolveOpenWindow(weeks, now) ?? mostRecentWeek(weeks);
 
     if (!target) {
       return {
@@ -111,7 +110,9 @@ export class RequestService {
 
     this.assertWithinWeek(date, week);
     if (!isOffDayAllowed(date)) {
-      throw new BadRequestException('Request libur hanya untuk Senin sampai Kamis.');
+      throw new BadRequestException(
+        'Request libur hanya untuk Senin sampai Kamis.',
+      );
     }
 
     // "Max 1 per minggu" is structural: the unique (week, employee) means an

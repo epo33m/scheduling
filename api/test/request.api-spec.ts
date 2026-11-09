@@ -62,7 +62,7 @@ function date(iso: string): Date {
 /** The Monday of the minggu target: the next Monday strictly after `now`. */
 function nextMonday(now: Date): Date {
   const midnight = date(now.toISOString().slice(0, 10));
-  const daysToMonday = ((8 - midnight.getUTCDay()) % 7) || 7;
+  const daysToMonday = (8 - midnight.getUTCDay()) % 7 || 7;
   return new Date(midnight.getTime() + daysToMonday * DAY_MS);
 }
 
@@ -167,13 +167,11 @@ describe('staff requests over HTTP', () => {
       .overrideProvider(PrismaService)
       .useValue({
         employee: {
-          findUnique: ({
-            where,
-          }: {
-            where: { email?: string; id?: string };
-          }) =>
+          findUnique: ({ where }: { where: { email?: string; id?: string } }) =>
             employees.find((e) =>
-              where.email !== undefined ? e.email === where.email : e.id === where.id,
+              where.email !== undefined
+                ? e.email === where.email
+                : e.id === where.id,
             ) ?? null,
         },
         scheduleWeek: {
@@ -183,7 +181,9 @@ describe('staff requests over HTTP', () => {
           findUnique: ({
             where,
           }: {
-            where: { weekId_employeeId: { weekId: string; employeeId: string } };
+            where: {
+              weekId_employeeId: { weekId: string; employeeId: string };
+            };
           }) =>
             offs.find(
               (o) =>
@@ -226,7 +226,9 @@ describe('staff requests over HTTP', () => {
             const before = offs.length;
             offs = offs.filter(
               (o) =>
-                !(o.weekId === where.weekId && o.employeeId === where.employeeId),
+                !(
+                  o.weekId === where.weekId && o.employeeId === where.employeeId
+                ),
             );
             return { count: before - offs.length };
           },
@@ -238,7 +240,11 @@ describe('staff requests over HTTP', () => {
             where: { weekId: string; employeeId: string };
           }) =>
             shifts
-              .filter((s) => s.weekId === where.weekId && s.employeeId === where.employeeId)
+              .filter(
+                (s) =>
+                  s.weekId === where.weekId &&
+                  s.employeeId === where.employeeId,
+              )
               .sort((a, b) => a.tanggal.getTime() - b.tanggal.getTime()),
           upsert: ({
             where,

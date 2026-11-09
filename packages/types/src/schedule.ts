@@ -1,4 +1,5 @@
 import type { EmployeePosition } from './employee';
+import type { WeekStatus } from './request';
 import type { ShiftCode } from './shift';
 
 /**
@@ -14,6 +15,17 @@ export const ASSIGNMENT_SOURCES = [
 ] as const;
 
 export type AssignmentSource = (typeof ASSIGNMENT_SOURCES)[number];
+
+/**
+ * A jendela request that is open for a week: which week it collects requests
+ * for, and the instant it closes (Minggu 12.00 WITA of the week before).
+ */
+export interface OpenWindow {
+  /** Monday of the week whose requests the window collects. */
+  weekStartDate: string;
+  /** ISO instant the window closes; `now` past it locks the window (ADR 0002). */
+  requestDeadline: string;
+}
 
 /**
  * One cell of the manager's draft: a staff member on one day, with a shift or a
@@ -63,4 +75,35 @@ export interface DraftSchedule {
   assignments: DraftAssignment[];
   /** Recomputed from the assignments on every read, so an edit never goes stale. */
   warnings: CoverageWarning[];
+  /** `draft` until the manager publishes; null when no week exists yet. */
+  status: WeekStatus | null;
+  /** ISO instant of the publish; null while the week is a draft. */
+  publishedAt: string | null;
+  /**
+   * The jendela request publishing this week opened for the week after it
+   * (ADR 0004); null until this week is published.
+   */
+  nextWindow: OpenWindow | null;
+}
+
+/**
+ * One day of a published week, as the staff member it belongs to reads it. No
+ * name, position, or source: the staff surface shows only their own day, shift,
+ * and hours (F7), and carries nothing about anyone else.
+ */
+export interface PublishedAssignment {
+  /** `YYYY-MM-DD` inside the published week. */
+  tanggal: string;
+  /** Null is hari libur, the same cell the manager wrote. */
+  shiftCode: ShiftCode | null;
+}
+
+/**
+ * The published minggu target as one employee sees it (F6/F7): the week the
+ * manager last published, holding only the caller's own placements.
+ */
+export interface PublishedWeek {
+  /** Monday of the published week, `YYYY-MM-DD`; null before the first publish. */
+  weekStartDate: string | null;
+  assignments: PublishedAssignment[];
 }

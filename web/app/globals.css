@@ -103,6 +103,7 @@ body {
   font-weight: var(--text-body-weight);
   line-height: var(--text-body-line-height);
   letter-spacing: var(--text-body-tracking);
+  text-decoration: none;
   cursor: pointer;
 }
 

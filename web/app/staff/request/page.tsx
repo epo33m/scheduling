@@ -74,8 +74,7 @@ export default async function RequestPage() {
 
       {gated ? (
         <p role="alert" className={styles.error}>
-          {loadError ??
-            'Menu request terbuka setelah masa probation selesai.'}
+          {loadError ?? 'Menu request terbuka setelah masa probation selesai.'}
         </p>
       ) : loadError ? (
         <p role="alert" className={styles.error}>

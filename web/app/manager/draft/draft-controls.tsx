@@ -5,6 +5,7 @@ import type { ShiftCode } from '@repo/types';
 import { SHIFT_LABEL } from '@/lib/request-labels';
 import {
   generateAction,
+  publishAction,
   saveAssignmentAction,
   type DraftActionState,
 } from './actions';
@@ -23,9 +24,38 @@ export function GenerateButton({ label }: { label: string }) {
   );
 
   return (
-    <form action={formAction} className={styles.generateForm}>
+    <form action={formAction} className={styles.actionForm}>
       <button type="submit" className="button-primary" disabled={pending}>
         {pending ? 'Menyusun draft...' : label}
+      </button>
+      {state.message ? (
+        <p
+          className={styles.cellNotice}
+          role={state.ok ? 'status' : 'alert'}
+          aria-live="polite"
+        >
+          {state.message}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+/**
+ * Publish (F6). The press flips the week live and opens the request window of
+ * the following week, so the copy says both; the screen then re-reads the week
+ * and swaps this for the share panel.
+ */
+export function PublishButton() {
+  const [state, formAction, pending] = useActionState(
+    publishAction,
+    initialState,
+  );
+
+  return (
+    <form action={formAction} className={styles.actionForm}>
+      <button type="submit" className="button-primary" disabled={pending}>
+        {pending ? 'Mempublish...' : 'Publish jadwal'}
       </button>
       {state.message ? (
         <p

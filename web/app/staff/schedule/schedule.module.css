@@ -1,0 +1,114 @@
+/* A staff member reads this on a phone at the bar, so it is one centered
+   column of seven rows: no column grid to squeeze on a small screen. */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-lg) 80px;
+}
+
+/* DESIGN.md Typography › {typography.display-lg} */
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg-size);
+  font-weight: var(--text-display-lg-weight);
+  line-height: var(--text-display-lg-line-height);
+  letter-spacing: var(--text-display-lg-tracking);
+}
+
+/* DESIGN.md Typography › {typography.body} */
+.lead {
+  margin: var(--spacing-sm) 0 var(--spacing-xl);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* Which week is on screen: the period, in the words the manager shared. */
+.weekBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+}
+
+.weekLabel {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+  color: var(--color-ink);
+}
+
+.weekValue {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* Seven days, one per row: the day on the left, what it holds on the right. */
+.days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.day:last-child {
+  border-bottom: 0;
+}
+
+.dayName {
+  margin: 0;
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+}
+
+/* Text-first status: the shift name, libur, or the gap, always in words
+   rather than by colour, so it survives a monochrome screen. */
+.dayShift {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* antislop-human R-27: the empty and error states each get their own surface. */
+.empty,
+.error {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.empty {
+  margin: 0 0 var(--spacing-lg);
+  color: var(--color-ink);
+}
+
+.error {
+  margin: 0 0 var(--spacing-lg);
+}
