@@ -1,3 +1,5 @@
+import { witaDate } from '../employee/probation';
+
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
@@ -7,13 +9,15 @@ const HOUR_MS = 3_600_000;
  * written on the Sunday of the running one — and on any other day it is the
  * Monday of the coming week. The date is a `@db.Date` calendar day, held as
  * midnight UTC the way every other date in this api is.
+ *
+ * "Today" is the WITA calendar day, not the UTC one: between 00.00 and 08.00
+ * WITA the UTC date is still yesterday, which would resolve the target to the
+ * week already running instead of the one being composed.
  */
 export function nextMonday(now: Date): Date {
-  const midnight = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-  const daysToMonday = (8 - midnight.getUTCDay()) % 7 || 7;
-  return new Date(midnight.getTime() + daysToMonday * DAY_MS);
+  const today = new Date(`${witaDate(now)}T00:00:00.000Z`);
+  const daysToMonday = (8 - today.getUTCDay()) % 7 || 7;
+  return new Date(today.getTime() + daysToMonday * DAY_MS);
 }
 
 /**

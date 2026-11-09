@@ -24,6 +24,21 @@ describe('minggu target', () => {
       new Date('2026-11-16T00:00:00.000Z'),
     );
   });
+
+  it('reads today in WITA, not UTC, just after midnight', () => {
+    // 16.30 UTC on Sunday is 00.30 WITA on Monday: the current week already
+    // opened, so the minggu target is the Monday after it.
+    expect(nextMonday(new Date('2026-11-15T16:30:00.000Z'))).toEqual(
+      new Date('2026-11-23T00:00:00.000Z'),
+    );
+  });
+
+  it('is tomorrow while it is still Sunday evening in WITA', () => {
+    // 15.59 UTC on Sunday is 23.59 WITA the same Sunday.
+    expect(nextMonday(new Date('2026-11-15T15:59:00.000Z'))).toEqual(
+      new Date('2026-11-16T00:00:00.000Z'),
+    );
+  });
 });
 
 describe('request deadline', () => {
