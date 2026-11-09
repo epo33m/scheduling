@@ -1,0 +1,1 @@
+Markdown documentation with numbered ADRs; agent skills managed through a `skills-lock.json` manifest and OpenAI-compatible YAML profiles; downstream project targets Bun workspaces + Turborepo, Next.js 16 App Router, NestJS, Prisma, Supabase Postgres, and Vitest/Jest.

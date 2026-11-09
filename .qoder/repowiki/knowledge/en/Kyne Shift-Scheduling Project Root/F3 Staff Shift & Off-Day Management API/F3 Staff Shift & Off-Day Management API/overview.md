@@ -1,0 +1,1 @@
+NestJS application root that wires Supabase-authenticated employee, request-management, health, and Prisma modules into a single F3 staff shift/off-day management API.

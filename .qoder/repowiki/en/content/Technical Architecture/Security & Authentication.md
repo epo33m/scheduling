@@ -15,6 +15,9 @@
 - [employee.prisma](file://api/prisma/schema/employee.prisma)
 - [20261108120100_hardening/migration.sql](file://api/prisma/migrations/20261108120100_hardening/migration.sql)
 - [route.ts](file://web/app/auth/callback/route.ts)
+- [e2e-login/route.ts](file://web/app/auth/e2e-login/route.ts)
+- [employee-gate.ts](file://web/lib/employee-gate.ts)
+- [login-error.ts](file://web/lib/login-error.ts)
 - [middleware.ts](file://web/lib/supabase/middleware.ts)
 - [config.ts](file://web/lib/supabase/config.ts)
 - [login-form.tsx](file://web/app/login/login-form.tsx)
@@ -29,7 +32,7 @@
 **Changes Made**
 - Updated Google OAuth PKCE flow documentation to reflect actual Supabase Auth SDK implementation with redirect-based authentication.
 - Added comprehensive JWT token verification using jose library with ES256 algorithm and JWKS key rotation support.
-- Documented employee whitelist validation through NestJS guards that reject unregistered emails with 403 responses.
+- Documented centralized employee whitelist validation through shared `employeeGate` module ensuring consistent authorization across OAuth callback and password-login flows.
 - Enhanced role-based access control documentation with manager and staff roles from the employee table.
 - Added secure cookie configuration details with 30-day session management and SameSite security settings.
 - Included open redirect protection through safeNext utility function.
@@ -47,11 +50,11 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-This document defines the security and authentication model for the Kyne shift scheduling application, which now includes a comprehensive Google OAuth PKCE authentication system with Supabase Auth integration. The implementation features employee whitelist validation, role-based access control (RBAC), JWT token verification, secure session management, and robust input validation mechanisms.
+This document defines the security and authentication model for the Kyne shift scheduling application, which now includes a comprehensive Google OAuth PKCE authentication system with Supabase Auth integration. The implementation features centralized employee whitelist validation, role-based access control (RBAC), JWT token verification, secure session management, and robust input validation mechanisms.
 
 The project implements production-ready security measures including:
 - Google OAuth PKCE redirect flow through Supabase Auth SDK
-- Employee whitelist validation rejecting unregistered accounts
+- Centralized employee whitelist validation via shared `employeeGate` module
 - Role-based access control with manager and staff permissions
 - JWT token verification using jose library with ES256 algorithm
 - Secure cookie configuration with 30-day session expiry
@@ -87,7 +90,7 @@ API --> Settings["Settings table<br/>Timezone, deadlines"]
 ## Core Components
 The security implementation includes:
 - **Authentication**: Google OAuth with PKCE redirect flow through Supabase Auth SDK
-- **Email Whitelist Validation**: NestJS guards enforce that only employees present in the employee table can log in
+- **Centralized Whitelist Validation**: Shared `employeeGate` module enforces that only employees present in the employee table can log in, used consistently across OAuth callback and password-login flows
 - **Role-Based Access Control**: Roles are manager and staff, derived from the employee table
 - **Session Handling**: 30-day session retention with secure cookie configuration
 - **JWT Verification**: ES256 algorithm with JWKS key rotation support
@@ -95,7 +98,7 @@ The security implementation includes:
 - **Data Protection**: RLS deny-all at the database layer; frontend never reads tables directly
 
 Key security constraints implemented:
-- Whitelist check occurs in NestJS AuthGuard; Supabase Auth allows any Google account unless blocked by employee table validation
+- Employee whitelist check occurs in centralized `employeeGate` module and NestJS AuthGuard; Supabase Auth allows any Google account unless blocked by employee table validation
 - Roles come from the employee table, not from JWT user_metadata
 - All database tables use RLS deny-all policies
 - Deadlines are server-enforced without cron jobs
@@ -144,7 +147,7 @@ The implementation uses PKCE redirect flow instead of popups to avoid issues on 
 
 Security notes:
 - Do not rely on JWT user_metadata for roles; always resolve roles from the employee table in NestJS
-- Enforce email whitelist in NestJS to reject unregistered accounts even if Google authentication succeeds
+- Enforce email whitelist in centralized `employeeGate` module and NestJS to reject unregistered accounts even if Google authentication succeeds
 
 ```mermaid
 flowchart TD
@@ -155,7 +158,7 @@ HasSession --> |No| StartOAuth["Start Google OAuth PKCE"]
 StartOAuth --> Redirect["Redirect to Google"]
 Redirect --> Callback["Callback to /auth/callback"]
 Callback --> Tokens["Receive JWT and refresh token"]
-Tokens --> ValidateEmployee["Validate employee against whitelist"]
+Tokens --> ValidateEmployee["Validate employee against whitelist via employeeGate"]
 ValidateEmployee --> Allowed{"Employee allowed?"}
 Allowed --> |No| Deny["Return error 'Account not registered'"]
 Allowed --> |Yes| StoreSession["Store session securely"]
@@ -169,6 +172,81 @@ StoreSession --> LoadPage
 **Section sources**
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:106-112](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L106-L112)
 - [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:237-241](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L237-L241)
+
+### Centralized Employee Whitelist Validation
+The employee whitelist validation has been centralized in a shared `employeeGate` module that provides consistent authorization checks across all authentication surfaces:
+
+**Updated** The employee whitelist gate is now implemented as a shared module called from both OAuth callback and password-login shortcut routes, ensuring consistent authorization checks across all app surfaces.
+
+The centralized approach provides:
+- **Single Source of Truth**: All authentication flows use the same `employeeGate` function
+- **Consistent Error Handling**: Standardized error responses for unauthorized access attempts
+- **Maintainable Security Logic**: Changes to whitelist validation affect all authentication paths uniformly
+- **Fails-Safe Design**: Missing API_URL throws an error rather than allowing access
+
+Implementation details:
+- The `employeeGate` function calls `/auth/me` endpoint with the access token
+- Only HTTP 403 responses are treated as authorization failures
+- Network errors are handled gracefully to prevent locking out legitimate users
+- Error messages are mapped to standardized login error codes ('belum-terdaftar', 'tidak-aktif')
+
+```mermaid
+flowchart TD
+AuthFlow["Any Auth Flow"] --> CallGate["Call employeeGate(accessToken)"]
+CallGate --> CheckAPI["Check API_URL configured"]
+CheckAPI --> |Missing| ThrowError["Throw error: API_URL belum diset"]
+CheckAPI --> |Present| CallEndpoint["Call /auth/me with Bearer token"]
+CallEndpoint --> Response{"Response status"}
+Response --> |403| MapError["Map message to login error"]
+Response --> |Other| AllowAccess["Allow access"]
+MapError --> ReturnError["Return specific error type"]
+```
+
+**Diagram sources**
+- [employee-gate.ts:8-39](file://web/lib/employee-gate.ts#L8-L39)
+- [auth.controller.ts:11-14](file://api/src/auth/auth.controller.ts#L11-L14)
+
+**Section sources**
+- [employee-gate.ts:1-39](file://web/lib/employee-gate.ts#L1-L39)
+- [auth.controller.ts:1-16](file://api/src/auth/auth.controller.ts#L1-L16)
+
+### OAuth Callback and Password-Login Integration
+Both authentication entry points now use the centralized `employeeGate` module:
+
+**OAuth Callback Flow:**
+- Exchanges authorization code for session tokens
+- Calls `employeeGate` to validate employee status
+- Signs out locally if employee is rejected
+- Redirects to intended destination on success
+
+**Password-Login Shortcut (E2E):**
+- Uses real GoTrue authentication with predefined password
+- Applies same employee whitelist validation as OAuth flow
+- Ensures test environments have identical security behavior
+
+```mermaid
+sequenceDiagram
+participant OAuth as "OAuth Callback"
+participant E2E as "E2E Login"
+participant Gate as "employeeGate"
+participant API as "/auth/me"
+OAuth->>Gate : employeeGate(accessToken)
+E2E->>Gate : employeeGate(accessToken)
+Gate->>API : GET /auth/me with Bearer token
+API-->>Gate : 403 or 200
+Gate-->>OAuth : Error or null
+Gate-->>E2E : Error or null
+OAuth->>OAuth : Sign out if rejected
+E2E->>E2E : Sign out if rejected
+```
+
+**Diagram sources**
+- [route.ts:45-52](file://web/app/auth/callback/route.ts#L45-L52)
+- [e2e-login/route.ts:35-44](file://web/app/auth/e2e-login/route.ts#L35-L44)
+
+**Section sources**
+- [route.ts:1-56](file://web/app/auth/callback/route.ts#L1-L56)
+- [e2e-login/route.ts:1-48](file://web/app/auth/e2e-login/route.ts#L1-L48)
 
 ### Email Whitelist Validation and Registration
 Only employees whose Google email exists in the employee table may log in:
@@ -455,7 +533,7 @@ Troubleshooting steps:
 ## Conclusion
 The Kyne shift scheduling application's security model relies on a comprehensive, production-ready approach:
 - **Google OAuth PKCE via Supabase Auth**: Identity management with PKCE redirect flow
-- **Email whitelist enforcement in NestJS**: Employee table validation rejects unregistered accounts
+- **Centralized employee whitelist validation**: Shared `employeeGate` module ensures consistent authorization across OAuth callback and password-login flows
 - **Role-based access control**: Manager and staff roles derived from employee table
 - **JWT verification on every request**: ES256 algorithm with JWKS key rotation
 - **Database-level protection**: RLS deny-all policies prevent direct client access
@@ -463,4 +541,4 @@ The Kyne shift scheduling application's security model relies on a comprehensive
 - **Robust input validation**: Comprehensive validation, XSS protection, and CSRF mitigation
 - **PWA and mobile security**: Specialized handling for mobile browsers and standalone PWA modes
 
-These measures collectively ensure that only authorized users can access their own data, while the system remains resilient against common web vulnerabilities and mobile-specific security challenges.
+These measures collectively ensure that only authorized users can access their own data, while the system remains resilient against common web vulnerabilities and mobile-specific security challenges. The centralized approach to employee whitelist validation provides maintainable, consistent security across all authentication surfaces.

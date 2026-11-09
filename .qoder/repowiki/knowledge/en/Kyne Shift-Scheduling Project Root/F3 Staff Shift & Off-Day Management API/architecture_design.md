@@ -1,0 +1,5 @@
+Three cooperating layers under `api/`:
+- `src/` is the NestJS runtime: `app.module.ts` registers `PrismaModule`, `AuthModule` (Supabase JWT validation + role guard), `EmployeeModule`, `RequestModule`, `ScheduleModule`, and `HealthModule`; `main.ts` boots the app.
+- `prisma/schema.prisma` plus per-entity `.prisma` files define the PostgreSQL model; `migrations/` hold timestamped SQL migrations and `seed.ts` populates initial data.
+- `test/` boots the real `AppModule` via supertest against an in-memory Prisma client, reusing the same environment variables (`test/setup-env.ts`) so auth, RBAC, and business endpoints are exercised end-to-end.
+The shared boundary between runtime and persistence is the generated Prisma client consumed through `PrismaService`, while authentication flows from Supabase tokens into Nest's `AuthGuard`/`RolesGuard` pipeline before reaching any controller.

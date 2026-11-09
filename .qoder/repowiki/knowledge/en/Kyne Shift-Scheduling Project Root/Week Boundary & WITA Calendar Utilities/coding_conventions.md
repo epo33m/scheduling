@@ -1,0 +1,3 @@
+- Public API surface is kept minimal by re-exporting from a single barrel file (`index.ts` delegates to `weeks.ts`).
+- ISO date strings are produced and consumed as plain `YYYY-MM-DD` slices of `toISOString()`, never passed through `Date` objects across boundaries.
+- Timezone-sensitive calculations first normalize to UTC midnight via `${iso}T00:00:00.000Z` before arithmetic, keeping the day boundary unambiguous.

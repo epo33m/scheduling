@@ -1,0 +1,1 @@
+TypeScript 6 compiled to Node16 ESM output; testing via Vitest; timezone handling relies on native `Intl.DateTimeFormat` with `timeZone: 'Asia/Makassar'` rather than a third-party library.

@@ -1,1 +1,0 @@
-Markdown-based documentation with ADR numbering; agent skills managed via a `skills-lock.json` manifest and `agents/openai.yaml` profiles consumed by an OpenAI-compatible agent runner; downstream project uses Bun workspaces + Turborepo, Next.js 16 App Router, NestJS, Prisma, Supabase Postgres, and Vitest/Jest.

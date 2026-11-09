@@ -1,0 +1,1 @@
+NestJS controllers/services backed by Prisma ORM; input validation via shared `@repo/validators` Zod parsers; types from `@repo/types`; probation state advanced lazily via `advanceProbation` from `../employee/probation`.

@@ -1,0 +1,1 @@
+Build with `pnpm build` (runs `tsc --project tsconfig.json`), typecheck with `pnpm typecheck`, test with `pnpm test` (runs `vitest run`).

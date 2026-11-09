@@ -5,9 +5,16 @@
 - [page.tsx](file://web/app/manager/dashboard/page.tsx)
 - [actions.ts](file://web/app/manager/dashboard/actions.ts)
 - [decide-controls.tsx](file://web/app/manager/dashboard/decide-controls.tsx)
+- [draft-page.tsx](file://web/app/manager/draft/page.tsx)
+- [draft-controls.tsx](file://web/app/manager/draft/draft-controls.tsx)
+- [draft-actions.ts](file://web/app/manager/draft/actions.ts)
+- [draft-tabs.tsx](file://web/app/manager/draft/draft-tabs.tsx)
 - [dashboard.controller.ts](file://api/src/request/dashboard.controller.ts)
 - [dashboard.service.ts](file://api/src/request/dashboard.service.ts)
+- [schedule-controller.ts](file://api/src/schedule/schedule.controller.ts)
+- [schedule-service.ts](file://api/src/schedule/schedule.service.ts)
 - [conflicts.ts](file://api/src/request/conflicts.ts)
+- [probation.ts](file://api/src/employee/probation.ts)
 - [api.ts](file://web/lib/api.ts)
 - [dashboard.api-spec.ts](file://api/test/dashboard.api-spec.ts)
 - [conflicts.spec.ts](file://api/src/request/conflicts.spec.ts)
@@ -15,52 +22,57 @@
 
 ## Update Summary
 **Changes Made**
-- Updated Project Structure section with actual implementation files
-- Added detailed API endpoints and React Server Actions implementation
-- Enhanced Conflict Detection Engine documentation with 'bentrok' logic
-- Added comprehensive test coverage details across 16 files
-- Updated Probation Staff Handling improvements
-- Added real-time decision workflow with React Server Actions
-- Included complete REST API contract documentation
+- Added comprehensive Manager Draft Interface (F5) documentation with generate button functionality
+- Documented per-day edit cards with source information display system
+- Added middle shift restrictions and validation logic documentation
+- Updated critical fix for server value display in draft cells
+- Enhanced integration between dashboard and draft interfaces
+- Added complete API endpoints for draft management operations
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Conflict Detection Engine](#conflict-detection-engine)
-7. [REST API Endpoints](#rest-api-endpoints)
-8. [React Server Actions](#react-server-actions)
-9. [Probation Staff Handling](#probation-staff-handling)
-10. [Test Coverage](#test-coverage)
-11. [Performance Considerations](#performance-considerations)
-12. [Troubleshooting Guide](#troubleshooting-guide)
-13. [Conclusion](#conclusion)
+5. [Manager Dashboard Interface (F4)](#manager-dashboard-interface-f4)
+6. [Manager Draft Interface (F5)](#manager-draft-interface-f5)
+7. [Detailed Component Analysis](#detailed-component-analysis)
+8. [Conflict Detection Engine](#conflict-detection-engine)
+9. [REST API Endpoints](#rest-api-endpoints)
+10. [React Server Actions](#react-server-actions)
+11. [Probation Staff Handling](#probation-staff-handling)
+12. [Test Coverage](#test-coverage)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
 
 ## Introduction
 This document defines the functional specifications for the Manager Dashboard module (F4) within the Kyne Shift Scheduling application. The dashboard is the manager's single screen to review all upcoming-week requests, identify conflicts, and prepare for schedule drafting. It must clearly show pending approvals with priority indicators, highlight scheduling conflicts, and provide filtering by request type, date range, and employee.
 
-The project now includes a complete implementation with conflict detection engine ('bentrok' logic), REST API endpoints (/dashboard/requests), React Server Actions for decision workflow, probation staff handling improvements, and comprehensive test coverage across 16 files with ~1,886 lines of new code.
+The project now includes a complete implementation with conflict detection engine ('bentrok' logic), REST API endpoints (/dashboard/requests), React Server Actions for decision workflow, probation staff handling improvements, comprehensive test coverage across 16 files with ~1,886 lines of new code, and an enhanced Manager Draft Interface (F5) with generate button, per-day edit cards, source information display, and middle shift restrictions.
 
 **Section sources**
 - [page.tsx:105-112](file://web/app/manager/dashboard/page.tsx#L105-L112)
 - [dashboard.controller.ts:19-25](file://api/src/request/dashboard.controller.ts#L19-L25)
+- [draft-page.tsx:123-130](file://web/app/manager/draft/page.tsx#L123-L130)
 
 ## Project Structure
-The repository now contains a complete implementation of the Manager Dashboard with Next.js frontend components and NestJS backend services.
+The repository now contains a complete implementation of both the Manager Dashboard (F4) and Manager Draft Interface (F5) with Next.js frontend components and NestJS backend services.
 
 ```mermaid
 graph TB
 subgraph "Frontend (Next.js)"
-FE_Dashboard["Manager Dashboard Page"]
+FE_Dashboard["Manager Dashboard Page (F4)"]
+FE_Draft["Manager Draft Page (F5)"]
 FE_Actions["React Server Actions"]
 FE_Controls["Decision Controls"]
 FE_API["API Client"]
 end
 subgraph "Backend (NestJS)"
 BE_Controller["Dashboard Controller"]
+BE_ScheduleController["Schedule Controller"]
 BE_Service["Dashboard Service"]
+BE_ScheduleService["Schedule Service"]
 BE_Conflicts["Conflict Detection"]
 BE_Probation["Probation Logic"]
 end
@@ -69,23 +81,29 @@ DB["PostgreSQL (Supabase)"]
 PRISMA["Prisma ORM"]
 end
 FE_Dashboard --> FE_API
+FE_Draft --> FE_API
 FE_Actions --> BE_Controller
+FE_Actions --> BE_ScheduleController
 FE_Controls --> FE_Actions
 BE_Controller --> BE_Service
+BE_ScheduleController --> BE_ScheduleService
 BE_Service --> BE_Conflicts
 BE_Service --> DB
+BE_ScheduleService --> DB
 PRISMA --> DB
 ```
 
 **Diagram sources**
 - [page.tsx:113-147](file://web/app/manager/dashboard/page.tsx#L113-L147)
+- [draft-page.tsx:131-198](file://web/app/manager/draft/page.tsx#L131-L198)
 - [dashboard.controller.ts:23-31](file://api/src/request/dashboard.controller.ts#L23-L31)
-- [dashboard.service.ts:34-35](file://api/src/request/dashboard.service.ts#L34-L35)
+- [schedule-controller.ts:27-99](file://api/src/schedule/schedule.controller.ts#L27-L99)
 
 **Section sources**
 - [page.tsx:1-300](file://web/app/manager/dashboard/page.tsx#L1-L300)
+- [draft-page.tsx:1-495](file://web/app/manager/draft/page.tsx#L1-L495)
 - [dashboard.controller.ts:1-59](file://api/src/request/dashboard.controller.ts#L1-L59)
-- [dashboard.service.ts:1-186](file://api/src/request/dashboard.service.ts#L1-L186)
+- [schedule-controller.ts:1-100](file://api/src/schedule/schedule.controller.ts#L1-L100)
 
 ## Core Components
 The Manager Dashboard (F4) provides:
@@ -95,14 +113,23 @@ The Manager Dashboard (F4) provides:
 - Visual priority indicators to help managers triage urgent or problematic requests.
 - React Server Actions for secure decision-making workflows.
 
+The Manager Draft Interface (F5) provides:
+- Generate button to create drafts from previous week data.
+- Per-day edit cards with immediate save functionality.
+- Source information display showing assignment origins (copy, request, auto_middle, manual).
+- Middle shift restrictions for kitchen staff only.
+- Critical server value display fix for draft cells.
+
 Key data entities involved:
 - Employee: role, position (bar/kitchen), probation status, active status.
 - Off-request: weekly leave request per employee, with status and decision metadata.
 - Shift-request: weekly shift preference per employee per day, with status and decision metadata.
 - Schedule week: weekly context including deadline and status.
+- Draft assignment: per-day placement with source tracking and validation.
 
 **Section sources**
 - [page.tsx:54-63](file://web/app/manager/dashboard/page.tsx#L54-L63)
+- [draft-page.tsx:81-91](file://web/app/manager/draft/page.tsx#L81-L91)
 - [dashboard.service.ts:66-83](file://api/src/request/dashboard.service.ts#L66-L83)
 
 ## Architecture Overview
@@ -111,10 +138,13 @@ The Manager Dashboard is a client-side view that calls backend endpoints to retr
 ```mermaid
 sequenceDiagram
 participant M as "Manager Browser"
-participant D as "Dashboard UI"
+participant D as "Dashboard UI (F4)"
+participant G as "Draft UI (F5)"
 participant A as "React Server Actions"
 participant C as "Dashboard Controller"
+participant SC as "Schedule Controller"
 participant S as "Dashboard Service"
+participant SS as "Schedule Service"
 participant CF as "Conflict Detector"
 participant DB as "PostgreSQL"
 M->>D : Open Manager Dashboard
@@ -126,22 +156,172 @@ S->>CF : detectConflicts()
 CF-->>S : Conflict IDs
 S-->>C : RequestsDashboard
 C-->>D : JSON response
-D->>A : decideAction(formData)
-A->>C : PATCH /dashboard/requests/{kind}/{id}
-C->>S : decideOff/decideShift()
-S->>DB : Update request status
-DB-->>S : Updated record
-S-->>C : Decision result
-C-->>A : Success response
-A->>D : revalidatePath()
-D-->>M : Updated dashboard
+M->>G : Open Manager Draft
+G->>SC : GET /schedule/draft
+SC->>SS : draft()
+SS->>DB : Fetch draft assignments
+DB-->>SS : Assignments
+SS-->>SC : DraftSchedule
+SC-->>G : Draft data
+G->>A : generateAction(formData)
+A->>SC : POST /schedule/draft
+SC->>SS : generate()
+SS->>DB : Create draft from previous week
+DB-->>SS : Created draft
+SS-->>SC : DraftSchedule
+SC-->>A : Success response
+A->>G : revalidatePath()
+G-->>M : Updated draft interface
 ```
 
 **Diagram sources**
 - [page.tsx:113-147](file://web/app/manager/dashboard/page.tsx#L113-L147)
+- [draft-page.tsx:131-198](file://web/app/manager/draft/page.tsx#L131-L198)
 - [dashboard.controller.ts:28-57](file://api/src/request/dashboard.controller.ts#L28-L57)
+- [schedule-controller.ts:51-71](file://api/src/schedule/schedule.controller.ts#L51-L71)
 - [dashboard.service.ts:37-134](file://api/src/request/dashboard.service.ts#L37-L134)
-- [actions.ts:21-55](file://web/app/manager/dashboard/actions.ts#L21-L55)
+- [schedule-service.ts:71-130](file://api/src/schedule/schedule.service.ts#L71-L130)
+
+## Manager Dashboard Interface (F4)
+The original Manager Dashboard interface continues to provide comprehensive request management capabilities with enhanced integration to the new draft interface.
+
+### Request Overview Interface
+Purpose:
+- Show all pending leave and shift requests for the upcoming week with real-time conflict detection.
+- Indicate which requests are still open for change before the weekly deadline.
+- Provide quick access to details for each request with visual conflict indicators.
+
+UI elements:
+- Summary cards: total pending requests, number of conflicts, number of employees who have not requested yet.
+- Priority indicators:
+  - High: conflicts involving kitchen coverage or weekend coverage violations.
+  - Medium: conflicts in bar positions or weekday coverage concerns.
+  - Normal: valid requests awaiting decision.
+- Status badges: pending, approved, rejected.
+- Action buttons: approve, reject via React Server Actions.
+
+Data model mapping:
+- Off-request: employee, date, status, decided_by, decided_at.
+- Shift-request: employee, date, shift_type (morning/evening), status, decided_by, decided_at.
+- Employee: name, position, probation status, active flag.
+
+Acceptance criteria:
+- All pending requests for the upcoming week load within performance targets.
+- Conflicts are visually highlighted with clear labels and colors using the 'bentrok' system.
+- Managers can sort and filter requests by type, date, and employee.
+- The interface reflects real-time updates after decisions are made through React Server Actions.
+
+**Section sources**
+- [page.tsx:149-229](file://web/app/manager/dashboard/page.tsx#L149-L229)
+- [page.tsx:231-300](file://web/app/manager/dashboard/page.tsx#L231-L300)
+
+## Manager Draft Interface (F5)
+The new Manager Draft Interface provides advanced scheduling capabilities with enhanced user experience and robust validation.
+
+### Generate Button Functionality
+Purpose:
+- Create draft schedules from previous week data automatically.
+- Run the complete alur 4.1–4.4 process to populate the target week.
+- Replace existing draft data with fresh generated content.
+
+Implementation:
+- Single button form that works before hydration for reliability.
+- Uses useActionState for pending state management and success/error feedback.
+- Only available on target tab (not running week) to prevent overwriting live data.
+- Triggers full regeneration and database transaction for consistency.
+
+User experience:
+- Shows "Menyusun draft..." while processing.
+- Displays success message "Draft dibuat dari minggu lalu." on completion.
+- Automatically refreshes the page to show generated content.
+
+**Section sources**
+- [draft-controls.tsx:22-45](file://web/app/manager/draft/draft-controls.tsx#L22-L45)
+- [draft-actions.ts:35-48](file://web/app/manager/draft/actions.ts#L35-L48)
+
+### Per-Day Edit Cards
+Purpose:
+- Allow managers to edit individual day assignments directly.
+- Provide immediate save functionality without separate submit buttons.
+- Support different shift types based on employee position.
+
+Features:
+- Each staff member gets a card with seven day cells.
+- Select dropdowns for shift selection (PAGI, SORE, MIDDLE for kitchen; PAGI, SORE for bar).
+- Automatic form submission on select change.
+- Real-time validation and error feedback.
+
+Validation rules:
+- Libur only allowed Monday-Thursday (Senin-Kamis).
+- Friday-Sunday busy days require everyone to work.
+- Past days on running week are locked and read-only.
+- Position-specific shift availability (middle only for kitchen).
+
+**Section sources**
+- [draft-controls.tsx:104-176](file://web/app/manager/draft/draft-controls.tsx#L104-L176)
+- [draft-page.tsx:282-321](file://web/app/manager/draft/page.tsx#L282-L321)
+
+### Source Information Display
+Purpose:
+- Show managers where each assignment originated from.
+- Provide transparency about automatic vs manual placements.
+- Help managers understand the draft generation process.
+
+Source types:
+- `copy`: Assignment copied from previous week.
+- `request`: Assignment based on approved employee request.
+- `auto_middle`: Automatic middle shift assignment for kitchen coverage.
+- `manual`: Manual edit by manager.
+
+Display format:
+- Text label below each cell showing assignment source.
+- Indonesian labels for better user comprehension.
+- Special handling for past days ("Sudah lewat") and empty cells ("Belum diisi").
+
+**Section sources**
+- [draft-page.tsx:81-86](file://web/app/manager/draft/page.tsx#L81-L86)
+- [draft-page.tsx:307-313](file://web/app/manager/draft/page.tsx#L307-L313)
+
+### Middle Shift Restrictions
+Purpose:
+- Enforce business rules for middle shift assignments.
+- Ensure proper kitchen coverage during colleague absences.
+- Prevent invalid middle shift configurations.
+
+Business rules:
+- Middle shift only available for kitchen staff.
+- Middle shift only allowed Monday-Thursday (same as libur).
+- Automatic middle assignment when kitchen peer is on leave.
+- Never appears on Friday-Sunday busy days.
+
+Implementation:
+- Backend validation in schedule service edit method.
+- Frontend choice filtering (kitchen-only middle option).
+- Error messages for invalid middle shift attempts.
+
+**Section sources**
+- [draft-page.tsx:88-91](file://web/app/manager/draft/page.tsx#L88-L91)
+- [schedule-service.ts:393-402](file://api/src/schedule/schedule.service.ts#L393-L402)
+
+### Critical Fix for Server Value Display
+Purpose:
+- Ensure draft cells always display server-authoritative values.
+- Fix synchronization issues between client and server state.
+- Handle regeneration and refused edits gracefully.
+
+Technical implementation:
+- Uncontrolled select component with server value synchronization.
+- useEffect hook to sync client select value with server state.
+- Proper handling of null shift codes (libur) vs actual shift codes.
+- State-aware value updates after actions complete.
+
+Benefits:
+- Prevents display of stale client-side values.
+- Ensures consistency after batch operations.
+- Improves reliability of draft editing workflow.
+
+**Section sources**
+- [draft-controls.tsx:119-130](file://web/app/manager/draft/draft-controls.tsx#L119-L130)
 
 ## Detailed Component Analysis
 
@@ -239,7 +419,7 @@ Key features:
 - [conflicts.ts:68-110](file://api/src/request/conflicts.ts#L68-L110)
 
 ## REST API Endpoints
-The dashboard exposes RESTful endpoints for reading requests and making decisions.
+The dashboard exposes RESTful endpoints for reading requests and making decisions, plus new endpoints for draft management.
 
 ### GET /dashboard/requests
 Returns the complete dashboard data including requests, conflicts, and reminder lists.
@@ -278,15 +458,46 @@ Request body:
 }
 ```
 
-All endpoints require manager role authentication and return appropriate error codes for unauthorized access.
+### GET /schedule/draft
+Retrieves the draft schedule for a specific week alias.
+
+Query parameters:
+- `week`: 'target' | 'running' (defaults to 'target')
+
+### POST /schedule/draft
+Generates a new draft from the previous week (target only).
+
+### POST /schedule/publish
+Publishes a schedule and opens the next request window.
+
+Query parameters:
+- `week`: 'target' | 'running'
+
+### PUT /schedule/draft/assignment
+Updates a single draft assignment cell.
+
+Request body:
+```json
+{
+  "employeeId": "string",
+  "tanggal": "YYYY-MM-DD",
+  "shiftCode": "PAGI" | "SORE" | "MIDDLE" | null,
+  "week": "target" | "running"
+}
+```
+
+All endpoints require appropriate role authentication and return standardized error responses.
 
 **Section sources**
 - [dashboard.controller.ts:28-57](file://api/src/request/dashboard.controller.ts#L28-L57)
+- [schedule-controller.ts:51-99](file://api/src/schedule/schedule.controller.ts#L51-L99)
 - [dashboard.service.ts:37-134](file://api/src/request/dashboard.service.ts#L37-L134)
+- [schedule-service.ts:71-431](file://api/src/schedule/schedule.service.ts#L71-L431)
 
 ## React Server Actions
 The dashboard uses React Server Actions for secure decision-making workflows with automatic form validation and state management.
 
+### Dashboard Actions
 Key features:
 - Form-based submission with hidden fields for request type and ID.
 - Automatic revalidation of dashboard data after successful decisions.
@@ -300,8 +511,21 @@ Implementation details:
 - Integration with Next.js caching system for real-time updates.
 - Graceful error handling with fallback messages.
 
+### Draft Actions
+New draft-related server actions:
+- `generateAction()`: Creates draft from previous week data.
+- `publishAction()`: Publishes schedule and opens next request window.
+- `saveAssignmentAction()`: Updates individual draft assignment cells.
+
+Features:
+- Week alias support for target vs running week operations.
+- Comprehensive input validation and sanitization.
+- Transactional database operations for data consistency.
+- Real-time path revalidation for immediate UI updates.
+
 **Section sources**
-- [actions.ts:1-55](file://web/app/manager/dashboard/actions.ts#L1-L55)
+- [actions.ts:1-56](file://web/app/manager/dashboard/actions.ts#L1-L56)
+- [draft-actions.ts:1-112](file://web/app/manager/draft/actions.ts#L1-L112)
 - [decide-controls.tsx:1-70](file://web/app/manager/dashboard/decide-controls.tsx#L1-L70)
 
 ## Probation Staff Handling
@@ -321,6 +545,7 @@ Implementation:
 
 **Section sources**
 - [dashboard.service.ts:66-83](file://api/src/request/dashboard.service.ts#L66-L83)
+- [probation.ts:1-46](file://api/src/employee/probation.ts#L1-L46)
 - [dashboard.api-spec.ts:339-380](file://api/test/dashboard.api-spec.ts#L339-L380)
 
 ## Test Coverage
@@ -331,6 +556,7 @@ Test categories:
 - **Conflict Detection Tests**: Unit tests for the 'bentrok' algorithm covering all edge cases.
 - **Probation Logic Tests**: Verification of probation status advancement and handling.
 - **Integration Tests**: Full-stack testing with Supabase JWT authentication.
+- **Draft Interface Tests**: Testing of generate, publish, and assignment operations.
 
 Key test scenarios:
 - Kitchen leave conflicts between multiple employees.
@@ -338,6 +564,9 @@ Key test scenarios:
 - Probation staff inclusion in coverage calculations.
 - Access control enforcement for manager-only endpoints.
 - Decision workflow persistence and audit trail.
+- Draft generation from previous week data.
+- Middle shift restriction validation.
+- Server value synchronization in draft cells.
 
 Test infrastructure:
 - In-memory database mocks for fast execution.
@@ -355,6 +584,7 @@ Target behaviors:
 - Filter operations respond within 500 milliseconds.
 - Real-time updates reflect new decisions within 3 seconds using efficient polling or server-sent events.
 - Conflict computation runs on the backend to avoid heavy client-side processing.
+- Draft generation completes within 5 seconds for typical staff sizes.
 
 Optimization strategies:
 - Paginate or virtualize large request lists.
@@ -362,6 +592,8 @@ Optimization strategies:
 - Use indexed queries for weekId, employeeId, and status fields.
 - Avoid unnecessary re-renders by memoizing components and minimizing state changes.
 - React Server Actions eliminate client-side state synchronization overhead.
+- Efficient draft compilation with parallel data loading.
+- Optimized database transactions for bulk operations.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -370,18 +602,26 @@ Common issues and resolutions:
 - Filters returning empty results: validate date range selection and employee filters; ensure timezone settings align with WITA.
 - Slow loading: inspect network requests for large payloads; enable pagination and reduce returned fields.
 - Decision actions failing: check React Server Action configuration and API connectivity.
+- Draft generation fails: verify previous week exists and has sufficient data; check staff availability and permissions.
+- Middle shift errors: ensure employee is kitchen staff and day is Monday-Thursday; verify business rules are properly enforced.
+- Server value display issues: check useEffect synchronization and server state consistency.
 
 Operational checks:
 - Confirm database indexes exist for frequently queried columns.
 - Validate that auth middleware enforces RBAC for dashboard endpoints.
 - Ensure error responses include actionable messages for managers.
 - Verify probation staff handling logic in production environments.
+- Monitor draft generation performance and database transaction times.
 
 **Section sources**
 - [dashboard.controller.ts:1-59](file://api/src/request/dashboard.controller.ts#L1-L59)
+- [schedule-controller.ts:1-100](file://api/src/schedule/schedule.controller.ts#L1-L100)
 - [dashboard.service.ts:136-186](file://api/src/request/dashboard.service.ts#L136-L186)
+- [schedule-service.ts:432-534](file://api/src/schedule/schedule.service.ts#L432-L534)
 
 ## Conclusion
-The Manager Dashboard (F4) centralizes request review and conflict resolution for the upcoming week with a complete implementation featuring the 'bentrok' conflict detection engine, REST API endpoints, React Server Actions, and comprehensive test coverage. It presents pending approvals with clear priority indicators, highlights scheduling conflicts, and supports robust filtering and bulk actions. Acceptance criteria emphasize performance, real-time updates, and accurate visualization. Integration with employee, request, and schedule modules ensures consistent data and reliable decision logging.
+The Manager Dashboard (F4) centralizes request review and conflict resolution for the upcoming week with a complete implementation featuring the 'bentrok' conflict detection engine, REST API endpoints, React Server Actions, and comprehensive test coverage. The addition of the Manager Draft Interface (F5) enhances the system with advanced scheduling capabilities including generate button functionality, per-day edit cards, source information display, middle shift restrictions, and critical server value display fixes.
 
-The implementation demonstrates best practices in TypeScript, React Server Actions, NestJS architecture, and comprehensive testing, providing a solid foundation for future enhancements and maintenance.
+Together, these interfaces provide a comprehensive solution for shift scheduling management, presenting pending approvals with clear priority indicators, highlighting scheduling conflicts, supporting robust filtering and bulk actions, and enabling detailed draft creation and editing. Acceptance criteria emphasize performance, real-time updates, accurate visualization, and seamless integration between request management and schedule drafting workflows.
+
+The implementation demonstrates best practices in TypeScript, React Server Actions, NestJS architecture, and comprehensive testing, providing a solid foundation for future enhancements and maintenance while maintaining backward compatibility with existing dashboard functionality.
