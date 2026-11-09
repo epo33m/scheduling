@@ -3,6 +3,16 @@ import type { WeekStatus } from './request';
 import type { ShiftCode } from './shift';
 
 /**
+ * Which minggu a manager surface is looking at (issue #20, ADR 0005). The two
+ * weeks are live at the same time: `running` is the one the staff are working
+ * through and `target` is the next one being composed (ADR 0004). Callers pick
+ * by alias only; the server derives the dates, never the other way round.
+ */
+export const WEEK_ALIASES = ['running', 'target'] as const;
+
+export type WeekAlias = (typeof WEEK_ALIASES)[number];
+
+/**
  * Where a placement in a week's schedule came from (PRD §Model data): the copy
  * of last week's schedule (alur 4.1), a request the manager approved (4.2/4.3),
  * the automatic middle of a lone kitchen staff (4.4), or the manager's edit.

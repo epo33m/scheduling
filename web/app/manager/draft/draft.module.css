@@ -72,6 +72,42 @@
   letter-spacing: var(--text-body-tracking);
 }
 
+/* Minggu berjalan / Minggu target switch (issue #20). Text-first underline
+   tabs: the single Action Blue accent marks the selected week, the hairline
+   under the row is the only chrome, and each tab is a full 44px tap target. */
+.tabs {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.tab {
+  min-height: 44px;
+  padding: 0 var(--spacing-xs);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--color-ink);
+  font-family: var(--font-text);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+  cursor: pointer;
+}
+
+.tab[data-active] {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: var(--text-body-strong-weight);
+}
+
+.tabPanel:focus-visible {
+  outline-offset: 2px;
+}
+
 /* A manager action, with its outcome notice under it. */
 .actionForm {
   display: flex;

@@ -9,6 +9,7 @@ import type {
   ShiftCode,
   ShiftRequestView,
   StaffRequests,
+  WeekAlias,
 } from '@repo/types';
 import { createServerSupabaseClient } from './supabase/server';
 
@@ -178,31 +179,35 @@ export function decideRequest(
 }
 
 /**
- * The draft of the minggu target (F5): every staff member, every day. Manager
- * only, which is what keeps the draft invisible to staff before publish.
+ * The draft of one minggu (F5): every staff member, every day. The `week`
+ * alias picks the running or target minggu (issue #20); it defaults to the
+ * target so a caller that has not adopted the toggle still sees next week.
+ * Manager only, which is what keeps the draft invisible to staff before
+ * publish.
  */
-export function getDraft(): Promise<DraftSchedule> {
-  return authorizedFetch('/schedule/draft', { method: 'GET' }).then(
-    (r) => r.json() as Promise<DraftSchedule>,
-  );
+export function getDraft(week: WeekAlias = 'target'): Promise<DraftSchedule> {
+  return authorizedFetch(`/schedule/draft?week=${week}`, {
+    method: 'GET',
+  }).then((r) => r.json() as Promise<DraftSchedule>);
 }
 
 /** "Buat draft dari minggu lalu": runs alur 4.1–4.4 and replaces the draft. */
-export function generateDraft(): Promise<DraftSchedule> {
-  return authorizedFetch('/schedule/draft', { method: 'POST' }).then(
-    (r) => r.json() as Promise<DraftSchedule>,
-  );
+export function generateDraft(week: WeekAlias): Promise<DraftSchedule> {
+  return authorizedFetch(`/schedule/draft?week=${week}`, {
+    method: 'POST',
+  }).then((r) => r.json() as Promise<DraftSchedule>);
 }
 
 /**
  * Publish (F6): the week becomes staff-visible and the request window of the
  * following week opens. The api answers with the week as it now stands, which
- * is also what carries the share link's deadline.
+ * is also what carries the share link's deadline. A still-draft running week
+ * can be published late through the same call (issue #20).
  */
-export function publishSchedule(): Promise<DraftSchedule> {
-  return authorizedFetch('/schedule/publish', { method: 'POST' }).then(
-    (r) => r.json() as Promise<DraftSchedule>,
-  );
+export function publishSchedule(week: WeekAlias): Promise<DraftSchedule> {
+  return authorizedFetch(`/schedule/publish?week=${week}`, {
+    method: 'POST',
+  }).then((r) => r.json() as Promise<DraftSchedule>);
 }
 
 /**
@@ -221,8 +226,9 @@ export function saveAssignment(
   employeeId: string,
   tanggal: string,
   shiftCode: ShiftCode | null,
+  week: WeekAlias,
 ): Promise<DraftAssignment> {
-  return authorizedFetch('/schedule/draft/assignment', {
+  return authorizedFetch(`/schedule/draft/assignment?week=${week}`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ employeeId, tanggal, shiftCode }),

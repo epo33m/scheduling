@@ -3,12 +3,17 @@ import {
   test,
   type Browser,
   type BrowserContext,
+  type Locator,
   type Page,
 } from '@playwright/test';
-import { MIDDLE_CLOSING_NOTICE } from '../lib/request-labels';
+import { MIDDLE_CLOSING_NOTICE, targetWeekDays } from '../lib/request-labels';
 import { formatWeekRange } from '../lib/share';
 import { E2E_EMAILS } from '../lib/e2e-fixtures';
-import { runningMondayIso, targetMondayIso } from '@repo/weeks';
+import {
+  runningMondayIso,
+  targetMondayIso,
+  witaCalendarDate,
+} from '@repo/weeks';
 
 /**
  * The T9 end-to-end criterion: one full weekly cycle lands green. Kiki asks
@@ -62,6 +67,32 @@ function weekSection(page: Page, monday: string) {
       name: `Minggu ${formatWeekRange(monday)}`,
     }),
   });
+}
+
+/**
+ * "Senin, 9 November 2026" for a week's Monday — the shape the draft screen's
+ * week bar prints. The day cells spell only the weekday ("Senin"), and those
+ * come from `targetWeekDays` in the app itself, so the spec reads them there
+ * rather than formatting a second copy.
+ */
+function weekLabel(iso: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Makassar',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${iso}T00:00:00.000Z`));
+}
+
+/**
+ * One staff member's card inside a tab panel. The day labels repeat across the
+ * cards, so an edit has to be aimed at one person's row. `hasText` rather than
+ * a `has` locator: the inner locator of `has` is re-rooted inside each
+ * candidate `li`, so a chain that starts at the panel could never match.
+ */
+function staffCard(panel: Locator, name: string): Locator {
+  return panel.getByRole('listitem').filter({ hasText: name });
 }
 
 test.afterEach(async () => {
@@ -141,4 +172,102 @@ test('full weekly cycle: request, approve, draft, validate, publish, staff view'
   await expect(
     weekSection(rian, target).getByText('Total jam kerja: 56 jam'),
   ).toBeVisible();
+});
+
+/**
+ * The issue #20 criterion (ADR 0005): after Monday the manager still reaches
+ * the minggu the staff are living through, edits today and onward, keeps the
+ * WhatsApp share link, and cannot rewrite a day already past. The running week
+ * is the published fixture, so the lock is the only thing standing between the
+ * manager's click and a schedule staff already worked by.
+ */
+test('minggu berjalan toggle: reach, edit and share the running week', async ({
+  browser,
+}) => {
+  test.slow();
+
+  const running = runningMondayIso();
+  const today = witaCalendarDate(new Date());
+  const maya = await loginTo(browser, E2E_EMAILS.manager, '/manager/draft');
+
+  const runningTab = maya.getByRole('tab', { name: 'Minggu berjalan' });
+  const targetTab = maya.getByRole('tab', { name: 'Minggu target' });
+
+  // 1. The screen lands on the minggu target, and only that one panel is in
+  // the DOM: the toggle swaps panels rather than hiding them, so every label
+  // has exactly one match.
+  await expect(targetTab).toHaveAttribute('aria-selected', 'true');
+  await expect(runningTab).toHaveAttribute('aria-selected', 'false');
+  await expect(maya.getByRole('tabpanel')).toHaveCount(1);
+  await expect(
+    maya.getByRole('button', { name: 'Buat draft dari minggu lalu' }),
+  ).toBeVisible();
+
+  // 2. Switching to the running week swaps the whole panel. The generate
+  // button belongs to the target tab only (ADR 0005), so its disappearance is
+  // the proof the swap actually happened.
+  await runningTab.click();
+  await expect(maya.getByRole('tabpanel')).toHaveCount(1);
+  await expect(
+    maya.getByRole('button', { name: 'Buat draft dari minggu lalu' }),
+  ).toHaveCount(0);
+
+  const runningPanel = maya.getByRole('tabpanel', { name: 'Minggu berjalan' });
+  await expect(
+    runningPanel.getByText(weekLabel(running), { exact: true }),
+  ).toBeVisible();
+
+  // 3. The share link survives the Monday: the running week was published, so
+  // the panel carries its outcome and the WhatsApp message, not a publish press.
+  await expect(runningPanel.getByText(/Sudah dipublish/)).toBeVisible();
+  await expect(
+    runningPanel.getByRole('button', { name: 'Publish jadwal' }),
+  ).toHaveCount(0);
+  await expect(
+    runningPanel.getByRole('link', { name: 'Bagikan ke WhatsApp' }),
+  ).toBeVisible();
+
+  // 4. Every day before today (WITA) is read-only and says why in words; today
+  // and the days ahead stay editable. Walked across the whole week so the rule
+  // holds whichever day the suite happens to run on.
+  const dila = staffCard(runningPanel, 'Dila');
+
+  for (const day of targetWeekDays(running)) {
+    const select = dila.getByLabel(day.name);
+
+    if (day.tanggal < today) {
+      await expect(select, `${day.tanggal} is past`).toBeDisabled();
+      // Each past day carries its own notice, so the count is the proof.
+      await expect(
+        dila.getByText('Sudah lewat'),
+        `${day.tanggal} explains its lock`,
+      ).not.toHaveCount(0);
+    } else {
+      await expect(select, `${day.tanggal} is live`).toBeEnabled();
+    }
+  }
+
+  // 5. A live day of the running week saves like any other draft cell: the
+  // lock stops at the past, it does not freeze the whole week.
+  const liveDay =
+    targetWeekDays(running).find((day) => day.tanggal >= today) ??
+    targetWeekDays(running)[0];
+  const liveSelect = dila.getByLabel(liveDay.name);
+  const picked = (await liveSelect.inputValue()) === 'SORE' ? 'PAGI' : 'SORE';
+  await liveSelect.selectOption({ value: picked });
+  await expect(dila.getByText('Tersimpan.')).toBeVisible();
+
+  // 6. The tab row is a keyboard-operable tablist: arrow keys move focus and
+  // the selection follows focus, and the row wraps at its ends.
+  await runningTab.focus();
+  await runningTab.press('ArrowRight');
+  await expect(targetTab).toBeFocused();
+  await expect(targetTab).toHaveAttribute('aria-selected', 'true');
+  await expect(
+    maya.getByRole('button', { name: 'Buat draft dari minggu lalu' }),
+  ).toBeVisible();
+
+  await targetTab.press('ArrowRight');
+  await expect(runningTab).toBeFocused();
+  await expect(runningTab).toHaveAttribute('aria-selected', 'true');
 });

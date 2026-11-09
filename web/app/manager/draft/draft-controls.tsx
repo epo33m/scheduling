@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
-import type { ShiftCode } from '@repo/types';
+import type { ShiftCode, WeekAlias } from '@repo/types';
 import { SHIFT_LABEL } from '@/lib/request-labels';
 import {
   generateAction,
@@ -15,7 +15,9 @@ const initialState: DraftActionState = { ok: false, message: '' };
 
 /**
  * The one button of the screen. A plain form, so it works before hydration;
- * useActionState adds the pending disable and the outcome notice.
+ * useActionState adds the pending disable and the outcome notice. It only ever
+ * appears on the target tab: "Buat draft dari minggu lalu" has no meaning for
+ * the minggu the staff are already living through (issue #20).
  */
 export function GenerateButton({ label }: { label: string }) {
   const [state, formAction, pending] = useActionState(
@@ -25,6 +27,7 @@ export function GenerateButton({ label }: { label: string }) {
 
   return (
     <form action={formAction} className={styles.actionForm}>
+      <input type="hidden" name="week" value="target" />
       <button type="submit" className="button-primary" disabled={pending}>
         {pending ? 'Menyusun draft...' : label}
       </button>
@@ -44,9 +47,11 @@ export function GenerateButton({ label }: { label: string }) {
 /**
  * Publish (F6). The press flips the week live and opens the request window of
  * the following week, so the copy says both; the screen then re-reads the week
- * and swaps this for the share panel.
+ * and swaps this for the share panel. The hidden week keeps the press on the
+ * tab the manager is looking at, so a still-draft running week can be published
+ * late (issue #20).
  */
-export function PublishButton() {
+export function PublishButton({ week }: { week: WeekAlias }) {
   const [state, formAction, pending] = useActionState(
     publishAction,
     initialState,
@@ -54,6 +59,7 @@ export function PublishButton() {
 
   return (
     <form action={formAction} className={styles.actionForm}>
+      <input type="hidden" name="week" value={week} />
       <button type="submit" className="button-primary" disabled={pending}>
         {pending ? 'Mempublish...' : 'Publish jadwal'}
       </button>
@@ -81,13 +87,19 @@ interface CellProps {
   choices: readonly ShiftCode[];
   /** Senin–Kamis only: Jumat–Minggu is busy and everyone works. */
   liburAllowed: boolean;
+  /** The minggu this cell belongs to, sent with the edit (issue #20). */
+  week: WeekAlias;
+  /** A day before today (WITA): read-only, the api refuses the write too. */
+  locked: boolean;
 }
 
 /**
  * One staff member on one day. Changing the select submits the cell straight
  * away: a day's placement is a complete decision, so it needs no second button.
  * The submit button stays in the form (visually hidden) to keep it a real form
- * with a real submit control.
+ * with a real submit control. On the running tab a day already past comes back
+ * `locked`: its select is disabled so the manager cannot reach a shift staff
+ * have already worked.
  */
 export function AssignmentCell({
   employeeId,
@@ -96,6 +108,8 @@ export function AssignmentCell({
   shiftCode,
   choices,
   liburAllowed,
+  week,
+  locked,
 }: CellProps) {
   const [state, formAction, pending] = useActionState(
     saveAssignmentAction,
@@ -103,7 +117,7 @@ export function AssignmentCell({
   );
   const selectRef = useRef<HTMLSelectElement>(null);
   const serverValue = shiftCode ?? 'LIBUR';
-  const selectId = `assignment-${employeeId}-${tanggal}`;
+  const selectId = `assignment-${week}-${employeeId}-${tanggal}`;
 
   // The select stays uncontrolled so the form works before hydration, but the
   // server is the truth: after a regeneration or a refused edit it must show
@@ -117,6 +131,7 @@ export function AssignmentCell({
 
   return (
     <form action={formAction} className={styles.cell}>
+      <input type="hidden" name="week" value={week} />
       <input type="hidden" name="employeeId" value={employeeId} />
       <input type="hidden" name="tanggal" value={tanggal} />
       <label className={styles.cellDay} htmlFor={selectId}>
@@ -128,7 +143,7 @@ export function AssignmentCell({
         name="shiftCode"
         className={styles.select}
         defaultValue={serverValue}
-        disabled={pending}
+        disabled={pending || locked}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
       >
         {/* Kept as a disabled option on Jumat–Minggu so a day off written

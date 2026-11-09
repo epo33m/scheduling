@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { nextMonday, publishedWeekBounds, requestDeadlineFor } from './weeks';
+import {
+  nextMonday,
+  publishedWeekBounds,
+  requestDeadlineFor,
+  runningMonday,
+} from './weeks';
 
 /**
  * The minggu target and its jendela request deadline (ADR 0004 + ADR 0002):
@@ -55,6 +60,31 @@ describe('publishedWeekBounds', () => {
       new Date('2026-11-15T16:30:00.000Z'),
     );
     expect(target - running).toBe(7 * 86_400_000);
+  });
+});
+
+describe('minggu berjalan', () => {
+  it('is the Monday the staff are living through, one week before the target', () => {
+    // Senin 9 Nov 10.00 WITA (02.00 UTC): the running week opened that same
+    // Monday, and the minggu target is the next one (ADR 0004/0005).
+    expect(runningMonday(new Date('2026-11-09T02:00:00.000Z'))).toEqual(
+      new Date('2026-11-09T00:00:00.000Z'),
+    );
+  });
+
+  it('stays on this Monday when the UTC date is still yesterday', () => {
+    // 17.30 UTC on Sunday is 01.30 WITA on Monday: the running week just
+    // opened, so it is the Monday that started, not the Sunday's week.
+    expect(runningMonday(new Date('2026-11-15T17:30:00.000Z'))).toEqual(
+      new Date('2026-11-16T00:00:00.000Z'),
+    );
+  });
+
+  it('is exactly the target minus seven days across the WITA midnight edge', () => {
+    const now = new Date('2026-11-08T17:00:00.000Z'); // 01.00 WITA Senin
+    expect(runningMonday(now).getTime()).toBe(
+      nextMonday(now).getTime() - 7 * 86_400_000,
+    );
   });
 });
 

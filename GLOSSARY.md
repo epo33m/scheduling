@@ -18,6 +18,10 @@ _Hindari_: periode request, masa request
 Minggu yang jadwalnya sedang disusun lewat request dan draft; relatif terhadap jendela request yang berjalan.
 _Hindari_: minggu depan (ambigu), minggu berikutnya
 
+**Minggu berjalan**:
+Periode Senin–Minggu yang memuat hari ini (WITA) — jadwal yang sedang dijalani staf. Bagi manager ia dapat diedit mulai hari ini dan dipublish terlambat, sebagai lawan dari minggu target (ADR 0005).
+_Hindari_: minggu saat ini, minggu aktif, current week
+
 ### Request & keputusan
 
 **Request libur**:

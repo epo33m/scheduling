@@ -1,4 +1,5 @@
-import { SHIFT_CODES } from '@repo/types';
+import { SHIFT_CODES, WEEK_ALIASES } from '@repo/types';
+import type { WeekAlias } from '@repo/types';
 import { z } from 'zod';
 import { calendarDateSchema } from './employee';
 
@@ -27,4 +28,18 @@ export function parseAssignmentEdit(
         message:
           'Perubahan jadwal tidak valid. Pilih pagi, sore, middle, atau libur.',
       };
+}
+
+/**
+ * The `week` alias a manager route was called with (issue #20). An absent
+ * value is not an error: the caller simply means the minggu target, which is
+ * what every draft route did before the toggle existed. Anything other than
+ * `running` or `target` is refused so a typo cannot silently edit the wrong
+ * week.
+ */
+export function parseWeekAlias(raw: unknown): WeekAlias | null {
+  return typeof raw === 'string' &&
+    (WEEK_ALIASES as readonly string[]).includes(raw)
+    ? (raw as WeekAlias)
+    : null;
 }
