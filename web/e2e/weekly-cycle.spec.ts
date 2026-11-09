@@ -20,9 +20,16 @@ import { runningMondayIso, targetMondayIso } from './weeks';
 
 const opened: BrowserContext[] = [];
 
+// Same origin as baseURL in playwright.config.ts: a link path becomes a full
+// href for the cold-visit goto and the landing URL check.
+const ORIGIN = 'http://localhost:3210';
+
 /**
- * Sign in as one fixture account through the E2E-only password route and land
- * on `path`. One context per person: sessions must not leak between roles.
+ * Open the shared link (`path`) as one fixture account in a fresh context.
+ * A cold visitor is first bounced to the login page carrying the link, the
+ * step the staff take when they tap it in the WhatsApp message; the E2E-only
+ * password route then plays the sign-in that returns them there.
+ * One context per person: sessions must not leak between roles.
  */
 async function loginTo(
   browser: Browser,
@@ -32,11 +39,18 @@ async function loginTo(
   const context = await browser.newContext();
   opened.push(context);
   const page = await context.newPage();
+  const link = new URL(path, ORIGIN);
 
-  await page.goto(
-    `/auth/e2e-login?email=${encodeURIComponent(email)}&next=${encodeURIComponent(path)}`,
-  );
-  await expect(page).toHaveURL(new RegExp(`${path}$`));
+  await page.goto(link.pathname + link.search);
+  await expect(page).toHaveURL(/\/login\?next=/);
+
+  const href =
+    '/auth/e2e-login?email=' +
+    encodeURIComponent(email) +
+    '&next=' +
+    encodeURIComponent(link.pathname + link.search);
+  await page.goto(href);
+  await expect(page).toHaveURL(link.href);
 
   return page;
 }

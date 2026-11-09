@@ -44,9 +44,10 @@ export class ScheduleController {
   }
 
   /**
-   * The published week as a staff member reads it (F6/F7). Method-level roles
-   * override the manager-only class: the staff surface is the published week,
-   * never the draft, and the service only returns the caller's own rows.
+   * The published weeks as a staff member reads them (F6/F7): the running
+   * week and the minggu target. Method-level roles override the
+   * manager-only class: the staff surface is published content only, never
+   * the draft, and the service only returns the caller's own rows.
    */
   @Get('published')
   @Roles('staff')
