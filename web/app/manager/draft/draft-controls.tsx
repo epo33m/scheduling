@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import type { ShiftCode } from '@repo/types';
 import { SHIFT_LABEL } from '@/lib/request-labels';
 import {
@@ -49,6 +49,8 @@ interface CellProps {
   shiftCode: ShiftCode | null;
   /** Pagi and sore for bar; the kitchen adds middle (PRD §Jenis shift). */
   choices: readonly ShiftCode[];
+  /** Senin–Kamis only: Jumat–Minggu is busy and everyone works. */
+  liburAllowed: boolean;
 }
 
 /**
@@ -63,12 +65,25 @@ export function AssignmentCell({
   dayLabel,
   shiftCode,
   choices,
+  liburAllowed,
 }: CellProps) {
   const [state, formAction, pending] = useActionState(
     saveAssignmentAction,
     initialState,
   );
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const serverValue = shiftCode ?? 'LIBUR';
   const selectId = `assignment-${employeeId}-${tanggal}`;
+
+  // The select stays uncontrolled so the form works before hydration, but the
+  // server is the truth: after a regeneration or a refused edit it must show
+  // what the draft holds, not the value the manager last picked.
+  useEffect(() => {
+    const select = selectRef.current;
+    if (select && select.value !== serverValue) {
+      select.value = serverValue;
+    }
+  }, [serverValue, state]);
 
   return (
     <form action={formAction} className={styles.cell}>
@@ -78,14 +93,21 @@ export function AssignmentCell({
         {dayLabel}
       </label>
       <select
+        ref={selectRef}
         id={selectId}
         name="shiftCode"
         className={styles.select}
-        defaultValue={shiftCode ?? 'LIBUR'}
+        defaultValue={serverValue}
         disabled={pending}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
       >
-        <option value="LIBUR">Libur</option>
+        {/* Kept as a disabled option on Jumat–Minggu so a day off written
+            before this rule still displays instead of blanking the select. */}
+        {liburAllowed || shiftCode === null ? (
+          <option value="LIBUR" disabled={!liburAllowed}>
+            Libur
+          </option>
+        ) : null}
         {choices.map((code) => (
           <option key={code} value={code}>
             {SHIFT_LABEL[code]}

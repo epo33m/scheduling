@@ -223,45 +223,6 @@
   color: var(--color-ink);
 }
 
-/* Shift hours, read once and then known. */
-.legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.legendItem {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md) 0;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.legendItem:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.legendName {
-  font-family: var(--font-text);
-  font-size: var(--text-body-size);
-  font-weight: var(--text-body-strong-weight);
-  line-height: var(--text-body-strong-line-height);
-  letter-spacing: var(--text-body-strong-tracking);
-}
-
-.legendTime {
-  font-size: var(--text-caption-size);
-  line-height: var(--text-caption-line-height);
-  letter-spacing: var(--text-caption-tracking);
-  color: var(--color-ink);
-}
-
 /* antislop-human R-27: the empty and error states each get their own surface. */
 .empty,
 .error {

@@ -6,10 +6,9 @@ import type {
   EmployeePosition,
   ShiftCode,
 } from '@repo/types';
-import { SHIFT_TYPE_CATALOG } from '@repo/types';
 import { ApiError, getDraft } from '@/lib/api';
 import { POSITION_LABEL } from '@/lib/employee-labels';
-import { SHIFT_LABEL, targetWeekDays } from '@/lib/request-labels';
+import { targetWeekDays } from '@/lib/request-labels';
 import { AssignmentCell, GenerateButton } from './draft-controls';
 import styles from './draft.module.css';
 
@@ -163,8 +162,8 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
             Jadwal per staf
           </h2>
           <p className={styles.sectionLead}>
-            Middle dipakai otomatis saat hanya satu staf dapur yang masuk. Libur
-            bisa dipilih untuk setiap hari.
+            Middle dipakai otomatis saat hanya satu staf dapur yang masuk, di
+            hari rekannya libur. Libur hanya tersedia Senin sampai Kamis.
           </p>
 
           {staff.length === 0 ? (
@@ -193,6 +192,7 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
                             dayLabel={day.name}
                             shiftCode={cell?.shiftCode ?? null}
                             choices={choicesFor(row.position)}
+                            liburAllowed={day.offAllowed}
                           />
                           <p className={styles.source}>
                             {cell ? SOURCE_LABEL[cell.source] : 'Belum diisi'}
@@ -207,25 +207,6 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
           )}
         </section>
       )}
-
-      <section aria-labelledby="shift-heading">
-        <h2 id="shift-heading" className={styles.sectionTitle}>
-          Jam shift
-        </h2>
-        <ul className={styles.legend}>
-          {SHIFT_TYPE_CATALOG.map((shift) => (
-            <li key={shift.code} className={styles.legendItem}>
-              <span className={styles.legendName}>
-                {SHIFT_LABEL[shift.code]}
-              </span>
-              <span className={styles.legendTime}>
-                {shift.startTime.replace(':', '.')} sampai{' '}
-                {shift.endTime.replace(':', '.')} WITA
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
     </>
   );
 }
