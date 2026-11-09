@@ -3,6 +3,7 @@ import type {
   EmployeePosition,
   ShiftCode,
 } from '@repo/types';
+import { isQuietDay } from './weeks';
 
 /**
  * The draft compiler (F5): reproduces alur utama 4.1–4.4 on pure data, so the
@@ -80,15 +81,6 @@ function addDays(iso: string, days: number): string {
 /** Cell key: one staff member on one day. */
 function cellKey(employeeId: string, tanggal: string): string {
   return `${employeeId}|${tanggal}`;
-}
-
-/**
- * Middle exists because a kitchen peer is libur, and libur only exists Senin–Kamis
- * (PRD §Aturan bisnis), so middle never lands Jumat–Minggu (GLOSSARY › Middle).
- */
-function isMiddleDay(tanggal: string): boolean {
-  const weekday = new Date(`${tanggal}T00:00:00.000Z`).getUTCDay();
-  return weekday >= 1 && weekday <= 4;
 }
 
 /**
@@ -189,8 +181,11 @@ export function compileDraft(input: CompileInput): CompiledAssignment[] {
   // 4.4: a kitchen staff member becomes middle on a day a kitchen colleague is
   // libur, provided they are the only one working that day — the requested
   // shift they held is voided, since it is never what gets written.
+  //
+  // Middle exists because libur exists, and libur only exists Senin–Kamis, so
+  // middle never lands Jumat–Minggu (GLOSSARY › Middle).
   for (const tanggal of days) {
-    if (!isMiddleDay(tanggal)) {
+    if (!isQuietDay(tanggal)) {
       continue;
     }
 

@@ -345,6 +345,32 @@ describe('schedule draft over HTTP', () => {
     source: 'copy' | 'request' | 'auto_middle' | 'manual';
   }
 
+  interface CoverageWarningView {
+    tanggal: string;
+    position: 'bar' | 'kitchen';
+    shiftCode: 'PAGI' | 'SORE' | null;
+    headcount: number;
+    minimum: number;
+  }
+
+  function warningFor(
+    body: { warnings: CoverageWarningView[] },
+    tanggal: string,
+    position: 'bar' | 'kitchen',
+    shiftCode: 'PAGI' | 'SORE' | null,
+  ): CoverageWarningView {
+    const found = body.warnings.find(
+      (warning) =>
+        warning.tanggal === tanggal &&
+        warning.position === position &&
+        warning.shiftCode === shiftCode,
+    );
+    if (!found) {
+      throw new Error(`no ${position} warning for ${shiftCode} on ${tanggal}`);
+    }
+    return found;
+  }
+
   describe('access control', () => {
     it('refuses an unauthenticated caller', async () => {
       await request(app.getHttpServer()).get('/schedule/draft').expect(401);
@@ -626,6 +652,43 @@ describe('schedule draft over HTTP', () => {
           shiftCode: null,
         })
         .expect(400);
+    });
+
+    it('recomputes coverage on the read after an edit', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedPreviousWeek();
+
+      const generated = await request(app.getHttpServer())
+        .post('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+
+      // Sabtu is busy: two bar per shift, and one bar on pagi is half a crew.
+      const sabtu = isoDay(addDays(monday, 5));
+      expect(warningFor(generated.body, sabtu, 'bar', 'PAGI')).toMatchObject({
+        headcount: 1,
+        minimum: 2,
+      });
+
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: sabtu, shiftCode: 'SORE' })
+        .expect(200);
+
+      const draft = await request(app.getHttpServer())
+        .get('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(200);
+
+      expect(warningFor(draft.body, sabtu, 'bar', 'PAGI')).toMatchObject({
+        headcount: 0,
+        minimum: 2,
+      });
+      expect(warningFor(draft.body, sabtu, 'bar', 'SORE')).toMatchObject({
+        headcount: 1,
+        minimum: 2,
+      });
     });
 
     it('refuses a day outside the minggu target', async () => {

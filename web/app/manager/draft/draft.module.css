@@ -88,6 +88,66 @@
   color: var(--color-ink);
 }
 
+/* Coverage validation (T7): the manager's pre-publish check. It sits on
+   parchment rather than a warning colour, so the shortfall is carried by the
+   words and survives a monochrome screen (antislop-human). */
+.coverage {
+  margin: 0 0 var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+}
+
+.coverageTitle {
+  margin: 0 0 var(--spacing-sm);
+  font-family: var(--font-display);
+  font-size: var(--text-tagline-size);
+  font-weight: var(--text-tagline-weight);
+  line-height: var(--text-tagline-line-height);
+  letter-spacing: var(--text-tagline-tracking);
+}
+
+.coverageList {
+  display: grid;
+  gap: var(--spacing-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coverageDay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.coverageDayName {
+  margin: 0;
+  font-size: var(--text-caption-strong-size);
+  font-weight: var(--text-caption-strong-weight);
+  line-height: var(--text-caption-strong-line-height);
+  letter-spacing: var(--text-caption-strong-tracking);
+}
+
+.coverageWarnings {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+.coverageClear {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
 /* One card per staff member: a single column on a phone, two side by side as
    soon as both fit, never a table of seven narrow columns. */
 .staffGrid {

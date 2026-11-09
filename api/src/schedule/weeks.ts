@@ -29,3 +29,21 @@ export function nextMonday(now: Date): Date {
 export function requestDeadlineFor(startDate: Date): Date {
   return new Date(startDate.getTime() - DAY_MS + 4 * HOUR_MS);
 }
+
+/** `iso` shifted by whole days, `YYYY-MM-DD` in and out, the `@db.Date` shape. */
+export function addDays(iso: string, days: number): string {
+  return new Date(new Date(`${iso}T00:00:00.000Z`).getTime() + days * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * Senin–Kamis: the cafe is quiet, so a libur is allowed, a lone kitchen becomes
+ * middle, and one bar per shift is enough. Jumat–Minggu is busy and everyone
+ * works (PRD §Aturan bisnis). The one place the schedule module asks which kind
+ * of day it is holding.
+ */
+export function isQuietDay(tanggal: string): boolean {
+  const weekday = new Date(`${tanggal}T00:00:00.000Z`).getUTCDay();
+  return weekday >= 1 && weekday <= 4;
+}

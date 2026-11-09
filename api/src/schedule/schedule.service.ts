@@ -18,6 +18,7 @@ import {
   type PreviousAssignment,
   type ShiftFact,
 } from './compiler';
+import { validateCoverage } from './coverage';
 import { nextMonday, requestDeadlineFor } from './weeks';
 
 const DAY_MS = 86_400_000;
@@ -59,6 +60,7 @@ export class ScheduleService {
         weekStartDate: null,
         copiedFromWeekStartDate: null,
         assignments: [],
+        warnings: [],
       };
     }
 
@@ -71,30 +73,33 @@ export class ScheduleService {
       ? weeks.find((week) => week.id === target.copiedFromWeekId)
       : undefined;
 
+    const draft = assignments
+      .map((assignment) => {
+        const employee = employees.find(
+          (row) => row.id === assignment.employeeId,
+        );
+        return {
+          employeeId: assignment.employeeId,
+          employeeName: employee?.name ?? '(staf dihapus)',
+          position: employee?.position ?? 'bar',
+          tanggal: toCalendarDate(assignment.tanggal),
+          shiftCode: assignment.shiftCode as ShiftCode | null,
+          source: assignment.source,
+        };
+      })
+      .sort(
+        (a, b) =>
+          a.tanggal.localeCompare(b.tanggal) ||
+          a.employeeId.localeCompare(b.employeeId),
+      );
+
     return {
       weekStartDate: toCalendarDate(target.startDate),
       copiedFromWeekStartDate: copiedFrom
         ? toCalendarDate(copiedFrom.startDate)
         : null,
-      assignments: assignments
-        .map((assignment) => {
-          const employee = employees.find(
-            (row) => row.id === assignment.employeeId,
-          );
-          return {
-            employeeId: assignment.employeeId,
-            employeeName: employee?.name ?? '(staf dihapus)',
-            position: employee?.position ?? 'bar',
-            tanggal: toCalendarDate(assignment.tanggal),
-            shiftCode: assignment.shiftCode as ShiftCode | null,
-            source: assignment.source,
-          };
-        })
-        .sort(
-          (a, b) =>
-            a.tanggal.localeCompare(b.tanggal) ||
-            a.employeeId.localeCompare(b.employeeId),
-        ),
+      assignments: draft,
+      warnings: validateCoverage(toCalendarDate(target.startDate), draft),
     };
   }
 
@@ -186,14 +191,15 @@ export class ScheduleService {
         ? toCalendarDate(previous.startDate)
         : null,
       assignments,
+      warnings: validateCoverage(toCalendarDate(target.startDate), assignments),
     };
   }
 
   /**
    * The manager's per-day edit (F5): pagi, sore, middle (kitchen only), or
    * libur. The row is stamped `manual` so the draft keeps saying where each
-   * placement came from. Nothing cascades — coverage validation (T7) reads the
-   * result and warns the manager.
+   * placement came from. Nothing cascades: the next read of the draft
+   * recomputes coverage and warns the manager.
    */
   async edit(
     actor: SessionEmployee,
