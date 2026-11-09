@@ -47,7 +47,10 @@ export function parseShiftRequest(
   const result = shiftRequestSchema.safeParse(body);
   return result.success
     ? { ok: true, value: result.data }
-    : { ok: false, message: 'Request shift tidak valid. Pilih pagi atau sore.' };
+    : {
+        ok: false,
+        message: 'Request shift tidak valid. Pilih pagi atau sore.',
+      };
 }
 
 /**

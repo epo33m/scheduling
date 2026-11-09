@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isWindowOpen, mostRecentWeek, resolveOpenWindow } from './request-window';
+import {
+  isWindowOpen,
+  mostRecentWeek,
+  resolveOpenWindow,
+} from './request-window';
 
 /**
  * The window-lock from ADR 0002: no cron, no stored open/closed flag. A request
@@ -25,12 +29,18 @@ describe('jendela request window-lock', () => {
 });
 
 describe('the open minggu target', () => {
-  const nextWeek = { id: 'w2', requestDeadline: new Date('2026-11-15T04:00:00Z') };
+  const nextWeek = {
+    id: 'w2',
+    requestDeadline: new Date('2026-11-15T04:00:00Z'),
+  };
   const followingWeek = {
     id: 'w3',
     requestDeadline: new Date('2026-11-22T04:00:00Z'),
   };
-  const pastWeek = { id: 'w1', requestDeadline: new Date('2026-11-08T04:00:00Z') };
+  const pastWeek = {
+    id: 'w1',
+    requestDeadline: new Date('2026-11-08T04:00:00Z'),
+  };
 
   it('resolves the nearest week whose deadline has not passed', () => {
     const now = new Date('2026-11-10T00:00:00Z');
