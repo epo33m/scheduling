@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type {
   AssignmentSource,
+  CoverageWarning,
   DraftAssignment,
   DraftSchedule,
   EmployeePosition,
@@ -8,7 +9,7 @@ import type {
 } from '@repo/types';
 import { ApiError, getDraft } from '@/lib/api';
 import { POSITION_LABEL } from '@/lib/employee-labels';
-import { targetWeekDays } from '@/lib/request-labels';
+import { SHIFT_LABEL, targetWeekDays } from '@/lib/request-labels';
 import { AssignmentCell, GenerateButton } from './draft-controls';
 import styles from './draft.module.css';
 
@@ -33,6 +34,16 @@ function formatWeek(monday: string): string {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${monday}T00:00:00.000Z`));
+}
+
+/** "Jumat, 20 November" for one day of the minggu target. */
+function formatDay(tanggal: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: WITA,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(`${tanggal}T00:00:00.000Z`));
 }
 
 /**
@@ -151,6 +162,8 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
         manual di sini. Draft ini hanya terlihat oleh manager, belum oleh staf.
       </p>
 
+      {weekStartDate ? <CoveragePanel warnings={draft.warnings} /> : null}
+
       {!weekStartDate ? (
         <p className={styles.empty}>
           Belum ada draft untuk minggu depan. Tombol di atas membuat minggu
@@ -208,5 +221,87 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
         </section>
       )}
     </>
+  );
+}
+
+/** One day's warnings, in the order the api sent them. */
+interface WarningDay {
+  tanggal: string;
+  warnings: CoverageWarning[];
+}
+
+function groupByDay(warnings: CoverageWarning[]): WarningDay[] {
+  const days = new Map<string, CoverageWarning[]>();
+
+  for (const warning of warnings) {
+    const day = days.get(warning.tanggal) ?? [];
+    day.push(warning);
+    days.set(warning.tanggal, day);
+  }
+
+  return [...days].map(([tanggal, rows]) => ({ tanggal, warnings: rows }));
+}
+
+/** One warning in the manager's words: which crew is short, and by how much. */
+function coverageLine(warning: CoverageWarning): string {
+  const position = POSITION_LABEL[warning.position];
+
+  // A quiet day's kitchen is covered by one person on any shift, middle too,
+  // so its warning is about the whole day rather than one shift.
+  if (warning.shiftCode === null) {
+    return `${position} belum ada yang masuk, termasuk middle.`;
+  }
+
+  const shift = SHIFT_LABEL[warning.shiftCode].toLowerCase();
+
+  if (warning.headcount === 0) {
+    return `${position} ${shift} belum ada yang masuk.`;
+  }
+
+  return `${position} ${shift} baru ${warning.headcount} orang, minimal ${warning.minimum}.`;
+}
+
+/**
+ * Coverage validation (T7, PRD §Aturan bisnis): the manager's pre-publish
+ * check, day by day. It warns and never blocks, so publishing still comes down
+ * to the manager's call. This screen is manager-only, which is what keeps the
+ * markers off the staff surface.
+ */
+function CoveragePanel({ warnings }: { warnings: CoverageWarning[] }) {
+  const days = groupByDay(warnings);
+
+  return (
+    <section aria-labelledby="coverage-heading" className={styles.coverage}>
+      <h2 id="coverage-heading" className={styles.coverageTitle}>
+        Validasi coverage
+      </h2>
+      <p className={styles.sectionLead}>
+        Peringatan ini hanya untuk Anda. Draft tetap bisa diubah dan dipublish
+        meskipun ada yang kurang.
+      </p>
+
+      {days.length === 0 ? (
+        <p className={styles.coverageClear}>
+          Setiap shift sudah memenuhi aturan coverage.
+        </p>
+      ) : (
+        <ul className={styles.coverageList}>
+          {days.map((day) => (
+            <li key={day.tanggal} className={styles.coverageDay}>
+              <h3 className={styles.coverageDayName}>
+                {formatDay(day.tanggal)}
+              </h3>
+              <ul className={styles.coverageWarnings}>
+                {day.warnings.map((warning) => (
+                  <li key={`${warning.position}-${warning.shiftCode ?? 'day'}`}>
+                    {coverageLine(warning)}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
