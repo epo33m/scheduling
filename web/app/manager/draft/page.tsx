@@ -7,7 +7,9 @@ import type {
   DraftSchedule,
   EmployeePosition,
   ShiftCode,
+  WeekAlias,
 } from '@repo/types';
+import { witaCalendarDate } from '@repo/weeks';
 import { ApiError, getDraft } from '@/lib/api';
 import { POSITION_LABEL } from '@/lib/employee-labels';
 import { SHIFT_LABEL, targetWeekDays } from '@/lib/request-labels';
@@ -17,6 +19,7 @@ import {
   GenerateButton,
   PublishButton,
 } from './draft-controls';
+import { WeekTabs } from './draft-tabs';
 import styles from './draft.module.css';
 
 export const metadata: Metadata = {
@@ -118,17 +121,23 @@ function groupByStaff(assignments: DraftAssignment[]): StaffRow[] {
 }
 
 /**
- * The manager's draft screen (F5). The one button runs alur 4.1–4.4 and every
- * cell below it is an editable day: the manager keeps the placement they agree
- * with and changes the rest. Only the manager sees this; staff read the week
- * once it is published (F6).
+ * The manager's draft screen (F5). Both live weeks are read up front (issue
+ * #20): the minggu target being composed and the minggu berjalan the staff are
+ * working through. A client toggle switches between them without a round trip,
+ * defaulting to the target. The one button on the target tab runs alur 4.1–4.4
+ * and every cell below it is an editable day. Only the manager sees this; staff
+ * read a week once it is published (F6).
  */
 export default async function DraftPage() {
-  let draft: DraftSchedule | null = null;
+  let target: DraftSchedule | null = null;
+  let running: DraftSchedule | null = null;
   let loadError: string | null = null;
 
   try {
-    draft = await getDraft();
+    [target, running] = await Promise.all([
+      getDraft('target'),
+      getDraft('running'),
+    ]);
   } catch (error) {
     loadError =
       error instanceof ApiError
@@ -137,6 +146,8 @@ export default async function DraftPage() {
   }
 
   const scheduleLink = await staffScheduleLink();
+  // Days before today (WITA) on the running week are past: their cells lock.
+  const lockedBefore = witaCalendarDate(new Date());
 
   return (
     <main className={styles.page}>
@@ -151,8 +162,36 @@ export default async function DraftPage() {
         <p role="alert" className={styles.error}>
           {loadError}
         </p>
-      ) : draft ? (
-        <DraftView draft={draft} scheduleLink={scheduleLink} />
+      ) : target && running ? (
+        <WeekTabs
+          defaultAlias="target"
+          tabs={[
+            {
+              alias: 'running',
+              label: 'Minggu berjalan',
+              panel: (
+                <DraftView
+                  draft={running}
+                  alias="running"
+                  scheduleLink={scheduleLink}
+                  lockedBefore={lockedBefore}
+                />
+              ),
+            },
+            {
+              alias: 'target',
+              label: 'Minggu target',
+              panel: (
+                <DraftView
+                  draft={target}
+                  alias="target"
+                  scheduleLink={scheduleLink}
+                  lockedBefore={lockedBefore}
+                />
+              ),
+            },
+          ]}
+        />
       ) : null}
     </main>
   );
@@ -160,21 +199,28 @@ export default async function DraftPage() {
 
 function DraftView({
   draft,
+  alias,
   scheduleLink,
+  lockedBefore,
 }: {
   draft: DraftSchedule;
+  alias: WeekAlias;
   scheduleLink: string;
+  /** Days before this `YYYY-MM-DD` (WITA today) are read-only on the running tab. */
+  lockedBefore: string;
 }) {
   const weekStartDate = draft.weekStartDate;
   const staff = groupByStaff(draft.assignments);
   const isPublished = draft.status === 'published';
+  const isTarget = alias === 'target';
+  const weekLabel = isTarget ? 'Minggu target' : 'Minggu berjalan';
 
   return (
     <>
       {weekStartDate ? (
         <div className={styles.weekBar}>
           <div>
-            <p className={styles.windowLabel}>Minggu target</p>
+            <p className={styles.windowLabel}>{weekLabel}</p>
             <p className={styles.windowValue}>{formatWeek(weekStartDate)}</p>
           </div>
           <div>
@@ -188,30 +234,39 @@ function DraftView({
         </div>
       ) : null}
 
-      <GenerateButton label={GENERATE_LABEL} />
+      {isTarget ? <GenerateButton label={GENERATE_LABEL} /> : null}
 
       <p className={styles.note}>
-        {isPublished
-          ? 'Menyusun ulang mengganti seluruh jadwal, termasuk yang sudah dilihat staf.'
-          : 'Menekan tombol menyusun ulang seluruh draft dan menghapus perubahan manual di sini. Draft ini hanya terlihat oleh manager, belum oleh staf.'}
+        {isTarget
+          ? isPublished
+            ? 'Menyusun ulang mengganti seluruh jadwal, termasuk yang sudah dilihat staf.'
+            : 'Menekan tombol menyusun ulang seluruh draft dan menghapus perubahan manual di sini. Draft ini hanya terlihat oleh manager, belum oleh staf.'
+          : isPublished
+            ? 'Perubahan yang Anda simpan langsung terlihat staf. Hari yang sudah lewat pada minggu berjalan tidak bisa diubah lagi.'
+            : 'Minggu berjalan belum dipublish, jadi perubahannya hanya terlihat oleh Anda. Hari yang sudah lewat tidak bisa diubah lagi.'}
       </p>
 
       {weekStartDate ? (
-        <CoveragePanel warnings={draft.warnings} published={isPublished} />
+        <CoveragePanel
+          warnings={draft.warnings}
+          published={isPublished}
+          alias={alias}
+        />
       ) : null}
 
       {weekStartDate ? (
-        <PublishPanel draft={draft} scheduleLink={scheduleLink} />
+        <PublishPanel draft={draft} alias={alias} scheduleLink={scheduleLink} />
       ) : null}
 
       {!weekStartDate ? (
         <p className={styles.empty}>
-          Belum ada draft untuk minggu depan. Tombol di atas membuat minggu
-          target dan menyusunnya dari minggu lalu.
+          {isTarget
+            ? 'Belum ada draft untuk minggu depan. Tombol di atas membuat minggu target dan menyusunnya dari minggu lalu.'
+            : 'Belum ada jadwal untuk minggu berjalan.'}
         </p>
       ) : (
-        <section aria-labelledby="draft-heading">
-          <h2 id="draft-heading" className={styles.sectionTitle}>
+        <section aria-labelledby={`${alias}-draft-heading`}>
+          <h2 id={`${alias}-draft-heading`} className={styles.sectionTitle}>
             Jadwal per staf
           </h2>
           <p className={styles.sectionLead}>
@@ -246,9 +301,15 @@ function DraftView({
                             shiftCode={cell?.shiftCode ?? null}
                             choices={choicesFor(row.position)}
                             liburAllowed={day.offAllowed}
+                            week={alias}
+                            locked={!isTarget && day.tanggal < lockedBefore}
                           />
                           <p className={styles.source}>
-                            {cell ? SOURCE_LABEL[cell.source] : 'Belum diisi'}
+                            {!isTarget && day.tanggal < lockedBefore
+                              ? 'Sudah lewat'
+                              : cell
+                                ? SOURCE_LABEL[cell.source]
+                                : 'Belum diisi'}
                           </p>
                         </div>
                       );
@@ -310,15 +371,18 @@ function coverageLine(warning: CoverageWarning): string {
 function CoveragePanel({
   warnings,
   published,
+  alias,
 }: {
   warnings: CoverageWarning[];
   published: boolean;
+  alias: WeekAlias;
 }) {
   const days = groupByDay(warnings);
+  const headingId = `${alias}-coverage-heading`;
 
   return (
-    <section aria-labelledby="coverage-heading" className={styles.coverage}>
-      <h2 id="coverage-heading" className={styles.coverageTitle}>
+    <section aria-labelledby={headingId} className={styles.coverage}>
+      <h2 id={headingId} className={styles.coverageTitle}>
         Validasi coverage
       </h2>
       <p className={styles.sectionLead}>
@@ -357,13 +421,17 @@ function CoveragePanel({
  * Publish & share (F6). Before the press it is one action and one sentence of
  * what the press does; after it the action is done, so the panel becomes the
  * share link and names the window the publish opened. The link is the only way
- * staff learn the schedule moved, which is why it sits here, not in a menu.
+ * staff learn the schedule moved, which is why it sits here, not in a menu. It
+ * shows for any published week on either tab, so the running week keeps its
+ * share panel after Monday (issue #20).
  */
 function PublishPanel({
   draft,
+  alias,
   scheduleLink,
 }: {
   draft: DraftSchedule;
+  alias: WeekAlias;
   scheduleLink: string;
 }) {
   const weekStartDate = draft.weekStartDate;
@@ -371,17 +439,19 @@ function PublishPanel({
     return null;
   }
 
+  const headingId = `${alias}-publish-heading`;
+
   if (draft.status !== 'published') {
     return (
-      <section aria-labelledby="publish-heading" className={styles.publish}>
-        <h2 id="publish-heading" className={styles.publishTitle}>
+      <section aria-labelledby={headingId} className={styles.publish}>
+        <h2 id={headingId} className={styles.publishTitle}>
           Bagikan ke staf
         </h2>
         <p className={styles.publishText}>
           Staf baru melihat jadwal ini setelah dipublish. Publish juga membuka
           jendela request untuk minggu setelahnya.
         </p>
-        <PublishButton />
+        <PublishButton week={alias} />
       </section>
     );
   }
@@ -389,8 +459,8 @@ function PublishPanel({
   const nextWindow = draft.nextWindow;
 
   return (
-    <section aria-labelledby="publish-heading" className={styles.publish}>
-      <h2 id="publish-heading" className={styles.publishTitle}>
+    <section aria-labelledby={headingId} className={styles.publish}>
+      <h2 id={headingId} className={styles.publishTitle}>
         Bagikan ke staf
       </h2>
       <p className={styles.publishText}>

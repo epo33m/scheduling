@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { WeekAlias } from '@repo/types';
 import {
   ApiError,
   generateDraft,
@@ -17,16 +18,26 @@ export interface DraftActionState {
 }
 
 /**
+ * The tab the submitting control belongs to (issue #20). Each draft form
+ * carries its week in a hidden field, so the mutation lands on the minggu the
+ * manager is looking at rather than always the target.
+ */
+function weekFrom(formData: FormData): WeekAlias {
+  return formData.get('week') === 'running' ? 'running' : 'target';
+}
+
+/**
  * "Buat draft dari minggu lalu". The api runs alur 4.1–4.4 and replaces the
  * draft, so a failed press still revalidates: the screen must show what the
- * server actually holds, never a draft that only seemed to be built.
+ * server actually holds, never a draft that only seemed to be built. The api
+ * refuses this on the running week, and the running view hides the button.
  */
 export async function generateAction(
   _previous: DraftActionState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<DraftActionState> {
   try {
-    await generateDraft();
+    await generateDraft(weekFrom(formData));
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   } finally {
@@ -39,14 +50,15 @@ export async function generateAction(
 /**
  * Publish (F6). The api flips the week and opens the next request window in one
  * call, so a failure must still revalidate: the screen has to show whether the
- * week is live, never the state it had before the press.
+ * week is live, never the state it had before the press. The selected week may
+ * be a still-draft running week, which the same call publishes late.
  */
 export async function publishAction(
   _previous: DraftActionState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<DraftActionState> {
   try {
-    await publishSchedule();
+    await publishSchedule(weekFrom(formData));
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   } finally {
@@ -59,7 +71,8 @@ export async function publishAction(
 /**
  * One cell of the draft. "LIBUR" is the select's value for a day off, which the
  * api stores as a null shift; everything else is a shift code the api checks
- * against the staff member's position and the day.
+ * against the staff member's position and the day. The api also refuses a day
+ * already past (WITA) on the running week.
  */
 export async function saveAssignmentAction(
   _previous: DraftActionState,
@@ -81,7 +94,7 @@ export async function saveAssignmentAction(
   }
 
   try {
-    await saveAssignment(employeeId, tanggal, shiftCode);
+    await saveAssignment(employeeId, tanggal, shiftCode, weekFrom(formData));
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   } finally {
