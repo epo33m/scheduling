@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextMonday, requestDeadlineFor } from './weeks';
+import { nextMonday, publishedWeekBounds, requestDeadlineFor } from './weeks';
 
 /**
  * The minggu target and its jendela request deadline (ADR 0004 + ADR 0002):
@@ -38,6 +38,23 @@ describe('minggu target', () => {
     expect(nextMonday(new Date('2026-11-15T15:59:00.000Z'))).toEqual(
       new Date('2026-11-16T00:00:00.000Z'),
     );
+  });
+});
+
+describe('publishedWeekBounds', () => {
+  it('spans the target week and the running week one before it', () => {
+    const { running, target } = publishedWeekBounds(
+      new Date('2026-11-09T10:00:00.000Z'),
+    );
+    expect(target).toBe(new Date('2026-11-16T00:00:00.000Z').getTime());
+    expect(running).toBe(new Date('2026-11-09T00:00:00.000Z').getTime());
+  });
+
+  it('keeps the two bounds exactly one week apart', () => {
+    const { running, target } = publishedWeekBounds(
+      new Date('2026-11-15T16:30:00.000Z'),
+    );
+    expect(target - running).toBe(7 * 86_400_000);
   });
 });
 

@@ -21,6 +21,7 @@
         "@prisma/client": "7.10.0",
         "@repo/types": "*",
         "@repo/validators": "*",
+        "@repo/weeks": "*",
         "jose": "^5",
         "pg": "^8.16.3",
         "reflect-metadata": "^0.2.2",
@@ -65,11 +66,20 @@
         "vitest": "^4.1.10",
       },
     },
+    "packages/weeks": {
+      "name": "@repo/weeks",
+      "version": "0.0.0",
+      "devDependencies": {
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10",
+      },
+    },
     "web": {
       "name": "web",
       "version": "0.0.0",
       "dependencies": {
         "@repo/types": "*",
+        "@repo/weeks": "*",
         "@supabase/ssr": "^0.12.7",
         "@supabase/supabase-js": "^2.119.0",
         "dotenv": "^18.0.9",
@@ -433,6 +443,8 @@
     "@repo/types": ["@repo/types@workspace:packages/types"],
 
     "@repo/validators": ["@repo/validators@workspace:packages/validators"],
+
+    "@repo/weeks": ["@repo/weeks@workspace:packages/weeks"],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.16", "", { "os": "android", "cpu": "arm" }, "sha512-ia3DwAs0OsMGS7+IConptSiyk9pEXkOx/AbJ2n/lAGxH3QkWQus1t8d7gnAT38FCU2sQu8lUbeR6AiZFv4JxaA=="],
 

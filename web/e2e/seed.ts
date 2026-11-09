@@ -1,6 +1,6 @@
 import { SHIFT_TYPE_CATALOG } from '@repo/types';
 import { E2E_EMAILS, E2E_EMAIL_LIST, E2E_PASSWORD } from '../lib/e2e-fixtures';
-import { addDays, runningMondayIso, targetMondayIso } from './weeks';
+import { addDays, runningMondayIso, targetMondayIso } from '@repo/weeks';
 
 /**
  * Seed through the local Supabase surface (PostgREST + GoTrue admin) instead of

@@ -7,8 +7,8 @@ export function addDays(iso: string, days: number): string {
     .slice(0, 10);
 }
 
-/** Today's calendar day in WITA, `YYYY-MM-DD`. */
-export function witaToday(now: Date): string {
+/** Today's calendar day in WITA (UTC+8), `YYYY-MM-DD`. */
+export function witaCalendarDate(now: Date): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Makassar',
     year: 'numeric',
@@ -18,15 +18,15 @@ export function witaToday(now: Date): string {
 }
 
 /**
- * The minggu target: the next Monday strictly after today (ADR 0004). The api
- * recomputes this per request; the seed and the spec both derive their rows
- * from the same formula, so they always match while a run stays inside one
- * WITA day.
+ * The minggu target: the next Monday strictly after the WITA today (ADR 0004).
+ * Between 00.00 and 08.00 WITA the UTC date is still the day before, so "today"
+ * is read in WITA, not UTC. `YYYY-MM-DD` out, the calendar-day shape.
  */
 export function targetMondayIso(now = new Date()): string {
+  const today = witaCalendarDate(now);
   const daysToMonday =
-    (8 - new Date(`${witaToday(now)}T00:00:00.000Z`).getUTCDay()) % 7 || 7;
-  return addDays(witaToday(now), daysToMonday);
+    (8 - new Date(`${today}T00:00:00.000Z`).getUTCDay()) % 7 || 7;
+  return addDays(today, daysToMonday);
 }
 
 /** The Monday the staff are living through: the week before the target. */

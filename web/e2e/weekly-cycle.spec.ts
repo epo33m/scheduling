@@ -8,7 +8,7 @@ import {
 import { MIDDLE_CLOSING_NOTICE } from '../lib/request-labels';
 import { formatWeekRange } from '../lib/share';
 import { E2E_EMAILS } from '../lib/e2e-fixtures';
-import { runningMondayIso, targetMondayIso } from './weeks';
+import { runningMondayIso, targetMondayIso } from '@repo/weeks';
 
 /**
  * The T9 end-to-end criterion: one full weekly cycle lands green. Kiki asks
