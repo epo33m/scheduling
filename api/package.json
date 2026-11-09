@@ -11,7 +11,8 @@
     "test:api": "jest --config test/jest-api.json",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:seed-manager": "bun prisma/seed-manager.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.27",
