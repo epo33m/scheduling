@@ -7,6 +7,7 @@ import type {
   DraftAssignment,
   DraftSchedule,
   OpenWindow,
+  PublishedSchedule,
   PublishedWeek,
   SessionEmployee,
   ShiftCode,
@@ -15,7 +16,6 @@ import type {
 import type { AssignmentEditInput } from '@repo/validators';
 import { PrismaService } from '../prisma/prisma.service';
 import { isOffDayAllowed } from '../request/off-day';
-import { mostRecentWeek } from '../request/request-window';
 import { toCalendarDate } from '../request/request.service';
 import {
   compileDraft,
@@ -23,6 +23,7 @@ import {
   type ShiftFact,
 } from './compiler';
 import { validateCoverage } from './coverage';
+import { shiftDurationHours } from './work-hours';
 import { nextMonday, requestDeadlineFor } from './weeks';
 
 const DAY_MS = 86_400_000;
@@ -144,31 +145,73 @@ export class ScheduleService {
   }
 
   /**
-   * The week one staff member sees (F6/F7): the most recent published week and
-   * only their own placements. Staff read a week once it is published, so a
-   * draft is never returned here, not even to the staff it will hold.
+   * The weeks one staff member sees (F6/F7): the running minggu and the
+   * minggu target, each narrowed to the caller's own placements. Staff read a
+   * week only once it is published, so a draft is never returned here, not
+   * even to the staff it will hold, and a week older than the running one has
+   * already left the screen for good.
    */
-  async published(actor: SessionEmployee): Promise<PublishedWeek> {
+  async published(
+    actor: SessionEmployee,
+    now = new Date(),
+  ): Promise<PublishedSchedule> {
     const weeks = await this.prisma.scheduleWeek.findMany({
       where: { status: 'published' },
     });
-    const week = mostRecentWeek(weeks);
-    if (!week) {
-      return { weekStartDate: null, assignments: [] };
-    }
+    const target = nextMonday(now).getTime();
+    const running = target - 7 * DAY_MS;
+    const visible = weeks
+      .filter(
+        (week) =>
+          week.startDate.getTime() === running ||
+          week.startDate.getTime() === target,
+      )
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
-    const rows = await this.prisma.shiftAssignment.findMany({
-      where: { weekId: week.id, employeeId: actor.id },
-      orderBy: { tanggal: 'asc' },
+    const [shiftTypes, ...weekRows] = await Promise.all([
+      this.prisma.shiftType.findMany(),
+      ...visible.map((week) =>
+        this.prisma.shiftAssignment.findMany({
+          where: { weekId: week.id, employeeId: actor.id },
+          orderBy: { tanggal: 'asc' },
+        }),
+      ),
+    ]);
+
+    // Wall-clock times live in shift_type alone; the staff read copies them
+    // onto each placement instead of keeping a second table of hours.
+    const hoursOf = (code: ShiftCode) =>
+      shiftTypes.find((row) => row.code === code);
+
+    const perWeek = visible.map((week, index): PublishedWeek => {
+      const assignments = weekRows[index].map((row) => {
+        const shiftCode = row.shiftCode as ShiftCode | null;
+        const hours = shiftCode ? hoursOf(shiftCode) : undefined;
+        return {
+          tanggal: toCalendarDate(row.tanggal),
+          shiftCode,
+          startTime: hours?.startTime ?? null,
+          endTime: hours?.endTime ?? null,
+        };
+      });
+
+      // Total jam kerja (F7): gross durations only, libur adds nothing.
+      const totalHours = assignments.reduce(
+        (sum, assignment) =>
+          assignment.startTime && assignment.endTime
+            ? sum + shiftDurationHours(assignment.startTime, assignment.endTime)
+            : sum,
+        0,
+      );
+
+      return {
+        weekStartDate: toCalendarDate(week.startDate),
+        assignments,
+        totalHours,
+      };
     });
 
-    return {
-      weekStartDate: toCalendarDate(week.startDate),
-      assignments: rows.map((row) => ({
-        tanggal: toCalendarDate(row.tanggal),
-        shiftCode: row.shiftCode as ShiftCode | null,
-      })),
-    };
+    return { weeks: perWeek };
   }
 
   /**

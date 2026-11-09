@@ -96,14 +96,33 @@ export interface PublishedAssignment {
   tanggal: string;
   /** Null is hari libur, the same cell the manager wrote. */
   shiftCode: ShiftCode | null;
+  /** Local WITA `HH:MM` copied from `shift_type`; null when no shift works. */
+  startTime: string | null;
+  /** Local WITA `HH:MM` copied from `shift_type`; null when no shift works. */
+  endTime: string | null;
 }
 
 /**
- * The published minggu target as one employee sees it (F6/F7): the week the
- * manager last published, holding only the caller's own placements.
+ * One published week as one employee sees it: the caller's own placements
+ * inside a single minggu. A week the staff cannot see is absent from
+ * `PublishedSchedule.weeks`, so this shape never carries a null Monday.
  */
 export interface PublishedWeek {
-  /** Monday of the published week, `YYYY-MM-DD`; null before the first publish. */
-  weekStartDate: string | null;
+  /** Monday of the week, `YYYY-MM-DD`. */
+  weekStartDate: string;
   assignments: PublishedAssignment[];
+  /**
+   * Total jam kerja for the week (F7): the gross sum of the caller's shift
+   * durations from `shift_type`, with no break deduction.
+   */
+  totalHours: number;
+}
+
+/**
+ * The staff schedule read (F6/F7): the published weeks of the running cycle,
+ * oldest first. The week the staff member is living through and, once the
+ * manager has published it, the minggu target. Empty before the first publish.
+ */
+export interface PublishedSchedule {
+  weeks: PublishedWeek[];
 }

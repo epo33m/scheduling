@@ -9,7 +9,7 @@ import {
 import type {
   DraftAssignment,
   DraftSchedule,
-  PublishedWeek,
+  PublishedSchedule,
   SessionEmployee,
 } from '@repo/types';
 import { parseAssignmentEdit } from '@repo/validators';
@@ -50,7 +50,9 @@ export class ScheduleController {
    */
   @Get('published')
   @Roles('staff')
-  published(@CurrentEmployee() actor: SessionEmployee): Promise<PublishedWeek> {
+  published(
+    @CurrentEmployee() actor: SessionEmployee,
+  ): Promise<PublishedSchedule> {
     return this.schedule.published(actor);
   }
 
