@@ -1,8 +1,11 @@
 import type {
+  DraftAssignment,
+  DraftSchedule,
   ManagedEmployee,
   OffRequestView,
   RequestDecisionResult,
   RequestsDashboard,
+  ShiftCode,
   ShiftRequestView,
   StaffRequests,
 } from '@repo/types';
@@ -171,4 +174,34 @@ export function decideRequest(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ decision }),
   }).then((r) => r.json() as Promise<RequestDecisionResult>);
+}
+
+/**
+ * The draft of the minggu target (F5): every staff member, every day. Manager
+ * only, which is what keeps the draft invisible to staff before publish.
+ */
+export function getDraft(): Promise<DraftSchedule> {
+  return authorizedFetch('/schedule/draft', { method: 'GET' }).then(
+    (r) => r.json() as Promise<DraftSchedule>,
+  );
+}
+
+/** "Buat draft dari minggu lalu": runs alur 4.1–4.4 and replaces the draft. */
+export function generateDraft(): Promise<DraftSchedule> {
+  return authorizedFetch('/schedule/draft', { method: 'POST' }).then(
+    (r) => r.json() as Promise<DraftSchedule>,
+  );
+}
+
+/** The manager's edit of one draft cell; `shiftCode` null writes libur. */
+export function saveAssignment(
+  employeeId: string,
+  tanggal: string,
+  shiftCode: ShiftCode | null,
+): Promise<DraftAssignment> {
+  return authorizedFetch('/schedule/draft/assignment', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ employeeId, tanggal, shiftCode }),
+  }).then((r) => r.json() as Promise<DraftAssignment>);
 }

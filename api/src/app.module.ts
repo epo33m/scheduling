@@ -7,9 +7,17 @@ import { EmployeeModule } from './employee/employee.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RequestModule } from './request/request.module';
+import { ScheduleModule } from './schedule/schedule.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, HealthModule, EmployeeModule, RequestModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    HealthModule,
+    EmployeeModule,
+    RequestModule,
+    ScheduleModule,
+  ],
   providers: [
     // Order matters: AuthGuard resolves the employee, RolesGuard reads that
     // employee's role. Every route is closed until it opts out with @Public().

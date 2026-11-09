@@ -33,6 +33,7 @@ model Employee {
 
   offRequests   OffRequest[]
   shiftRequests ShiftRequest[]
+  assignments   ShiftAssignment[]
 
   @@index([isActive])
   @@map("employee")
