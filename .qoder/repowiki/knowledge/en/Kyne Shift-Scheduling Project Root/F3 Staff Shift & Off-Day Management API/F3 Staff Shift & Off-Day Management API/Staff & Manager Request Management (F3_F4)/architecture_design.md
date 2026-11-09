@@ -1,0 +1,7 @@
+Single NestJS module (`request.module.ts`) registers two controllers and two services:
+- `RequestController` (`@Roles('staff')`, route `/requests`) is the thin HTTP boundary for F3: it parses payloads via `parseOffRequest`/`parseShiftRequest` from `@repo/validators`, injects `@CurrentEmployee()` as `SessionEmployee`, and delegates all domain logic to `RequestService`.
+- `DashboardController` (`@Roles('manager')`, route `/dashboard/requests`) is the F4 manager surface for viewing and deciding on requests; it delegates to `DashboardService`.
+- `RequestService` owns the staff-side business rules: probation gate via `advanceProbation` (ADR 0003), open-window enforcement (ADR 0002) through `resolveOpenWindow`/`isWindowOpen`, week membership checks, and Prisma upserts against `offRequest` (unique key `weekId_employeeId`) and `shiftRequest` (unique key `weekId_employeeId_tanggal`).
+- `DashboardService` aggregates employees/off-shift rows for the target week, computes conflict sets via the sibling `conflicts.ts` helper, and writes decision status with `decidedBy`/`decidedAt` timestamps.
+- Pure helpers live in dedicated files: `off-day.ts` restricts leave to Mon–Thu, `request-window.ts` computes the live window and most recent week, and `toCalendarDate`/`toDate` normalize dates to midnight-UTC ISO strings so weekday arithmetic is timezone-stable.
+- Dependency direction is one-way: controllers → services → pure helpers + `PrismaService`; services never import each other except `DashboardService` reusing `toCalendarDate` from `request.service.ts`.

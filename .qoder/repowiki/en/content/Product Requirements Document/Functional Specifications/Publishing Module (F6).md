@@ -2,9 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md)
+- [schedule.service.ts](file://api/src/schedule/schedule.service.ts)
+- [schedule.controller.ts](file://api/src/schedule/schedule.controller.ts)
+- [share.ts](file://web/lib/share.ts)
+- [request-window.ts](file://api/src/request/request-window.ts)
+- [weeks.ts](file://api/src/schedule/weeks.ts)
+- [schedule_week.prisma](file://api/prisma/schema/schedule_week.prisma)
+- [0002-jendela-request-dikunci-tanpa-cron.md](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md)
+- [0004-siklus-mingguan-acu-ke-minggu-berikutnya.md](file://docs/adr/0004-siklus-mingguan-acu-ke-minggu-berikutnya.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated publishing workflow to reflect idempotent publish functionality
+- Added documentation for automatic next week row creation on first publish
+- Documented request window management without cron jobs
+- Enhanced WhatsApp sharing integration details
+- Updated architecture diagrams to reflect actual implementation
+- Added technical specifications for idempotent operations and time-based locking
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -18,65 +33,72 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-This document specifies the functional requirements for the Publishing module (F6) of the Kyne shift scheduling application. It focuses on how schedules move from draft to published state, how versioning and timestamps are handled, how WhatsApp sharing integrates into the workflow, and how request windows are controlled relative to publication. It also provides user stories, acceptance criteria, business rules, error handling guidance, retry strategies, and audit logging expectations.
+This document specifies the functional requirements and implementation details for the Publishing module (F6) of the Kyne shift scheduling application. The system has evolved from a conceptual design to a fully implemented solution featuring idempotent publishing, automatic next week row creation, time-based request window management without cron jobs, and integrated WhatsApp sharing functionality.
 
-The repository is currently a scaffold with no implementation code yet. Therefore, this specification is derived from the product requirements document and intended as a design contract for future development.
+The implementation focuses on how schedules transition from draft to published state, version control mechanisms, timestamp handling, automated request window management, and seamless WhatsApp distribution to staff members.
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:1-20](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L1-L20)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
+- [schedule_week.prisma:1-33](file://api/prisma/schema/schedule_week.prisma#L1-L33)
 
 ## Project Structure
-At this stage, the project contains only documentation and a minimal README. The publishing functionality will be implemented later according to the architecture described in the PRD, which targets a NestJS backend with a Next.js frontend and PostgreSQL via Prisma.
+The publishing system is implemented across multiple layers with clear separation of concerns between the API layer, business logic, and frontend components.
 
 ```mermaid
 graph TB
 Repo["Repository"]
-Readme["README.md"]
-Docs["docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md"]
-FutureAPI["Future API Layer<br/>NestJS Publish Module"]
-FutureFrontend["Future Frontend<br/>Next.js PWA"]
-Database["Future Database<br/>PostgreSQL + Prisma"]
-Repo --> Readme
-Repo --> Docs
-Repo --> FutureAPI
-Repo --> FutureFrontend
+API["NestJS API Layer<br/>ScheduleService & Controller"]
+Frontend["Next.js Frontend<br/>Manager Dashboard"]
+Database["PostgreSQL + Prisma<br/>schedule_week table"]
+WhatsApp["WhatsApp Platform<br/>External Integration"]
+Repo --> API
+Repo --> Frontend
 Repo --> Database
+API --> Database
+Frontend --> API
+Frontend --> WhatsApp
 ```
 
 **Diagram sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [schedule.controller.ts:64-71](file://api/src/schedule/schedule.controller.ts#L64-L71)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
+- [share.ts:68-76](file://web/lib/share.ts#L68-L76)
 
 **Section sources**
-- [README.md:1-25](file://README.md#L1-L25)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:230-249](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L230-L249)
+- [schedule.controller.ts:64-71](file://api/src/schedule/schedule.controller.ts#L64-L71)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
 
 ## Core Components
-The Publishing module (F6) centers around these capabilities:
+The Publishing module (F6) implements these core capabilities:
 
-- Schedule publication workflow
-  - Transition schedule weeks from draft to published.
-  - Make the schedule visible to staff after publish.
-  - Open the next week’s request window when the current schedule is published.
-- Version control and timestamps
-  - Track publication time and publisher identity.
-  - Preserve previous schedule versions through weekly records.
-- WhatsApp sharing integration
-  - Provide a share action that opens WhatsApp with a pre-filled message containing the schedule period, link, and next request deadline.
-- Request window management
-  - Automatically open request submission for the following week upon publication.
-  - Enforce the weekly request deadline at Sunday 12:00 WITA.
+### Idempotent Schedule Publication
+- **Idempotent Operations**: Publishing the same schedule multiple times produces identical results without duplicate side effects
+- **State Management**: Transitions schedule weeks from draft to published status while preserving existing publication timestamps
+- **Audit Trail**: Records publisher identity and publication timestamps for compliance and debugging
 
-These behaviors are defined by the product requirements and must be enforced server-side.
+### Automatic Next Week Row Creation
+- **Proactive Scheduling**: Creates the following week's row automatically during first publish operation
+- **Request Window Setup**: Establishes request deadlines for the next week immediately upon creation
+- **Cron-Free Architecture**: Eliminates need for scheduled jobs through proactive data preparation
+
+### Time-Based Request Window Management
+- **Deadline-Driven Locking**: Request windows open automatically when weeks are created and close at Sunday 12:00 WITA
+- **No Cron Jobs**: Implements time-based logic through direct deadline comparisons rather than scheduled tasks
+- **Automatic State Resolution**: Determines window availability through real-time date calculations
+
+### Integrated WhatsApp Sharing
+- **Seamless Distribution**: Provides one-click WhatsApp sharing with pre-filled messages containing schedule links and deadlines
+- **Contextual Information**: Includes schedule period, staff access link, and next request submission deadline
+- **Client-Side Integration**: Leverages WhatsApp's web interface for message composition and delivery
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
+- [schedule.service.ts:472-497](file://api/src/schedule/schedule.service.ts#L472-L497)
+- [request-window.ts:1-12](file://api/src/request/request-window.ts#L1-L12)
+- [share.ts:50-76](file://web/lib/share.ts#L50-L76)
 
 ## Architecture Overview
-The publishing workflow spans the frontend, backend, database, and external messaging platform.
+The publishing workflow integrates multiple systems to provide a seamless experience from schedule composition to staff distribution.
 
 ```mermaid
 sequenceDiagram
@@ -84,203 +106,267 @@ participant Manager as "Manager"
 participant Frontend as "Next.js Frontend"
 participant API as "NestJS API"
 participant DB as "PostgreSQL"
-participant WhatsApp as "WhatsApp"
+participant WhatsApp as "WhatsApp Client"
+Note over Manager,WhatsApp : Phase 1 : Schedule Publication
 Manager->>Frontend : Click "Publish schedule"
-Frontend->>API : POST /api/schedules/{weekId}/publish
-API->>DB : Update schedule_week status, published_at, published_by
-DB-->>API : Persisted schedule record
-API->>DB : Open request window for next week
-API-->>Frontend : Publication result
-Frontend->>Manager : Show success and "Share to WhatsApp"
+Frontend->>API : POST /schedule/publish?week=target
+API->>DB : Check if week exists and is editable
+DB-->>API : Return week data
+API->>DB : Update status=published, set publishedAt/publishedBy
+API->>DB : Create next week row if not exists
+DB-->>API : Persist changes
+API-->>Frontend : Return published schedule with nextWindow
+Note over Manager,WhatsApp : Phase 2 : WhatsApp Sharing
+Frontend->>Manager : Show success with "Share to WhatsApp" button
 Manager->>Frontend : Click "Share to WhatsApp"
-Frontend->>WhatsApp : Open URL with pre-filled text
-Note over Manager,WhatsApp : Staff receive link and can view their own schedule
+Frontend->>WhatsApp : Open wa.me/?text=encoded_message
+WhatsApp-->>Manager : Message ready to send
+Note over Manager,WhatsApp : Phase 3 : Staff Access
+Manager->>WhatsApp : Send message to group
+WhatsApp-->>Staff : Deliver message with schedule link
+Staff->>Frontend : Click schedule link
+Frontend->>API : GET /schedule/published
+API-->>Staff : Display their own schedule
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.controller.ts:64-71](file://api/src/schedule/schedule.controller.ts#L64-L71)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
+- [schedule.service.ts:478-497](file://api/src/schedule/schedule.service.ts#L478-L497)
+- [share.ts:68-76](file://web/lib/share.ts#L68-L76)
 
 ## Detailed Component Analysis
 
-### Publishing Workflow Specification
-The publishing workflow controls the transition of a schedule week from draft to published and triggers downstream effects.
+### Idempotent Publishing Workflow
+The publishing system ensures that repeated publish operations produce consistent results without creating duplicate records or modifying existing timestamps.
 
-- Inputs
-  - Manager role authentication.
-  - Target schedule week identifier.
-- Processing
-  - Validate that the schedule exists and is editable.
-  - Set schedule status to published.
-  - Record publication timestamp and publisher.
-  - Open the request window for the following week.
-- Outputs
-  - Updated schedule record.
-  - Visible schedule for staff.
-  - Success response enabling WhatsApp sharing.
+#### Processing Logic
+- **Validation**: Verifies schedule existence and editability before processing
+- **Conditional Updates**: Only updates publication fields when transitioning from draft to published
+- **Timestamp Preservation**: Maintains original `publishedAt` value on subsequent publishes
+- **Actor Tracking**: Records the manager who performed the most recent publication
 
 ```mermaid
 flowchart TD
 Start(["Manager initiates publish"]) --> AuthCheck["Verify manager role"]
-AuthCheck --> LoadWeek["Load schedule week"]
-LoadWeek --> ValidState{"Is draft or editable?"}
-ValidState --> |No| Reject["Reject publish"]
-ValidState --> |Yes| SetPublished["Set status = published"]
-SetPublished --> RecordTimestamps["Record published_at and published_by"]
-RecordTimestamps --> OpenNextRequestWindow["Open request window for next week"]
-OpenNextRequestWindow --> Persist["Persist changes"]
-Persist --> ReturnSuccess["Return success to frontend"]
-Reject --> End(["End"])
+AuthCheck --> LoadWeek["Load target schedule week"]
+LoadWeek --> Exists{"Week exists?"}
+Exists --> |No| NotFound["Return 404 Not Found"]
+Exists --> |Yes| CheckStatus{"Status = published?"}
+CheckStatus --> |Yes| SkipUpdate["Skip timestamp update"]
+CheckStatus --> |No| SetPublished["Set status=published,<br/>record publishedAt & publishedBy"]
+SkipUpdate --> OpenNextWindow["Open next week's request window"]
+SetPublished --> OpenNextWindow
+OpenNextWindow --> CreateNextWeek{"Next week exists?"}
+CreateNextWeek --> |No| CreateRow["Create next week row with<br/>requestDeadline"]
+CreateNextWeek --> |Yes| SkipCreation["Skip creation"]
+CreateRow --> ReturnSuccess["Return updated schedule"]
+SkipCreation --> ReturnSuccess
+NotFound --> End(["End"])
 ReturnSuccess --> End
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
+- [schedule.service.ts:478-497](file://api/src/schedule/schedule.service.ts#L478-L497)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
 
-### Draft States and Version Control
-Drafts and versions are represented by weekly schedule records.
+### Automatic Next Week Row Creation
+The system proactively creates the following week's record during the first publish operation, eliminating the need for background jobs or manual intervention.
 
-- Draft state
-  - A schedule week starts as draft while being composed.
-  - Drafts are not visible to staff until published.
-- Version control
-  - Each week has its own record with identifiers and lifecycle fields.
-  - Copying behavior supports creating new drafts from previous weeks.
-- Timestamps
-  - `published_at` captures when a schedule becomes visible.
-  - `published_by` captures who performed the publication.
-- Editability after publish
-  - Managers may still edit schedules after publication; visibility remains to staff.
+#### Implementation Details
+- **Date Calculation**: Computes next Monday's date based on the current week's start date
+- **Deadline Assignment**: Sets request deadline to Sunday 12:00 WITA of the previous week
+- **Idempotent Creation**: Checks for existing rows before attempting creation
+- **Transaction Safety**: Ensures atomic operations for data consistency
 
 ```mermaid
-classDiagram
-class ScheduleWeek {
-+id
-+start_date
-+status
-+request_deadline
-+published_at
-+published_by
-+copied_from_week_id
+stateDiagram-v2
+[*] --> Draft : Initial state
+Draft --> Published : Publish() called
+Published --> Published : Re-publish (idempotent)
+state Published {
+[*] --> Active
+Active --> NextWeekCreated : First publish
+NextWeekCreated --> Active : Subsequent publishes
 }
-class ShiftAssignment {
-+id
-+week_id
-+employee_id
-+tanggal
-+shift_type_id
-+source
+state NextWeekCreated {
+[*] --> DateCalculated
+DateCalculated --> DeadlineSet
+DeadlineSet --> RowCreated
 }
-ScheduleWeek "1" --> "*" ShiftAssignment : "contains"
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:478-497](file://api/src/schedule/schedule.service.ts#L478-L497)
+- [weeks.ts:50-52](file://api/src/schedule/weeks.ts#L50-L52)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:472-497](file://api/src/schedule/schedule.service.ts#L472-L497)
+- [weeks.ts:50-52](file://api/src/schedule/weeks.ts#L50-L52)
+
+### Time-Based Request Window Management
+The request window system eliminates cron job dependencies by using direct deadline comparisons and real-time calculations.
+
+#### Core Principles
+- **Deadline-Driven**: Window availability determined by comparing current time against stored deadlines
+- **UTC Consistency**: All time comparisons use UTC instants for reliability
+- **WITA Alignment**: Deadlines calculated to match Sunday 12:00 WITA wall clock time
+- **Zero Maintenance**: No scheduled jobs required for window state management
+
+```mermaid
+flowchart TD
+Start(["System checks request window"]) --> GetDeadline["Read week.requestDeadline"]
+GetDeadline --> CompareTime{"now <= requestDeadline?"}
+CompareTime --> |Yes| WindowOpen["Window is OPEN"]
+CompareTime --> |No| WindowClosed["Window is CLOSED"]
+WindowOpen --> AllowRequests["Accept new requests"]
+WindowClosed --> RejectRequests["Reject new requests"]
+AllowRequests --> End(["End"])
+RejectRequests --> End
+```
+
+**Diagram sources**
+- [request-window.ts:10-12](file://api/src/request/request-window.ts#L10-L12)
+- [0002-jendela-request-dikunci-tanpa-cron.md:1-4](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md#L1-L4)
+
+**Section sources**
+- [request-window.ts:1-52](file://api/src/request/request-window.ts#L1-L52)
+- [0002-jendela-request-dikunci-tanpa-cron.md:1-4](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md#L1-L4)
 
 ### WhatsApp Sharing Integration
-The sharing feature provides a convenient way to distribute the published schedule link to staff through WhatsApp.
+The WhatsApp integration provides seamless distribution of published schedules to staff through the user's preferred messaging platform.
 
-- Behavior
-  - After successful publication, the frontend shows a share button.
-  - Clicking the button opens WhatsApp with a pre-filled message including:
-    - Schedule period.
-    - Link to the schedule.
-    - Deadline for submitting requests for the next week.
-- Delivery model
-  - The system does not send messages directly; it delegates delivery to the user’s WhatsApp client.
-  - Reliability depends on the user opening the link and staff accessing it.
+#### Message Composition
+- **Period Formatting**: Displays schedule coverage period in local Indonesian format
+- **Link Generation**: Creates accessible URL for staff schedule viewing
+- **Deadline Communication**: Clearly states request submission deadline for next week
+- **Platform Optimization**: Formats text specifically for WhatsApp's plain text requirements
+
+#### User Experience Flow
+- **One-Click Sharing**: Single action opens WhatsApp with pre-composed message
+- **Contextual Awareness**: Shows share option only after successful publication
+- **Visual Feedback**: Provides confirmation that message contains all necessary information
 
 ```mermaid
 sequenceDiagram
 participant Manager as "Manager"
-participant Frontend as "Next.js Frontend"
-participant WhatsApp as "WhatsApp Client"
-Manager->>Frontend : Click "Share to WhatsApp"
-Frontend->>WhatsApp : Open URL with pre-filled text
+participant UI as "Manager Interface"
+participant ShareLib as "Share Library"
+participant WhatsApp as "WhatsApp Web"
+Manager->>UI : Click "Bagikan ke WhatsApp"
+UI->>ShareLib : whatsappShareHref(weekStartDate, nextWindow, scheduleLink)
+ShareLib->>ShareLib : Compose message with period, link, deadline
+ShareLib-->>UI : Return WhatsApp URL
+UI->>WhatsApp : Open https : //wa.me/?text=encoded_message
 WhatsApp-->>Manager : Message ready to send
-Note over Manager,WhatsApp : Staff open link and view their own schedule
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
+- [share.ts:68-76](file://web/lib/share.ts#L68-L76)
+- [share.ts:56-66](file://web/lib/share.ts#L56-L66)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
+- [share.ts:50-76](file://web/lib/share.ts#L50-L76)
 
-### Request Window Management
-Request windows are tightly coupled to publication timing.
+### Data Model and Version Control
+The database schema supports comprehensive version tracking and audit capabilities for schedule publications.
 
-- Opening rule
-  - When the current week’s schedule is published, the request window for the next week opens automatically.
-- Closing rule
-  - Requests close automatically at Sunday 12:00 WITA.
-- Visibility and locking
-  - Before closing, staff can modify requests.
-  - After closing, requests are locked.
+#### Schema Design
+- **Unique Week Identity**: Each week identified by unique `start_date` (Monday)
+- **Explicit Status**: Only `draft` and `published` states explicitly stored
+- **Derived Availability**: Request window state derived from `request_deadline` comparison
+- **Audit Fields**: Tracks publication timestamps and responsible actors
 
 ```mermaid
-flowchart TD
-Start(["Schedule published"]) --> OpenNextWindow["Open request window for next week"]
-OpenNextWindow --> MonitorTime["Monitor current time in WITA"]
-MonitorTime --> CheckDeadline{"Is Sunday 12:00 WITA reached?"}
-CheckDeadline --> |No| AllowRequests["Allow request submissions"]
-CheckDeadline --> |Yes| LockRequests["Lock request submissions"]
-AllowRequests --> MonitorTime
-LockRequests --> End(["End"])
+erDiagram
+SCHEDULE_WEEK {
+string id PK
+date start_date UK
+enum status
+datetime request_deadline
+datetime published_at
+string published_by
+string copied_from_week_id
+datetime created_at
+datetime updated_at
+string created_by
+}
+SHIFT_ASSIGNMENT {
+string id PK
+string week_id FK
+string employee_id FK
+date tanggal
+string shift_type_id
+string source
+}
+OFF_REQUEST {
+string id PK
+string week_id FK
+string employee_id FK
+date tanggal
+string status
+}
+SHIFT_REQUEST {
+string id PK
+string week_id FK
+string employee_id FK
+date tanggal
+string shift_code
+string status
+}
+SCHEDULE_WEEK ||--o{ SHIFT_ASSIGNMENT : "contains"
+SCHEDULE_WEEK ||--o{ OFF_REQUEST : "has"
+SCHEDULE_WEEK ||--o{ SHIFT_REQUEST : "has"
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:188-189](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L188-L189)
+- [schedule_week.prisma:13-32](file://api/prisma/schema/schedule_week.prisma#L13-L32)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:188-189](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L188-L189)
+- [schedule_week.prisma:1-33](file://api/prisma/schema/schedule_week.prisma#L1-L33)
 
 ### User Stories for Publishing Workflows
-- As a manager, I want to publish the weekly schedule so that staff can see their shifts.
-- As a manager, I want to share the published schedule link to WhatsApp so that staff receive it quickly.
-- As a manager, I want the next week’s request window to open automatically after publication so that staff can submit requests without manual setup.
-- As a manager, I want to keep editing schedules after publication so I can correct issues before staff notice them.
+- **As a manager**, I want to publish the weekly schedule so that staff can see their shifts immediately.
+- **As a manager**, I want to share the published schedule via WhatsApp so that staff receive it quickly without manual copying.
+- **As a manager**, I want the next week's request window to open automatically after publication so that staff can submit requests without waiting for system maintenance.
+- **As a manager**, I want to re-publish schedules without affecting existing timestamps so I can correct issues while maintaining audit trails.
+- **As a staff member**, I want to access my schedule through shared WhatsApp links so I can view my assignments conveniently.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
+- [share.ts:50-76](file://web/lib/share.ts#L50-L76)
 
 ### Acceptance Criteria for Delivery Reliability
-- Publishing makes the schedule visible to staff immediately after the operation succeeds.
-- The next week’s request window opens automatically after publication.
-- The WhatsApp share action opens a message with the correct schedule period, link, and next request deadline.
-- Staff can access their own schedule through the shared link after logging in.
-- The system enforces the request deadline at Sunday 12:00 WITA.
-- Publication records include accurate timestamps and publisher identity.
+- Publishing operations are idempotent and produce consistent results when called multiple times.
+- The next week's row is automatically created during the first publish operation.
+- Request windows open automatically when weeks are created without requiring cron jobs.
+- WhatsApp sharing generates properly formatted messages with schedule period, link, and deadline information.
+- Staff can access their schedules through shared WhatsApp links after authentication.
+- Publication records maintain accurate timestamps and preserve original values on re-publishes.
+- Request deadlines are enforced at Sunday 12:00 WITA through direct time comparisons.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:149-155](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L149-L155)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
+- [schedule.service.ts:478-497](file://api/src/schedule/schedule.service.ts#L478-L497)
+- [request-window.ts:10-12](file://api/src/request/request-window.ts#L10-L12)
 
 ### Business Rules for Publication Timing Constraints
-- Weekly cycle runs Monday through Sunday.
-- The current week’s schedule is published during the previous week’s afternoon.
-- Request window opens when the current schedule is published.
-- Request window closes at Sunday 12:00 WITA.
-- Coverage validation applies before publication, especially for Friday–Sunday and Monday–Thursday minimum staffing.
+- Weekly cycle operates Monday through Sunday with target week being the following Monday.
+- Current week's schedule is published during the previous week's afternoon (Sunday 18:00 WITA).
+- Request windows open when weeks are created and close at Sunday 12:00 WITA.
+- Coverage validation applies before publication, especially for Friday–Sunday and Monday–Thursday minimum staffing requirements.
 - Kitchen middle coverage rules apply when kitchen colleagues are off.
+- Staff can only submit requests for future weeks, not the current running week.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:73-90](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L73-L90)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:165-195](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L165-L195)
+- [0004-siklus-mingguan-acu-ke-minggu-berikutnya.md:1-10](file://docs/adr/0004-siklus-mingguan-acu-ke-minggu-berikutnya.md#L1-L10)
+- [weeks.ts:44-52](file://api/src/schedule/weeks.ts#L44-L52)
 
 ## Dependency Analysis
-The publishing module depends on several other modules and data structures defined in the PRD.
+The publishing module depends on several interconnected components that work together to provide comprehensive schedule management functionality.
 
 ```mermaid
 graph TB
@@ -289,50 +375,67 @@ F5["F5. Schedule Composition"]
 F3["F3. Leave and Shift Requests"]
 F4["F4. Manager Dashboard"]
 F7["F7. Staff View"]
+ADR2["ADR 0002. Request Window Locking"]
+ADR4["ADR 0004. Weekly Cycle Reference"]
 Data["Data Model<br/>schedule_week, shift_assignment"]
 F5 --> F6
 F3 --> F6
 F4 --> F6
 F6 --> F7
 F6 --> Data
+F6 --> ADR2
+F6 --> ADR4
 ```
 
 **Diagram sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-163](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L163)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
+- [0002-jendela-request-dikunci-tanpa-cron.md:1-4](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md#L1-L4)
+- [0004-siklus-mingguan-acu-ke-minggu-berikutnya.md:1-10](file://docs/adr/0004-siklus-mingguan-acu-ke-minggu-berikutnya.md#L1-L10)
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:140-163](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L140-L163)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:132-159](file://api/src/schedule/schedule.service.ts#L132-L159)
+- [0002-jendela-request-dikunci-tanpa-cron.md:1-4](file://docs/adr/0002-jendela-request-dikunci-tanpa-cron.md#L1-L4)
+- [0004-siklus-mingguan-acu-ke-minggu-berikutnya.md:1-10](file://docs/adr/0004-siklus-mingguan-acu-ke-minggu-berikutnya.md#L1-L10)
 
 ## Performance Considerations
-- Keep publish operations fast and idempotent where possible to avoid duplicate publications.
-- Avoid heavy computation during publish; defer expensive validations to composition and pre-publish checks.
-- Use database transactions to ensure consistent updates to schedule status, timestamps, and request window settings.
-- Minimize frontend re-renders after publish by returning minimal but sufficient state updates.
-
-[No sources needed since this section provides general guidance]
+- **Idempotent Operations**: Publish operations avoid unnecessary database writes when already published, reducing load during repeated shares.
+- **Proactive Data Preparation**: Creating next week rows during publish eliminates runtime computation overhead and prevents race conditions.
+- **Efficient Time Comparisons**: Direct deadline comparisons eliminate the need for complex scheduling infrastructure.
+- **Minimal Frontend Processing**: WhatsApp message composition happens client-side, reducing server load.
+- **Database Indexing**: Proper indexing on `status`, `startDate`, and `requestDeadline` columns optimizes query performance.
 
 ## Troubleshooting Guide
-- Failed publish due to invalid state
-  - Ensure the schedule is in a draft or editable state before publishing.
-  - Check manager role permissions.
-- Incorrect request window behavior
-  - Verify timezone configuration uses WITA.
-  - Confirm that publication triggers the next week’s request window.
-- WhatsApp share not working
-  - Test opening links from WhatsApp on Android and iPhone.
-  - Handle cases where in-app browsers block login redirects.
-- Audit and reliability
-  - Log publication events with actor, timestamp, and target week.
-  - Retain history of schedule versions through weekly records.
-  - For direct integrations in the future, implement retry logic with exponential backoff and dead-letter tracking.
+### Publishing Issues
+- **Failed publish due to invalid state**: Ensure the schedule is in a draft or editable state before publishing. Verify manager role permissions.
+- **Duplicate week creation**: The system should prevent duplicate next week rows; check for existing rows before creation attempts.
+- **Incorrect timestamps**: Verify that `publishedAt` is only set during initial publication, not on subsequent publishes.
+
+### Request Window Problems
+- **Window not opening**: Confirm that next week row was created successfully and has proper `requestDeadline` value.
+- **Window not closing**: Verify timezone configuration uses WITA and deadline calculations are correct.
+- **Cron dependency errors**: The system should not require any cron jobs; verify no scheduled tasks are configured.
+
+### WhatsApp Sharing Issues
+- **Message formatting problems**: Test WhatsApp URL encoding and message composition across different devices.
+- **Link accessibility**: Ensure schedule links resolve correctly and handle authentication redirects properly.
+- **Mobile compatibility**: Test WhatsApp integration on both Android and iOS platforms.
+
+### Audit and Reliability
+- **Publication logging**: Log publication events with actor, timestamp, and target week for compliance.
+- **Version history**: Maintain history of schedule versions through weekly records and copy relationships.
+- **Error tracking**: Implement comprehensive error handling for failed operations with appropriate retry logic.
 
 **Section sources**
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:220-228](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L220-L228)
-- [PRD-Aplikasi-Penjadwalan-Shift-Kyne.md:197-217](file://docs/PRD-Aplikasi-Penjadwalan-Shift-Kyne.md#L197-L217)
+- [schedule.service.ts:139-159](file://api/src/schedule/schedule.service.ts#L139-L159)
+- [schedule.service.ts:478-497](file://api/src/schedule/schedule.service.ts#L478-L497)
+- [share.ts:68-76](file://web/lib/share.ts#L68-L76)
 
 ## Conclusion
-The Publishing module (F6) connects schedule composition, staff visibility, and communication. Its core responsibilities are to transition schedules to published state, manage request windows, preserve versioning and timestamps, and provide WhatsApp-based distribution. Because the repository is still a scaffold, these specifications serve as the contract for future implementation in the planned NestJS backend and Next.js frontend.
+The Publishing module (F6) has evolved into a robust, production-ready system that successfully addresses the core requirements of schedule publication, version control, and staff communication. The implementation demonstrates several key architectural decisions:
 
-[No sources needed since this section summarizes without analyzing specific files]
+1. **Idempotency**: The system handles repeated operations gracefully, ensuring data consistency and preventing duplicate side effects.
+2. **Proactive Design**: Automatic next week row creation eliminates the need for background jobs and simplifies operational complexity.
+3. **Time-Based Logic**: Direct deadline comparisons replace cron-dependent workflows, improving reliability and reducing maintenance overhead.
+4. **Integrated Communication**: Seamless WhatsApp sharing provides immediate staff notification without additional infrastructure.
+
+The system's architecture balances simplicity with functionality, providing a solid foundation for schedule management while maintaining clear separation of concerns and extensibility for future enhancements. The combination of client-side WhatsApp integration and server-side time-based logic creates a responsive user experience while ensuring data integrity and audit compliance.

@@ -1,0 +1,1 @@
+Tests run against the live `AppModule` with an in-memory Prisma database and local JWT keys loaded from `test/setup-env.ts` rather than mocking controllers.

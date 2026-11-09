@@ -3,17 +3,27 @@ import { E2E_EMAILS, E2E_EMAIL_LIST, E2E_PASSWORD } from '../lib/e2e-fixtures';
 import { addDays, runningMondayIso, targetMondayIso } from '@repo/weeks';
 
 /**
- * Seed through the local Supabase surface (PostgREST + GoTrue admin) instead of
+ * Seed through the hosted Supabase surface (PostgREST + GoTrue admin) instead of
  * Prisma: the web package has no Prisma client, and service-role writes bypass
  * RLS the same way the api's own reads do. Rows are deleted and recreated on
- * every run, so the suite is deterministic against the dev database.
+ * every run, so the suite is deterministic. Only the fixture rows (emails ending
+ * kyne-e2e.test and the two fixture Mondays) are ever touched.
  */
-const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54421';
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ?? 'https://rplpdnuyipccsckzvmyg.supabase.co';
 
-/** The fixed service-role key of `supabase start`; local-only, open-source. */
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+/**
+ * The hosted project's service_role key. It is a real secret, so it is read from
+ * the environment (the gitignored .env) and never hardcoded; it only exists to
+ * let the seed write through RLS via PostgREST and the GoTrue admin API.
+ */
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_ROLE_KEY) {
+  throw new Error(
+    'SUPABASE_SERVICE_ROLE_KEY is not set. The e2e seed writes through RLS, so ' +
+      'it needs the hosted project service_role key in your .env.',
+  );
+}
 
 const ADMIN_HEADERS = {
   apikey: SERVICE_ROLE_KEY,

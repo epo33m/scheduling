@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-11-08T18:04:16Z"
+exported_at: "2026-11-09T20:57:05Z"
 modules:
     "":
-        dir_name: Project Documentation, PRD & ADR Scaffold
-        title: Project Documentation, PRD & ADR Scaffold
+        dir_name: Kyne Shift-Scheduling Project Root
+        title: Kyne Shift-Scheduling Project Root
         scope:
             - docs/
             - .gitignore
@@ -15,11 +15,12 @@ modules:
         source_files: []
         children:
             - api
+            - weeks
         depends_on: []
         related_to: []
     api:
-        dir_name: api
-        title: api
+        dir_name: F3 Staff Shift & Off-Day Management API
+        title: F3 Staff Shift & Off-Day Management API
         scope:
             - api/prisma/
             - api/src/
@@ -39,10 +40,11 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: api/app_source
     api/app_source:
-        dir_name: F3 Staff Management API (NestJS)
-        title: F3 Staff Management API (NestJS)
+        dir_name: F3 Staff Shift & Off-Day Management API
+        title: F3 Staff Shift & Off-Day Management API
         scope:
             - api/src/
         source_files: []
@@ -52,7 +54,8 @@ modules:
             - api/app_source/employee
             - api/app_source/request_management
         depends_on: []
-        related_to: []
+        related_to:
+            - path: api/api_tests
     api/app_source/app_infra:
         dir_name: App Bootstrap, Health Probe & Prisma Data Layer
         title: App Bootstrap, Health Probe & Prisma Data Layer
@@ -81,21 +84,36 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: api/app_source/request_management
     api/app_source/request_management:
-        dir_name: Staff Shift & Off-Day Request API
-        title: Staff Shift & Off-Day Request API
+        dir_name: Staff & Manager Request Management (F3_F4)
+        title: Staff & Manager Request Management (F3/F4)
         scope:
             - api/src/request/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: api/app_source/employee
     api/prisma_schema:
         dir_name: Prisma Data Schema & Migrations
         title: Prisma Data Schema & Migrations
         scope:
             - api/prisma/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    weeks:
+        dir_name: Week Boundary & WITA Calendar Utilities
+        title: Week Boundary & WITA Calendar Utilities
+        scope:
+            - packages/weeks/package.json
+            - packages/weeks/tsconfig.json
+            - packages/weeks/src/index.ts
+            - packages/weeks/src/weeks.ts
+            - packages/weeks/src/weeks.spec.ts
         source_files: []
         children: []
         depends_on: []

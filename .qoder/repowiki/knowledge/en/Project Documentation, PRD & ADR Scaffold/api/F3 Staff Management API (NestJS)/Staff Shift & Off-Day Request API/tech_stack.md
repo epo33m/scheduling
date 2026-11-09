@@ -1,1 +1,0 @@
-NestJS controllers/services with Prisma ORM; input validation through shared `@repo/validators`; types from `@repo/types`.

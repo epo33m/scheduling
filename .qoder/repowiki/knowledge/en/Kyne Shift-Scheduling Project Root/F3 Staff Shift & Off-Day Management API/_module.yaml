@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: api
-title: api
+title: F3 Staff Shift & Off-Day Management API
 scope:
     - api/prisma/
     - api/src/

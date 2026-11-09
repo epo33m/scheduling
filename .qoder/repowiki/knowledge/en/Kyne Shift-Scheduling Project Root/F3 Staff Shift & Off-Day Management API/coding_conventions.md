@@ -1,0 +1,3 @@
+- Each feature domain (auth, employee, request, schedule) lives in its own Nest module with colocated controller/service/spec files.
+- Business rules that depend on multiple entities (conflicts, off-day windows, shift assignment, compiler, coverage, work-hours) are extracted into pure TypeScript helpers alongside their spec files.
+- Integration tests target the real `AppModule` over HTTP with supertest instead of unit-testing controllers in isolation.

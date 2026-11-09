@@ -2,15 +2,17 @@ import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * The Playwright tier: full cycles against the real stack (Next.js, NestJS
- * api, local Supabase). It is not wired into CI because CI has no Supabase.
- * Run it with `bun run test:e2e` from the repo root while
- * `bun run db:start` and `bun run db:migrate` have been done once.
+ * The Playwright tier: full cycles against the real stack — local Next.js and
+ * NestJS servers talking to the hosted Supabase project. It is not wired into
+ * CI because the seed needs the hosted service_role secret. Run it with
+ * `bun run test:e2e` from the repo root once the root .env carries SUPABASE_URL
+ * and SUPABASE_SERVICE_ROLE_KEY for the hosted project (already migrated and
+ * seeded).
  *
  * The servers run on their own ports so a developer's `bun run dev` can stay
  * up, and the web server gets E2E=1, which is what arms the password-login
  * route the real Google flow cannot serve headlessly. The seed writes to the
- * dev database: it deletes and rebuilds only the fixture rows (emails ending
+ * hosted database: it deletes and rebuilds only the fixture rows (emails ending
  * kyne-e2e.test, plus the two fixture Mondays).
  */
 const WEB_PORT = 3210;

@@ -1,0 +1,1 @@
+NestJS + Prisma ORM on PostgreSQL, with Supabase for identity/JWT validation and supertest for integration testing.

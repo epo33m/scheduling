@@ -1,5 +1,0 @@
-- Business-rule functions are extracted as pure, single-responsibility modules (`off-day.ts`, `request-window.ts`) and imported by the service rather than inlined.
-- Mutating endpoints accept an optional `now = new Date()` parameter so callers can inject a fixed timestamp for testing deterministic time-based gates.
-- Date handling goes through `toDate`/`toCalendarDate` helpers that normalize to midnight-UTC ISO strings, keeping weekday arithmetic stable across timezones.
-- Validation failures from `@repo/validators` are surfaced as `BadRequestException` with the validator's message string.
-- Probation eligibility is re-evaluated at the service layer using `advanceProbation` against the stored `employee` row, not delegated to the auth guard.

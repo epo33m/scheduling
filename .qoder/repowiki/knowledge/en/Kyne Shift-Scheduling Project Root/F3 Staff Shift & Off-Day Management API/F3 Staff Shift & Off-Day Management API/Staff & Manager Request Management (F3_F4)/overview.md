@@ -1,0 +1,1 @@
+NestJS module exposing the staff-facing off-day/shift request flow and the manager dashboard for reviewing, approving, or rejecting those requests against an open weekly window.

@@ -1,0 +1,6 @@
+- Controllers are thin HTTP boundaries: they only parse bodies with `parse*` validators from `@repo/validators`, convert failures to `BadRequestException(parsed.message)`, and delegate to a service method.
+- Mutating service methods accept an optional `now = new Date()` parameter so callers can inject a fixed timestamp for deterministic testing of time-based gates.
+- Dates are normalized through local `toDate`/`toCalendarDate` helpers that round-trip via midnight-UTC ISO strings, keeping weekday calculations stable regardless of server timezone.
+- Business-rule functions are extracted as pure, single-responsibility modules (`off-day.ts`, `request-window.ts`, `conflicts.ts`) and imported by services rather than inlined.
+- Probation eligibility is recomputed at the service layer using `advanceProbation(employee.status, employee.probationEndDate, now)` instead of relying on the stored row's status alone.
+- Write endpoints enforce the open window by calling `openWeekOrThrow`, which throws `ConflictException` when no window is live, while read endpoints report `windowOpen: false` without erroring.

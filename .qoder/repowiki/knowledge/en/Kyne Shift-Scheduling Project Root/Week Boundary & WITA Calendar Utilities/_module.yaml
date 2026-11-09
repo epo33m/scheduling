@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: weeks
+title: Week Boundary & WITA Calendar Utilities
+scope:
+    - packages/weeks/package.json
+    - packages/weeks/tsconfig.json
+    - packages/weeks/src/index.ts
+    - packages/weeks/src/weeks.ts
+    - packages/weeks/src/weeks.spec.ts
+source_files: []
+depends_on: []
+related_to: []

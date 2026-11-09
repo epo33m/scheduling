@@ -5,4 +5,5 @@ scope:
     - api/test/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: api/app_source
