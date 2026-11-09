@@ -21,7 +21,7 @@ jobs:
       # `next build` inlines NEXT_PUBLIC_* into the bundle and evaluates each
       # page far enough to decide whether it can be static, so it needs these
       # even though nothing here talks to Supabase. The repo variables hold the
-      # local stack's public values; a deploy job must pass its own project's.
+      # hosted project's public values (URL + anon key), both non-secret.
       - run: bun run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
