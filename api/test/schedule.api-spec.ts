@@ -118,6 +118,19 @@ describe('schedule draft over HTTP', () => {
   let shifts: ShiftRow[] = [];
   let assignments: AssignmentRow[] = [];
 
+  /** The seeded shift_type rows the staff read derives hours from. */
+  interface ShiftTypeRow {
+    code: 'PAGI' | 'SORE' | 'MIDDLE';
+    startTime: string;
+    endTime: string;
+  }
+  const defaultShiftTypes = (): ShiftTypeRow[] => [
+    { code: 'PAGI', startTime: '07:30', endTime: '15:30' },
+    { code: 'SORE', startTime: '15:00', endTime: '23:00' },
+    { code: 'MIDDLE', startTime: '11:00', endTime: '19:00' },
+  ];
+  let shiftTypes: ShiftTypeRow[] = defaultShiftTypes();
+
   const managerId = '11111111-1111-4111-8111-111111111111';
   const barA = '22222222-2222-4222-8222-222222222222';
   const kitA = '33333333-3333-4333-8333-333333333333';
@@ -240,6 +253,9 @@ describe('schedule draft over HTTP', () => {
             return row;
           },
         },
+        shiftType: {
+          findMany: () => shiftTypes.map((t) => ({ ...t })),
+        },
         offRequest: {
           findMany: ({ where }: { where: { weekId: string } }) =>
             offs.filter((o) => o.weekId === where.weekId),
@@ -328,6 +344,7 @@ describe('schedule draft over HTTP', () => {
     offs = [];
     shifts = [];
     assignments = [];
+    shiftTypes = defaultShiftTypes();
     employees.length = 1;
   });
 
@@ -772,7 +789,7 @@ describe('schedule draft over HTTP', () => {
         .get('/schedule/published')
         .set('Authorization', await staffAuth('rian@kyne.test'))
         .expect(200);
-      expect(before.body).toEqual({ weekStartDate: null, assignments: [] });
+      expect(before.body).toEqual({ weeks: [] });
 
       const published = await request(app.getHttpServer())
         .post('/schedule/publish')
@@ -800,11 +817,13 @@ describe('schedule draft over HTTP', () => {
         .set('Authorization', await staffAuth('rian@kyne.test'))
         .expect(200);
 
-      expect(after.body.weekStartDate).toBe(isoDay(monday));
-      expect(after.body.assignments).toHaveLength(7);
-      expect(after.body.assignments[0]).toEqual({
+      expect(after.body.weeks).toHaveLength(1);
+      expect(after.body.weeks[0].weekStartDate).toBe(isoDay(monday));
+      expect(after.body.weeks[0].assignments).toHaveLength(7);
+      expect(after.body.weeks[0].assignments[0]).toEqual({
         tanggal: isoDay(monday),
         shiftCode: 'PAGI',
+        time: { startTime: '07:30', endTime: '15:30' },
       });
     });
 
@@ -832,22 +851,30 @@ describe('schedule draft over HTTP', () => {
         .get('/schedule/published')
         .set('Authorization', await staffAuth('rian@kyne.test'))
         .expect(200);
-      expect(rian.body.assignments).toHaveLength(7);
+      expect(rian.body.weeks[0].assignments).toHaveLength(7);
       expect(
-        rian.body.assignments.find(
+        rian.body.weeks[0].assignments.find(
           (row: { tanggal: string }) => row.tanggal === selasa,
         ),
-      ).toEqual({ tanggal: selasa, shiftCode: null });
+      ).toEqual({
+        tanggal: selasa,
+        shiftCode: null,
+        time: null,
+      });
 
       const kiki = await request(app.getHttpServer())
         .get('/schedule/published')
         .set('Authorization', await staffAuth('kiki@kyne.test'))
         .expect(200);
       expect(
-        kiki.body.assignments.find(
+        kiki.body.weeks[0].assignments.find(
           (row: { tanggal: string }) => row.tanggal === selasa,
         ),
-      ).toEqual({ tanggal: selasa, shiftCode: 'SORE' });
+      ).toEqual({
+        tanggal: selasa,
+        shiftCode: 'SORE',
+        time: { startTime: '15:00', endTime: '23:00' },
+      });
     });
 
     it('opens the next window once even when published twice', async () => {
@@ -887,6 +914,186 @@ describe('schedule draft over HTTP', () => {
         .post('/schedule/publish')
         .set('Authorization', await managerAuth())
         .expect(404);
+    });
+  });
+
+  /**
+   * Tampilan staf (F7). The read behind the shared link covers the week the
+   * staff member is living through and the minggu target, one caller's own
+   * days only, and nothing older than the running week.
+   */
+  describe('staff schedule view (F7)', () => {
+    interface PublishedWeekView {
+      weekStartDate: string;
+      assignments: {
+        tanggal: string;
+        shiftCode: 'PAGI' | 'SORE' | 'MIDDLE' | null;
+        time: { startTime: string; endTime: string } | null;
+      }[];
+    }
+
+    const staffAuth = async (email: string) =>
+      `Bearer ${await accessToken(email)}`;
+
+    /** Publishes the minggu target on top of the seeded running week. */
+    async function publishTargetWeek() {
+      await request(app.getHttpServer())
+        .post('/schedule/draft')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+      await request(app.getHttpServer())
+        .post('/schedule/publish')
+        .set('Authorization', await managerAuth())
+        .expect(201);
+    }
+
+    it('serves the running week and the published minggu target, oldest first', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      addStaff(kitA, 'Kiki', 'kitchen');
+      seedPreviousWeek();
+      await publishTargetWeek();
+
+      const res = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+
+      const weeks = (res.body as { weeks: PublishedWeekView[] }).weeks;
+      expect(weeks.map((w) => w.weekStartDate)).toEqual([
+        isoDay(previousMonday),
+        isoDay(monday),
+      ]);
+
+      // Both weeks carry Rian's seven copied PAGI days and nothing else.
+      for (const week of weeks) {
+        expect(week.assignments).toHaveLength(7);
+        expect(week.assignments.every((a) => a.shiftCode === 'PAGI')).toBe(
+          true,
+        );
+      }
+    });
+
+    it('never serves a published week older than the running one', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedPreviousWeek();
+      weeks.push({
+        id: 'w-older',
+        startDate: addDays(previousMonday, -7),
+        requestDeadline: date(
+          `${isoDay(addDays(previousMonday, -8))}T04:00:00.000Z`,
+        ),
+        status: 'published',
+        copiedFromWeekId: null,
+      });
+      await publishTargetWeek();
+
+      const res = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+
+      expect(
+        (res.body as { weeks: PublishedWeekView[] }).weeks.map(
+          (w) => w.weekStartDate,
+        ),
+      ).toEqual([isoDay(previousMonday), isoDay(monday)]);
+    });
+
+    it('carries the shift_type hours for every placement, and none for libur', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      addStaff(kitA, 'Kiki', 'kitchen');
+      seedPreviousWeek();
+      await publishTargetWeek();
+
+      const selasa = isoDay(addDays(monday, 1));
+      const rabu = isoDay(addDays(monday, 2));
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: selasa, shiftCode: null })
+        .expect(200);
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: kitA, tanggal: rabu, shiftCode: 'MIDDLE' })
+        .expect(200);
+
+      const rian = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+      const rianTarget = (rian.body as { weeks: PublishedWeekView[] }).weeks[1];
+      expect(rianTarget.assignments[0]).toEqual({
+        tanggal: isoDay(monday),
+        shiftCode: 'PAGI',
+        time: { startTime: '07:30', endTime: '15:30' },
+      });
+      expect(rianTarget.assignments[1]).toEqual({
+        tanggal: selasa,
+        shiftCode: null,
+        time: null,
+      });
+
+      const kiki = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('kiki@kyne.test'))
+        .expect(200);
+      const kikiTarget = (kiki.body as { weeks: PublishedWeekView[] }).weeks[1];
+      expect(kikiTarget.assignments[2]).toEqual({
+        tanggal: rabu,
+        shiftCode: 'MIDDLE',
+        time: { startTime: '11:00', endTime: '19:00' },
+      });
+    });
+
+    it('totals the week from shift_type durations, gross and per staff', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      seedPreviousWeek();
+      // A PAGI of ten hours here, no such row exists in the catalog: the
+      // total must follow the table, not a constant baked into the app.
+      shiftTypes[0].endTime = '17:30';
+      await publishTargetWeek();
+
+      const selasa = isoDay(addDays(monday, 1));
+      await request(app.getHttpServer())
+        .put('/schedule/draft/assignment')
+        .set('Authorization', await managerAuth())
+        .send({ employeeId: barA, tanggal: selasa, shiftCode: null })
+        .expect(200);
+
+      const res = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+      const weeks = (
+        res.body as { weeks: (PublishedWeekView & { totalHours: number })[] }
+      ).weeks;
+
+      // Running week: 7 x PAGI = 70h. Target: 6 working days = 60h, the
+      // libur row adds nothing.
+      expect(weeks[0].totalHours).toBe(70);
+      expect(weeks[1].totalHours).toBe(60);
+    });
+
+    it('blocks reading another staff member days through the published week', async () => {
+      addStaff(barA, 'Rian', 'bar');
+      addStaff(kitA, 'Kiki', 'kitchen');
+      seedPreviousWeek();
+      await publishTargetWeek();
+
+      const res = await request(app.getHttpServer())
+        .get('/schedule/published')
+        .set('Authorization', await staffAuth('rian@kyne.test'))
+        .expect(200);
+
+      // seedPreviousWeek placed three staff per day; Rian reads seven rows
+      // per week, and neither peer's id appears anywhere in the payload.
+      const json = JSON.stringify(res.body);
+      expect(json).not.toContain(kitA);
+      expect(json).not.toContain(kitB);
+      for (const week of (res.body as { weeks: PublishedWeekView[] }).weeks) {
+        expect(week.assignments).toHaveLength(7);
+      }
     });
   });
 });

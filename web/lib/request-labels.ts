@@ -64,3 +64,39 @@ export function dayName(monday: string, tanggal: string): string | null {
   const day = targetWeekDays(monday).find((d) => d.tanggal === tanggal);
   return day?.name ?? null;
 }
+
+/**
+ * "9 Nov" for a `YYYY-MM-DD` day: the cell in the staff week list, where the
+ * full date would crowd the row. WITA keeps the day stable for this app's
+ * users, matching every other formatter here.
+ */
+export function formatDayShort(tanggal: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Makassar',
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(`${tanggal}T00:00:00.000Z`));
+}
+
+/**
+ * "07.30–15.30" for a stored `HH:MM` pair. The PRD writes WITA clock times
+ * with a dot, so the stored colon gives way to the reader's habit.
+ */
+export function formatShiftTime(startTime: string, endTime: string): string {
+  return `${startTime.replace(':', '.')}–${endTime.replace(':', '.')}`;
+}
+
+/** "56 jam", or "36,5 jam": id-ID decimals, because staff count in hours. */
+export function formatTotalHours(hours: number): string {
+  const text = new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 2,
+  }).format(hours);
+  return `${text} jam`;
+}
+
+/**
+ * The F7 marker for a kitchen middle day, verbatim from the PRD: the cafe's
+ * quiet stretch around the lone kitchen shift. It belongs to the `MIDDLE`
+ * code, which only kitchen ever holds, so no position check rides along.
+ */
+export const MIDDLE_CLOSING_NOTICE = 'Dapur tutup 07.30–11.00 & 19.00–23.00';

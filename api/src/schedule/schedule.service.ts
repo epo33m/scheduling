@@ -7,15 +7,16 @@ import type {
   DraftAssignment,
   DraftSchedule,
   OpenWindow,
+  PublishedSchedule,
   PublishedWeek,
   SessionEmployee,
   ShiftCode,
+  ShiftTime,
   WeekStatus,
 } from '@repo/types';
 import type { AssignmentEditInput } from '@repo/validators';
 import { PrismaService } from '../prisma/prisma.service';
 import { isOffDayAllowed } from '../request/off-day';
-import { mostRecentWeek } from '../request/request-window';
 import { toCalendarDate } from '../request/request.service';
 import {
   compileDraft,
@@ -23,7 +24,8 @@ import {
   type ShiftFact,
 } from './compiler';
 import { validateCoverage } from './coverage';
-import { nextMonday, requestDeadlineFor } from './weeks';
+import { shiftDurationHours } from './work-hours';
+import { nextMonday, publishedWeekBounds, requestDeadlineFor } from './weeks';
 
 const DAY_MS = 86_400_000;
 
@@ -144,31 +146,75 @@ export class ScheduleService {
   }
 
   /**
-   * The week one staff member sees (F6/F7): the most recent published week and
-   * only their own placements. Staff read a week once it is published, so a
-   * draft is never returned here, not even to the staff it will hold.
+   * The weeks one staff member sees (F6/F7): the running minggu and the
+   * minggu target, each narrowed to the caller's own placements. Staff read a
+   * week only once it is published, so a draft is never returned here, not
+   * even to the staff it will hold, and a week older than the running one has
+   * already left the screen for good.
    */
-  async published(actor: SessionEmployee): Promise<PublishedWeek> {
+  async published(actor: SessionEmployee): Promise<PublishedSchedule> {
     const weeks = await this.prisma.scheduleWeek.findMany({
       where: { status: 'published' },
     });
-    const week = mostRecentWeek(weeks);
-    if (!week) {
-      return { weekStartDate: null, assignments: [] };
-    }
+    const { running, target } = publishedWeekBounds(new Date());
+    const visible = weeks
+      .filter(
+        (week) =>
+          week.startDate.getTime() === running ||
+          week.startDate.getTime() === target,
+      )
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
-    const rows = await this.prisma.shiftAssignment.findMany({
-      where: { weekId: week.id, employeeId: actor.id },
-      orderBy: { tanggal: 'asc' },
+    const [shiftTypes, ...weekRows] = await Promise.all([
+      this.prisma.shiftType.findMany(),
+      ...visible.map((week) =>
+        this.prisma.shiftAssignment.findMany({
+          where: { weekId: week.id, employeeId: actor.id },
+          orderBy: { tanggal: 'asc' },
+        }),
+      ),
+    ]);
+
+    // Wall-clock times live in shift_type alone; the staff read copies them
+    // onto each placement instead of keeping a second table of hours.
+    const hoursOf = (code: ShiftCode) =>
+      shiftTypes.find((row) => row.code === code);
+
+    const perWeek = visible.map((week, index): PublishedWeek => {
+      const assignments = weekRows[index].map((row) => {
+        const shiftCode = row.shiftCode as ShiftCode | null;
+        const hours = shiftCode ? hoursOf(shiftCode) : undefined;
+        const time: ShiftTime | null = hours
+          ? { startTime: hours.startTime, endTime: hours.endTime }
+          : null;
+        return {
+          tanggal: toCalendarDate(row.tanggal),
+          shiftCode,
+          time,
+        };
+      });
+
+      // Total jam kerja (F7): gross durations only, libur adds nothing.
+      const totalHours = assignments.reduce(
+        (sum, assignment) =>
+          assignment.time
+            ? sum +
+              shiftDurationHours(
+                assignment.time.startTime,
+                assignment.time.endTime,
+              )
+            : sum,
+        0,
+      );
+
+      return {
+        weekStartDate: toCalendarDate(week.startDate),
+        assignments,
+        totalHours,
+      };
     });
 
-    return {
-      weekStartDate: toCalendarDate(week.startDate),
-      assignments: rows.map((row) => ({
-        tanggal: toCalendarDate(row.tanggal),
-        shiftCode: row.shiftCode as ShiftCode | null,
-      })),
-    };
+    return { weeks: perWeek };
   }
 
   /**

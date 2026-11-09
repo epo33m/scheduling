@@ -3,7 +3,7 @@ import type {
   DraftSchedule,
   ManagedEmployee,
   OffRequestView,
-  PublishedWeek,
+  PublishedSchedule,
   RequestDecisionResult,
   RequestsDashboard,
   ShiftCode,
@@ -206,12 +206,13 @@ export function publishSchedule(): Promise<DraftSchedule> {
 }
 
 /**
- * The staff schedule read (F7): the manager's published week, narrowed by the
- * api to the caller's own days. The share link lands on this.
+ * The staff schedule read (F7): the running week and the published minggu
+ * target, narrowed by the api to the caller's own days. The share link lands
+ * on this.
  */
-export function getPublishedSchedule(): Promise<PublishedWeek> {
+export function getPublishedSchedule(): Promise<PublishedSchedule> {
   return authorizedFetch('/schedule/published', { method: 'GET' }).then(
-    (r) => r.json() as Promise<PublishedWeek>,
+    (r) => r.json() as Promise<PublishedSchedule>,
   );
 }
 

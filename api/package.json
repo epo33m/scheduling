@@ -21,6 +21,7 @@
     "@prisma/client": "7.10.0",
     "@repo/types": "*",
     "@repo/validators": "*",
+    "@repo/weeks": "*",
     "jose": "^5",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",

@@ -27,6 +27,7 @@ export default defineConfig({
         __dirname,
         '../packages/validators/src/index.ts',
       ),
+      '@repo/weeks': path.resolve(__dirname, '../packages/weeks/src/index.ts'),
     },
   },
 });

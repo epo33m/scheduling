@@ -1,23 +1,33 @@
-import { witaDate } from '../employee/probation';
+import { addDays, targetMondayIso } from '@repo/weeks';
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
 /**
- * The minggu target the manager composes: the next Monday strictly after today
- * (ADR 0004). On a Sunday that is tomorrow — the schedule for next week is
- * written on the Sunday of the running one — and on any other day it is the
- * Monday of the coming week. The date is a `@db.Date` calendar day, held as
- * midnight UTC the way every other date in this api is.
- *
- * "Today" is the WITA calendar day, not the UTC one: between 00.00 and 08.00
- * WITA the UTC date is still yesterday, which would resolve the target to the
- * week already running instead of the one being composed.
+ * The minggu target the manager composes: the next Monday strictly after the
+ * WITA today (ADR 0004). The rule lives once in `@repo/weeks`, shared with the
+ * e2e fixture; this only gives it back in the `@db.Date` shape (midnight UTC)
+ * every date in this api is held as.
  */
 export function nextMonday(now: Date): Date {
-  const today = new Date(`${witaDate(now)}T00:00:00.000Z`);
-  const daysToMonday = (8 - today.getUTCDay()) % 7 || 7;
-  return new Date(today.getTime() + daysToMonday * DAY_MS);
+  return new Date(`${targetMondayIso(now)}T00:00:00.000Z`);
+}
+
+/** The shared whole-day shift, re-exported so schedule callers keep one home. */
+export { addDays };
+
+/**
+ * The two weeks a staff member reads (F6/F7): the minggu target and the
+ * running week one before it, as midnight-UTC stamps to match a stored
+ * `start_date` against. Older published weeks fall outside these bounds and
+ * leave the staff screen for good.
+ */
+export function publishedWeekBounds(now: Date): {
+  running: number;
+  target: number;
+} {
+  const target = nextMonday(now).getTime();
+  return { running: target - 7 * DAY_MS, target };
 }
 
 /**
@@ -28,13 +38,6 @@ export function nextMonday(now: Date): Date {
  */
 export function requestDeadlineFor(startDate: Date): Date {
   return new Date(startDate.getTime() - DAY_MS + 4 * HOUR_MS);
-}
-
-/** `iso` shifted by whole days, `YYYY-MM-DD` in and out, the `@db.Date` shape. */
-export function addDays(iso: string, days: number): string {
-  return new Date(new Date(`${iso}T00:00:00.000Z`).getTime() + days * DAY_MS)
-    .toISOString()
-    .slice(0, 10);
 }
 
 /**

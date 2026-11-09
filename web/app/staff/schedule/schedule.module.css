@@ -1,5 +1,5 @@
-/* A staff member reads this on a phone at the bar, so it is one centered
-   column of seven rows: no column grid to squeeze on a small screen. */
+/* A staff member reads this on a phone at the bar, so each week is one
+   centered column of seven rows: no grid to squeeze on a small screen. */
 .page {
   max-width: 760px;
   margin: 0 auto;
@@ -25,33 +25,26 @@
   letter-spacing: var(--text-body-tracking);
 }
 
-/* Which week is on screen: the period, in the words the manager shared. */
+/* Two weeks on one screen: the change of surface between the bars divides
+   them, no second heading layer. */
+.week {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Which week this list is: the period, in the words the manager shared.
+   DESIGN.md Typography › {typography.tagline} on a parchment tile. */
 .weekBar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
+  margin: 0 0 var(--spacing-lg);
   padding: var(--spacing-md) var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-lg);
   background: var(--color-canvas-parchment);
-}
-
-.weekLabel {
-  margin: 0;
   font-family: var(--font-text);
-  font-size: var(--text-caption-strong-size);
-  font-weight: var(--text-caption-strong-weight);
-  line-height: var(--text-caption-strong-line-height);
-  letter-spacing: var(--text-caption-strong-tracking);
+  font-size: var(--text-tagline-size);
+  font-weight: var(--text-tagline-weight);
+  line-height: var(--text-tagline-line-height);
+  letter-spacing: var(--text-tagline-tracking);
   color: var(--color-ink);
-}
-
-.weekValue {
-  margin: 0;
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-line-height);
-  letter-spacing: var(--text-body-tracking);
 }
 
 /* Seven days, one per row: the day on the left, what it holds on the right. */
@@ -83,13 +76,46 @@
   letter-spacing: var(--text-caption-strong-tracking);
 }
 
-/* Text-first status: the shift name, libur, or the gap, always in words
-   rather than by colour, so it survives a monochrome screen. */
+.dayRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
+/* Text-first status: the shift, its hours, libur, or the gap, always in
+   words rather than by colour, so it survives a monochrome screen. */
 .dayShift {
   margin: 0;
   font-size: var(--text-body-size);
   line-height: var(--text-body-line-height);
   letter-spacing: var(--text-body-tracking);
+  text-align: right;
+}
+
+/* The middle day's closing marker sits under the shift it explains, in the
+   caption voice so the shift stays the headline of the row. */
+.dayNotice {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  line-height: var(--text-caption-line-height);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-ink);
+  text-align: right;
+}
+
+/* Total jam kerja (F7): the week's sum in body-strong, the one number the
+   staff read checks per week. */
+.total {
+  margin: var(--spacing-md) 0 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--rounded-lg);
+  background: var(--color-canvas-parchment);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
 }
 
 /* antislop-human R-27: the empty and error states each get their own surface. */
