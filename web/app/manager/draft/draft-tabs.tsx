@@ -22,8 +22,8 @@ interface WeekTab {
  *
  * The panels themselves are rendered on the server and passed in as children,
  * so switching tabs is instant and needs no round trip. Only the active panel
- * stays in the accessibility tree; the other is hidden from screen readers and
- * Playwright alike.
+ * is mounted: the inactive one is not in the DOM at all, so each label exists
+ * exactly once for screen readers and text-based test selectors alike.
  */
 export function WeekTabs({
   tabs,
@@ -93,19 +93,25 @@ export function WeekTabs({
         })}
       </div>
 
-      {tabs.map((tab, index) => (
-        <div
-          key={tab.alias}
-          role="tabpanel"
-          id={idFor(tab.alias, 'panel')}
-          aria-labelledby={idFor(tab.alias, 'tab')}
-          tabIndex={0}
-          hidden={index !== active}
-          className={styles.tabPanel}
-        >
-          {tab.panel}
-        </div>
-      ))}
+      {tabs.map((tab, index) =>
+        // Only the active panel is mounted. Rendering both and hiding the
+        // inactive one leaves a second copy of every label in the DOM, which
+        // text-based selectors (and assistive tech reading the region) would
+        // have to disambiguate. Mounting one keeps a single source of each
+        // string, exactly as before the toggle existed.
+        index === active ? (
+          <div
+            key={tab.alias}
+            role="tabpanel"
+            id={idFor(tab.alias, 'panel')}
+            aria-labelledby={idFor(tab.alias, 'tab')}
+            tabIndex={0}
+            className={styles.tabPanel}
+          >
+            {tab.panel}
+          </div>
+        ) : null,
+      )}
     </>
   );
 }
