@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import type {
   AssignmentSource,
   CoverageWarning,
@@ -10,7 +11,12 @@ import type {
 import { ApiError, getDraft } from '@/lib/api';
 import { POSITION_LABEL } from '@/lib/employee-labels';
 import { SHIFT_LABEL, targetWeekDays } from '@/lib/request-labels';
-import { AssignmentCell, GenerateButton } from './draft-controls';
+import { formatDayMonth, formatInstant, whatsappShareHref } from '@/lib/share';
+import {
+  AssignmentCell,
+  GenerateButton,
+  PublishButton,
+} from './draft-controls';
 import styles from './draft.module.css';
 
 export const metadata: Metadata = {
@@ -34,6 +40,24 @@ function formatWeek(monday: string): string {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${monday}T00:00:00.000Z`));
+}
+
+/**
+ * The absolute address of the staff schedule screen. The origin comes from the
+ * request itself, so the link works on localhost and on the deployed host
+ * without a second environment variable to keep in step.
+ */
+async function staffScheduleLink(): Promise<string> {
+  const incoming = await headers();
+  const host =
+    incoming.get('x-forwarded-host') ??
+    incoming.get('host') ??
+    'localhost:3000';
+  const proto =
+    incoming.get('x-forwarded-proto') ??
+    (host.startsWith('localhost') ? 'http' : 'https');
+
+  return `${proto}://${host}/staff/schedule`;
 }
 
 /** "Jumat, 20 November" for one day of the minggu target. */
@@ -112,6 +136,8 @@ export default async function DraftPage() {
         : 'Tidak bisa memuat draft. Coba lagi.';
   }
 
+  const scheduleLink = await staffScheduleLink();
+
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Susun jadwal</h1>
@@ -126,15 +152,22 @@ export default async function DraftPage() {
           {loadError}
         </p>
       ) : draft ? (
-        <DraftView draft={draft} />
+        <DraftView draft={draft} scheduleLink={scheduleLink} />
       ) : null}
     </main>
   );
 }
 
-function DraftView({ draft }: { draft: DraftSchedule }) {
+function DraftView({
+  draft,
+  scheduleLink,
+}: {
+  draft: DraftSchedule;
+  scheduleLink: string;
+}) {
   const weekStartDate = draft.weekStartDate;
   const staff = groupByStaff(draft.assignments);
+  const isPublished = draft.status === 'published';
 
   return (
     <>
@@ -158,11 +191,18 @@ function DraftView({ draft }: { draft: DraftSchedule }) {
       <GenerateButton label={GENERATE_LABEL} />
 
       <p className={styles.note}>
-        Menekan tombol menyusun ulang seluruh draft dan menghapus perubahan
-        manual di sini. Draft ini hanya terlihat oleh manager, belum oleh staf.
+        {isPublished
+          ? 'Menyusun ulang mengganti seluruh jadwal, termasuk yang sudah dilihat staf.'
+          : 'Menekan tombol menyusun ulang seluruh draft dan menghapus perubahan manual di sini. Draft ini hanya terlihat oleh manager, belum oleh staf.'}
       </p>
 
-      {weekStartDate ? <CoveragePanel warnings={draft.warnings} /> : null}
+      {weekStartDate ? (
+        <CoveragePanel warnings={draft.warnings} published={isPublished} />
+      ) : null}
+
+      {weekStartDate ? (
+        <PublishPanel draft={draft} scheduleLink={scheduleLink} />
+      ) : null}
 
       {!weekStartDate ? (
         <p className={styles.empty}>
@@ -267,7 +307,13 @@ function coverageLine(warning: CoverageWarning): string {
  * to the manager's call. This screen is manager-only, which is what keeps the
  * markers off the staff surface.
  */
-function CoveragePanel({ warnings }: { warnings: CoverageWarning[] }) {
+function CoveragePanel({
+  warnings,
+  published,
+}: {
+  warnings: CoverageWarning[];
+  published: boolean;
+}) {
   const days = groupByDay(warnings);
 
   return (
@@ -276,8 +322,9 @@ function CoveragePanel({ warnings }: { warnings: CoverageWarning[] }) {
         Validasi coverage
       </h2>
       <p className={styles.sectionLead}>
-        Peringatan ini hanya untuk Anda. Draft tetap bisa diubah dan dipublish
-        meskipun ada yang kurang.
+        {published
+          ? 'Peringatan ini hanya untuk Anda. Jadwal sudah dipublish, jadi perubahan yang Anda simpan langsung terlihat staf.'
+          : 'Peringatan ini hanya untuk Anda. Draft tetap bisa diubah dan dipublish meskipun ada yang kurang.'}
       </p>
 
       {days.length === 0 ? (
@@ -302,6 +349,76 @@ function CoveragePanel({ warnings }: { warnings: CoverageWarning[] }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/**
+ * Publish & share (F6). Before the press it is one action and one sentence of
+ * what the press does; after it the action is done, so the panel becomes the
+ * share link and names the window the publish opened. The link is the only way
+ * staff learn the schedule moved, which is why it sits here, not in a menu.
+ */
+function PublishPanel({
+  draft,
+  scheduleLink,
+}: {
+  draft: DraftSchedule;
+  scheduleLink: string;
+}) {
+  const weekStartDate = draft.weekStartDate;
+  if (!weekStartDate) {
+    return null;
+  }
+
+  if (draft.status !== 'published') {
+    return (
+      <section aria-labelledby="publish-heading" className={styles.publish}>
+        <h2 id="publish-heading" className={styles.publishTitle}>
+          Bagikan ke staf
+        </h2>
+        <p className={styles.publishText}>
+          Staf baru melihat jadwal ini setelah dipublish. Publish juga membuka
+          jendela request untuk minggu setelahnya.
+        </p>
+        <PublishButton />
+      </section>
+    );
+  }
+
+  const nextWindow = draft.nextWindow;
+
+  return (
+    <section aria-labelledby="publish-heading" className={styles.publish}>
+      <h2 id="publish-heading" className={styles.publishTitle}>
+        Bagikan ke staf
+      </h2>
+      <p className={styles.publishText}>
+        Sudah dipublish
+        {draft.publishedAt ? ` ${formatInstant(draft.publishedAt)}` : ''}. Staf
+        bisa melihatnya, dan perubahan setelah ini langsung terlihat juga.
+      </p>
+      {nextWindow ? (
+        <p className={styles.publishText}>
+          Request untuk minggu {formatDayMonth(nextWindow.weekStartDate)} dibuka
+          sampai {formatInstant(nextWindow.requestDeadline)}.
+        </p>
+      ) : null}
+      {nextWindow ? (
+        <div className={styles.shareRow}>
+          <a
+            className="button-primary"
+            href={whatsappShareHref(weekStartDate, nextWindow, scheduleLink)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Bagikan ke WhatsApp
+          </a>
+          <p className={styles.publishNote}>
+            Teks WhatsApp sudah berisi periode jadwal, link, dan batas request.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
