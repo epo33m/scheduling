@@ -823,8 +823,7 @@ describe('schedule draft over HTTP', () => {
       expect(after.body.weeks[0].assignments[0]).toEqual({
         tanggal: isoDay(monday),
         shiftCode: 'PAGI',
-        startTime: '07:30',
-        endTime: '15:30',
+        time: { startTime: '07:30', endTime: '15:30' },
       });
     });
 
@@ -860,8 +859,7 @@ describe('schedule draft over HTTP', () => {
       ).toEqual({
         tanggal: selasa,
         shiftCode: null,
-        startTime: null,
-        endTime: null,
+        time: null,
       });
 
       const kiki = await request(app.getHttpServer())
@@ -875,8 +873,7 @@ describe('schedule draft over HTTP', () => {
       ).toEqual({
         tanggal: selasa,
         shiftCode: 'SORE',
-        startTime: '15:00',
-        endTime: '23:00',
+        time: { startTime: '15:00', endTime: '23:00' },
       });
     });
 
@@ -931,8 +928,7 @@ describe('schedule draft over HTTP', () => {
       assignments: {
         tanggal: string;
         shiftCode: 'PAGI' | 'SORE' | 'MIDDLE' | null;
-        startTime: string | null;
-        endTime: string | null;
+        time: { startTime: string; endTime: string } | null;
       }[];
     }
 
@@ -1030,14 +1026,12 @@ describe('schedule draft over HTTP', () => {
       expect(rianTarget.assignments[0]).toEqual({
         tanggal: isoDay(monday),
         shiftCode: 'PAGI',
-        startTime: '07:30',
-        endTime: '15:30',
+        time: { startTime: '07:30', endTime: '15:30' },
       });
       expect(rianTarget.assignments[1]).toEqual({
         tanggal: selasa,
         shiftCode: null,
-        startTime: null,
-        endTime: null,
+        time: null,
       });
 
       const kiki = await request(app.getHttpServer())
@@ -1048,8 +1042,7 @@ describe('schedule draft over HTTP', () => {
       expect(kikiTarget.assignments[2]).toEqual({
         tanggal: rabu,
         shiftCode: 'MIDDLE',
-        startTime: '11:00',
-        endTime: '19:00',
+        time: { startTime: '11:00', endTime: '19:00' },
       });
     });
 

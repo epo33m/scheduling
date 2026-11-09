@@ -11,6 +11,7 @@ import type {
   PublishedWeek,
   SessionEmployee,
   ShiftCode,
+  ShiftTime,
   WeekStatus,
 } from '@repo/types';
 import type { AssignmentEditInput } from '@repo/validators';
@@ -24,7 +25,7 @@ import {
 } from './compiler';
 import { validateCoverage } from './coverage';
 import { shiftDurationHours } from './work-hours';
-import { nextMonday, requestDeadlineFor } from './weeks';
+import { nextMonday, publishedWeekBounds, requestDeadlineFor } from './weeks';
 
 const DAY_MS = 86_400_000;
 
@@ -151,15 +152,11 @@ export class ScheduleService {
    * even to the staff it will hold, and a week older than the running one has
    * already left the screen for good.
    */
-  async published(
-    actor: SessionEmployee,
-    now = new Date(),
-  ): Promise<PublishedSchedule> {
+  async published(actor: SessionEmployee): Promise<PublishedSchedule> {
     const weeks = await this.prisma.scheduleWeek.findMany({
       where: { status: 'published' },
     });
-    const target = nextMonday(now).getTime();
-    const running = target - 7 * DAY_MS;
+    const { running, target } = publishedWeekBounds(new Date());
     const visible = weeks
       .filter(
         (week) =>
@@ -187,19 +184,25 @@ export class ScheduleService {
       const assignments = weekRows[index].map((row) => {
         const shiftCode = row.shiftCode as ShiftCode | null;
         const hours = shiftCode ? hoursOf(shiftCode) : undefined;
+        const time: ShiftTime | null = hours
+          ? { startTime: hours.startTime, endTime: hours.endTime }
+          : null;
         return {
           tanggal: toCalendarDate(row.tanggal),
           shiftCode,
-          startTime: hours?.startTime ?? null,
-          endTime: hours?.endTime ?? null,
+          time,
         };
       });
 
       // Total jam kerja (F7): gross durations only, libur adds nothing.
       const totalHours = assignments.reduce(
         (sum, assignment) =>
-          assignment.startTime && assignment.endTime
-            ? sum + shiftDurationHours(assignment.startTime, assignment.endTime)
+          assignment.time
+            ? sum +
+              shiftDurationHours(
+                assignment.time.startTime,
+                assignment.time.endTime,
+              )
             : sum,
         0,
       );

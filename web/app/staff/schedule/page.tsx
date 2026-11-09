@@ -45,10 +45,9 @@ function dayLine(assignment: PublishedAssignment | undefined): DayLine {
   }
 
   const label = SHIFT_LABEL[assignment.shiftCode];
-  const time =
-    assignment.startTime && assignment.endTime
-      ? formatShiftTime(assignment.startTime, assignment.endTime)
-      : null;
+  const time = assignment.time
+    ? formatShiftTime(assignment.time.startTime, assignment.time.endTime)
+    : null;
 
   return {
     main: time ? `${label}, ${time}` : label,

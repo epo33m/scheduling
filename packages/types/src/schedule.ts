@@ -87,6 +87,16 @@ export interface DraftSchedule {
 }
 
 /**
+ * The wall-clock span of a shift, copied from `shift_type`. `startTime` and
+ * `endTime` are local WITA `HH:MM` and always travel together, so they are one
+ * value rather than two parallel fields.
+ */
+export interface ShiftTime {
+  startTime: string;
+  endTime: string;
+}
+
+/**
  * One day of a published week, as the staff member it belongs to reads it. No
  * name, position, or source: the staff surface shows only their own day, shift,
  * and hours (F7), and carries nothing about anyone else.
@@ -96,10 +106,8 @@ export interface PublishedAssignment {
   tanggal: string;
   /** Null is hari libur, the same cell the manager wrote. */
   shiftCode: ShiftCode | null;
-  /** Local WITA `HH:MM` copied from `shift_type`; null when no shift works. */
-  startTime: string | null;
-  /** Local WITA `HH:MM` copied from `shift_type`; null when no shift works. */
-  endTime: string | null;
+  /** The shift's hours from `shift_type`; null when no shift works (libur). */
+  time: ShiftTime | null;
 }
 
 /**
