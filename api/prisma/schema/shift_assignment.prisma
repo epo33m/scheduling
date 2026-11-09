@@ -1,0 +1,36 @@
+/// Where one placement in the schedule came from (PRD §Model data): the copy of
+/// last week's schedule (4.1), an approved request shift (4.3), the automatic
+/// middle of a lone kitchen staff (4.4), or the manager's own edit (F5).
+enum AssignmentSource {
+  copy
+  request
+  auto_middle
+  manual
+}
+
+/// One staff member, one day of one week, one shift or a day off (PRD §Model
+/// data). `shift_code` null means libur, so a day off is a row like any other
+/// and the manager can edit it without deleting anything. The shift enum is
+/// shared with request shift; the catalog row it points at only holds hours.
+///
+/// Day offs come from an approved request libur, the auto-middle step (a lone
+/// kitchen worker never has one), or the manager's edit — never from the copy
+/// step, which strips last week's libur (alur step 4.1).
+model ShiftAssignment {
+  id         String           @id @default(uuid()) @db.Uuid
+  weekId     String           @map("week_id") @db.Uuid
+  employeeId String           @map("employee_id") @db.Uuid
+  tanggal    DateTime         @db.Date
+  shiftCode  ShiftCode?       @map("shift_code")
+  source     AssignmentSource @default(copy)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  createdBy  String?          @map("created_by") @db.Uuid
+
+  week     ScheduleWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, employeeId, tanggal])
+  @@index([employeeId])
+  @@map("shift_assignment")
+}

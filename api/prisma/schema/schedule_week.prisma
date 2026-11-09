@@ -24,6 +24,7 @@ model ScheduleWeek {
 
   offRequests   OffRequest[]
   shiftRequests ShiftRequest[]
+  assignments   ShiftAssignment[]
 
   @@unique([startDate])
   @@index([status])
