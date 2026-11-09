@@ -21,6 +21,7 @@
     "db:generate": "bun run --cwd api db:generate",
     "db:migrate": "bun run --cwd api db:migrate",
     "db:seed": "turbo run db:seed",
+    "db:seed-manager": "bun run --cwd api db:seed-manager",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
