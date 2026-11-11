@@ -1,0 +1,54 @@
+/* Root route: reached only while the role fetch is resolving or failing. The
+   happy path redirects straight to the screen the role owns, so the only thing
+   rendered here is the honest waiting/error state. */
+
+/* DESIGN.md Layout: one centered column, comfortable margins, generous whitespace. */
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--spacing-lg);
+  background: var(--color-canvas);
+}
+
+.panel {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* DESIGN.md Typography › Hierarchy: {typography.display-lg} */
+.wordmark {
+  margin: 0 0 var(--spacing-md);
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg-size);
+  font-weight: var(--text-display-lg-weight);
+  line-height: var(--text-display-lg-line-height);
+  letter-spacing: var(--text-display-lg-tracking);
+}
+
+/* DESIGN.md Typography › Hierarchy: {typography.body-strong} as the state title. */
+.title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--text-body-strong-size);
+  font-weight: var(--text-body-strong-weight);
+  line-height: var(--text-body-strong-line-height);
+  letter-spacing: var(--text-body-strong-tracking);
+}
+
+/* DESIGN.md Typography › Hierarchy: {typography.body} */
+.body {
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+  letter-spacing: var(--text-body-tracking);
+}
+
+/* DESIGN.md Components › {component.button-secondary-pill}: the one escape
+   hatch on a stuck screen never competes with a primary action. */
+.action {
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+}

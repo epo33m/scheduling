@@ -6,6 +6,7 @@ import type {
   PublishedSchedule,
   RequestDecisionResult,
   RequestsDashboard,
+  SessionEmployee,
   ShiftCode,
   ShiftRequestView,
   StaffRequests,
@@ -83,6 +84,17 @@ async function refusalMessage(response: Response): Promise<string> {
     return 'Halaman ini khusus manager.';
   }
   return 'Terjadi kesalahan di server.';
+}
+
+/**
+ * Who the signed-in account is, and with which role. `GET /auth/me` is also
+ * the whitelist check: a 403 here means the email has no active `employee` row.
+ * The root route reads this to decide which screen to hand the visitor to.
+ */
+export function getMe(): Promise<SessionEmployee> {
+  return authorizedFetch('/auth/me', { method: 'GET' }).then(
+    (r) => r.json() as Promise<SessionEmployee>,
+  );
 }
 
 export function listEmployees(): Promise<ManagedEmployee[]> {
