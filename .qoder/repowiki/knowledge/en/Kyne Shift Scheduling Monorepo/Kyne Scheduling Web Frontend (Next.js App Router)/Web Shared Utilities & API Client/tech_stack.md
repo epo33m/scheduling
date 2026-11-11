@@ -1,0 +1,1 @@
+Next.js App Router with server components, `@supabase/ssr` for per-request Supabase clients, and direct `fetch` calls to an external NestJS API over Bearer tokens — no React Query or data-fetching library is used.

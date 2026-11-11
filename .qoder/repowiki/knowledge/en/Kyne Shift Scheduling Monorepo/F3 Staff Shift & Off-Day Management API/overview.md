@@ -1,0 +1,1 @@
+NestJS application wiring Supabase-authenticated employee, request-management, and scheduling modules behind a Prisma-managed PostgreSQL database, exercised by integration tests over the real HTTP stack.

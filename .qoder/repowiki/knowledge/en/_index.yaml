@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-11-09T20:57:05Z"
+exported_at: "2026-11-11T04:27:29Z"
 modules:
     "":
-        dir_name: Kyne Shift-Scheduling Project Root
-        title: Kyne Shift-Scheduling Project Root
+        dir_name: Kyne Shift Scheduling Monorepo
+        title: Kyne Shift Scheduling Monorepo
         scope:
             - docs/
             - .gitignore
@@ -15,6 +15,7 @@ modules:
         source_files: []
         children:
             - api
+            - web
             - weeks
         depends_on: []
         related_to: []
@@ -40,8 +41,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: api/app_source
+        related_to: []
     api/app_source:
         dir_name: F3 Staff Shift & Off-Day Management API
         title: F3 Staff Shift & Off-Day Management API
@@ -55,7 +55,7 @@ modules:
             - api/app_source/request_management
         depends_on: []
         related_to:
-            - path: api/api_tests
+            - path: api/prisma_schema
     api/app_source/app_infra:
         dir_name: App Bootstrap, Health Probe & Prisma Data Layer
         title: App Bootstrap, Health Probe & Prisma Data Layer
@@ -75,7 +75,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: api/app_source/employee
+            - path: web/shared_lib
     api/app_source/employee:
         dir_name: Employee Management (Kelola Staf) API
         title: Employee Management (Kelola Staf) API
@@ -85,7 +87,8 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: api/app_source/request_management
+            - path: api/app_source/auth
+            - path: web/shared_lib
     api/app_source/request_management:
         dir_name: Staff & Manager Request Management (F3_F4)
         title: Staff & Manager Request Management (F3/F4)
@@ -95,16 +98,66 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: api/app_source/employee
+            - path: web/shared_lib
     api/prisma_schema:
-        dir_name: Prisma Data Schema & Migrations
-        title: Prisma Data Schema & Migrations
+        dir_name: Prisma Data Model & Seed for the Scheduling API
+        title: Prisma Data Model & Seed for the Scheduling API
         scope:
             - api/prisma/
         source_files: []
         children: []
         depends_on: []
+        related_to:
+            - path: api/app_source
+    web:
+        dir_name: Kyne Scheduling Web Frontend (Next.js App Router)
+        title: Kyne Scheduling Web Frontend (Next.js App Router)
+        scope:
+            - web/app/
+            - web/lib/
+            - web/e2e/
+            - web/playwright.config.ts
+            - web/next-env.d.ts
+        source_files: []
+        children:
+            - web/app_routes
+            - web/e2e_tests
+            - web/shared_lib
+        depends_on: []
         related_to: []
+    web/app_routes:
+        dir_name: Next.js App Router Pages & Server Actions
+        title: Next.js App Router Pages & Server Actions
+        scope:
+            - web/app/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web/shared_lib
+    web/e2e_tests:
+        dir_name: Playwright End-to-End Weekly Cycle Tests
+        title: Playwright End-to-End Weekly Cycle Tests
+        scope:
+            - web/e2e/
+            - web/playwright.config.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web/shared_lib:
+        dir_name: Web Shared Utilities & API Client
+        title: Web Shared Utilities & API Client
+        scope:
+            - web/lib/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api/app_source/auth
+            - path: api/app_source/employee
+            - path: api/app_source/request_management
+            - path: web/app_routes
     weeks:
         dir_name: Week Boundary & WITA Calendar Utilities
         title: Week Boundary & WITA Calendar Utilities

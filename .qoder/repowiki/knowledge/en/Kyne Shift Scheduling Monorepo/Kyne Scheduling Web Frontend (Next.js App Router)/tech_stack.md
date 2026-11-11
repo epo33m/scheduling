@@ -1,0 +1,1 @@
+Next.js App Router + Server Actions, NestJS API client, Supabase for sessions/auth, Playwright for end-to-end testing against a hosted Supabase project.

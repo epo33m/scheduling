@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: web
+title: Kyne Scheduling Web Frontend (Next.js App Router)
+scope:
+    - web/app/
+    - web/lib/
+    - web/e2e/
+    - web/playwright.config.ts
+    - web/next-env.d.ts
+source_files: []
+depends_on: []
+related_to: []

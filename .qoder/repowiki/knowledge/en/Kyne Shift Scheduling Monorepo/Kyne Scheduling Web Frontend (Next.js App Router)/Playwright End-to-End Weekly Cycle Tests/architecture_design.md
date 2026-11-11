@@ -1,0 +1,6 @@
+Three-layer layout under `web/e2e/`:
+- `playwright.config.ts` defines two `webServer` processes (NestJS API on port 3211, Next.js web on 3210 with `E2E=1`) and sets `globalSetup`, single-worker execution, and Chromium as the only project.
+- `global-setup.ts` loads `.env.local` / `.env` via `dotenv`, probes the hosted Supabase JWKS endpoint for connectivity, then dynamically imports `seed.ts` so env vars are available before seed evaluation.
+- `seed.ts` is a standalone data bootstrap: it calls Supabase PostgREST (`/rest/v1/*`) and GoTrue admin (`/auth/v1/admin/*`) using a `service_role` key from `SUPABASE_SERVICE_ROLE_KEY`, deletes fixture rows by email prefix `kyne-e2e.test`, then upserts fixed-UUID staff, shift types, two schedule weeks (running=published, target=draft), and shift assignments.
+- `weekly-cycle.spec.ts` contains the actual Playwright specs; it uses a shared `loginTo(browser, email, path)` helper that opens a fresh `BrowserContext` per role, navigates through the E2E-only `/auth/e2e-login` password route, and asserts the redirect back to the original link. Two top-level tests cover the T9 weekly cycle and the running-week toggle behavior described in ADR 0005.
+Dependency direction is one-way: spec → seed helpers → Supabase HTTP surface; the spec never touches Prisma or the DB directly.

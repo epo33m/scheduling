@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: web/app_routes
+title: Next.js App Router Pages & Server Actions
+scope:
+    - web/app/
+source_files: []
+depends_on: []
+related_to:
+    - path: web/shared_lib

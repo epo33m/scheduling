@@ -1,0 +1,1 @@
+Run E2E tests from the repo root with `bun run test:e2e`; this requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the root `.env` pointing at the hosted project, since the seed deletes/rebuilds only rows whose emails end in `kyne-e2e.test` plus the fixture Mondays.

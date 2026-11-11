@@ -1,0 +1,1 @@
+Shared Next.js utilities for the scheduling web app: a typed NestJS API client, Supabase session helpers, locale-specific formatters, and role/label maps.

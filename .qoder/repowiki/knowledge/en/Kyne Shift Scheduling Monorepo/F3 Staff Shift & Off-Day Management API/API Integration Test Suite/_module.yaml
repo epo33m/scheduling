@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api/api_tests
+title: API Integration Test Suite
+scope:
+    - api/test/
+source_files: []
+depends_on: []
+related_to: []

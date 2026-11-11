@@ -1,0 +1,4 @@
+- Enum display labels are exported as `Record<EnumType, string>` maps keyed by `@repo/types` enums so TypeScript enforces that every variant has a localized label.
+- All dates are stored as `YYYY-MM-DD` strings and formatted through `Intl.DateTimeFormat` with `timeZone: 'Asia/Makassar'` (WITA) rather than local browser time.
+- Server-side API calls go exclusively through `authorizedFetch` in `api.ts`, which attaches the Supabase session access token and converts failures into user-facing Indonesian messages via `ApiError`.
+- User-visible error codes are centralized as string literals in `login-error.ts` and validated with `Object.hasOwn` before being cast to the `LoginError` type.

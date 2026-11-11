@@ -1,0 +1,1 @@
+Headless Playwright tests that drive the real Next.js + NestJS stack against a hosted Supabase project to validate the full weekly scheduling cycle.

@@ -1,1 +1,0 @@
-NestJS application that exposes Supabase-authenticated employee, request-management, and scheduling endpoints backed by a Prisma-managed PostgreSQL database, with integration tests exercising the full HTTP stack.

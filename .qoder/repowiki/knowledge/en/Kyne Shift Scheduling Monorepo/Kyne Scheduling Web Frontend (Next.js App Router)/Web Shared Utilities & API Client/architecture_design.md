@@ -1,0 +1,7 @@
+The module is organized by concern rather than layer:
+- `api.ts` is the single server-side HTTP boundary to the NestJS backend; it wraps every call in `authorizedFetch`, which injects the Supabase access token from the current session and converts non-JSON failures into a user-safe `ApiError`. Types come from `@repo/types`.
+- `supabase/` provides per-request Supabase clients (`server.ts` for RSC/route handlers, `browser.ts` for client components) plus shared cookie/session config; `createServerSupabaseClient` reads cookies via Next's `cookies()` API.
+- `employee-gate.ts` performs the initial whitelist check against `/auth/me`, returning a narrow `LoginError` union defined in `login-error.ts`.
+- Pure presentation helpers live in `request-labels.ts`, `employee-labels.ts`, `share.ts`, and `home-route.ts`: enum-to-Indonesian label maps keyed by `@repo/types` unions (so missing keys fail at compile time), WITA-timezone date formatting via `Intl.DateTimeFormat`, and WhatsApp share-link builders.
+- `safe-next.ts` is a URL-safety utility guarding login redirects against open-redirect attacks.
+Dependency direction is one-way: this module depends on `@repo/types`, `@supabase/ssr`, and Next internals; nothing in the rest of the web app imports back into these helpers except through their public exports. Test files (`*.spec.ts`) sit alongside sources and use e2e fixtures from `e2e-fixtures.ts`.

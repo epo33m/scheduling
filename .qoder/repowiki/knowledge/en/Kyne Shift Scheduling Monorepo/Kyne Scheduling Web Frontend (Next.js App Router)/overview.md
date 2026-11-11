@@ -1,0 +1,1 @@
+Next.js frontend for the Kyne shift-scheduling system, wiring App Router pages and server actions to a NestJS API via shared Supabase/session helpers, with Playwright E2E tests driving the full stack.

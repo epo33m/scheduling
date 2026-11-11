@@ -1,0 +1,1 @@
+Monorepo for Kyne's weekly shift scheduling PWA, wiring a Next.js frontend, NestJS API, shared type/validator packages, and Supabase-backed PostgreSQL under Bun/Turborepo.

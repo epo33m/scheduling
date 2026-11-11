@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api/app_source/request_management
+title: Staff & Manager Request Management (F3/F4)
+scope:
+    - api/src/request/
+source_files: []
+depends_on: []
+related_to:
+    - path: web/shared_lib

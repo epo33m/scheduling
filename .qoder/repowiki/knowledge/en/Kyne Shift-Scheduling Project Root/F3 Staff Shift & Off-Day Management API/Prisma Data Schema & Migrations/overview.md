@@ -1,1 +1,0 @@
-Defines the PostgreSQL data model for the scheduling API — employees, weeks, shift types, and staff requests — plus Prisma migrations and an idempotent seed script.

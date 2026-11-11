@@ -1,0 +1,3 @@
+- Shared domain contracts (types, zod schemas, shift catalog) live in `packages/*` and are imported by both `web` and `api` instead of being duplicated.
+- All database time values are persisted as WITA-local strings (not SQL `time` or UTC timestamps) so the application owns timezone semantics.
+- Every new feature is first captured as an ADR in `docs/adr/` before implementation, keeping architectural decisions discoverable alongside the PRD.

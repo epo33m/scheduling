@@ -1,0 +1,1 @@
+Run from the repo root with `bun run test:e2e`; requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the root `.env` pointing at the hosted project (not wired into CI because the seed writes there). The config starts both dev servers itself, so developers can keep their own `bun run dev` instances on different ports.

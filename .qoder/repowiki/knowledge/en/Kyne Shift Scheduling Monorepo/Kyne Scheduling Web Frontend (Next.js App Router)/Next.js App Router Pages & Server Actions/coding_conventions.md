@@ -1,0 +1,6 @@
+- Mutations are implemented as `'use server'` functions in a sibling `actions.ts` file next to the page, returning a `{ ok, message }` state shape typed per feature (`DecisionState`, `DraftActionState`, `RequestActionState`).
+- Every server action wraps the API call in try/catch and revalidates its route path in a `finally` block so the UI always reflects the server's actual state after submit.
+- Error messages surface `ApiError.message` when available and fall back to a human-friendly Indonesian string otherwise, keeping user-facing text out of the API layer.
+- Authentication route handlers exchange the code via Supabase, then run `employeeGate` and sign out with `{ scope: 'local' }` on refusal before redirecting to `/login?error=...`.
+- Redirect targets are normalized through `safeNext` and passed as a `next` query parameter so users return to the page they originally requested after login.
+- Each route ships its styles as a CSS Module imported alongside the page/component rather than using global class names.

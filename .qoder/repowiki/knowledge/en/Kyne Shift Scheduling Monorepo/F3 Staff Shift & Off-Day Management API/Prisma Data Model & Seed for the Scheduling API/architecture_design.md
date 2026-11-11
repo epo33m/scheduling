@@ -1,0 +1,6 @@
+The module is a leaf Prisma project split into three layers:
+- Schema layer: per-entity files under `schema/` (`employee.prisma`, `schedule_week.prisma`, `shift_type.prisma`, `off_request.prisma`, `shift_request.prisma`) each declaring domain enums alongside their models; a minimal root `schema/schema.prisma` only wires the Prisma 7 generator (output to `../../src/generated/prisma`, CJS format) and the PostgreSQL datasource — the connection string lives in `prisma.config.ts` as noted by the file's comment.
+- Migration layer: versioned SQL migrations under `migrations/<timestamp>_<slug>/migration.sql` with a `migration_lock.toml`, including hardening migrations that add CHECK constraints mirroring business rules enforced in the API.
+- Seed layer: `seed.ts` bootstraps the `shift_type` catalog from `SHIFT_TYPE_CATALOG` in `@repo/types`, validated through `shiftTypeSeedSchema` from `@repo/validators`, using a raw `pg.Pool` wrapped in `PrismaPg` adapter rather than the generated client's default connection; `seed-manager.ts` provides orchestration around it.
+
+Dependency direction is one-way: schema → generated client → API consumers; the seed depends on shared `@repo/types` and `@repo/validators` but nothing inside the API codebase.

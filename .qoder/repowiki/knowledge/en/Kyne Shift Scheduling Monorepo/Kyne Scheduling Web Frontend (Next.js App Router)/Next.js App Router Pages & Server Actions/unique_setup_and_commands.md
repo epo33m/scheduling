@@ -1,0 +1,1 @@
+The e2e login endpoint at `/auth/e2e-login` is disabled unless the server runs with `E2E=1`; it uses the shared `E2E_PASSWORD` fixture from `@/lib/e2e-fixtures` to authenticate Playwright tests against real Supabase.

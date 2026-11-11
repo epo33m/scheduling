@@ -1,0 +1,2 @@
+- Server-side data mutations are implemented as Next.js Server Actions colocated with their page under `app/**/actions.ts` and imported by the corresponding page component.
+- Role- and label-related constants live in `lib/employee-labels.ts` and `lib/request-labels.ts` and are reused by both UI components and E2E fixtures rather than being duplicated per page.

@@ -1,0 +1,1 @@
+Bun workspaces + Turborepo as the monorepo runner; Next.js 16 (PWA) + NestJS + Prisma + Supabase Postgres; Zod for shared validation; Playwright for full-stack E2E tests.

@@ -1,0 +1,5 @@
+- Every model field whose database column differs from its Prisma name is explicitly remapped with `@map("snake_case")` (e.g. `start_date`, `created_at`, `decided_by`), keeping DB columns stable while fields stay camelCase in code.
+- Audit columns follow a uniform shape across models — `createdAt`/`updatedAt` timestamps with `default(now())` / `updatedAt`, plus an optional `createdBy: String? @db.Uuid` — repeated on every entity.
+- UUID primary keys use `String @id @default(uuid()) @db.Uuid` consistently instead of auto-increment integers.
+- Child models declare bidirectional relations with explicit `onDelete: Cascade` and foreign-key arrays (`fields: [...], references: [...]`) rather than relying on Prisma's implicit naming.
+- Business invariants are enforced defense-in-depth: date-range and status rules are checked in the API and mirrored as CHECK constraints in the migration, and enum values are kept in sync between Prisma enums and `@repo/types` constants.

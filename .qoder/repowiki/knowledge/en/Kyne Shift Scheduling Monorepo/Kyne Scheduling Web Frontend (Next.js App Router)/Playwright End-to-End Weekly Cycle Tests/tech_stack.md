@@ -1,0 +1,1 @@
+Playwright Test (single Chromium project) against a live Next.js dev server, NestJS API, and hosted Supabase (PostgREST + GoTrue admin); dotenv for env loading; deterministic UUIDs seeded into Supabase instead of an ORM.

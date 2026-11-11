@@ -1,0 +1,1 @@
+Top-level `bun run dev` boots both web (:3000) and api (:3001); `db:start` launches a local Supabase instance on port 5442x, followed by `db:migrate` then `db:seed`. `test:e2e` drives the complete weekly cycle against the real stack and requires a running Supabase instance plus installed Chromium.

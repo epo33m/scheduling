@@ -1,1 +1,0 @@
-Repository root anchoring the Kyne shift-scheduling PWA with product requirements, ADRs, and an agent-skill registry that guide the downstream Bun/Turborepo monorepo.

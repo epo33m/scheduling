@@ -1,0 +1,5 @@
+- Each browser context created inside the spec is pushed onto a module-level `opened` array and closed in `test.afterEach` via `Promise.all`, ensuring one isolated session per actor.
+- Actor sign-in goes through the E2E-only `/auth/e2e-login?email=...&next=...` password route rather than Google OAuth, so flows work headlessly without external auth providers.
+- All Supabase mutations go through the PostgREST `/rest/v1/<table>` and GoTrue `/auth/v1/admin/*` endpoints with `apikey` + `authorization: Bearer <SERVICE_ROLE_KEY>` headers, bypassing RLS exactly as the production API does.
+- Fixture entities use hand-written fixed UUIDs (prefixes `e2e00000-*`, `e2e10000-*`, `e2e20000-*`, `e2e30000-*`) so cross-row references between employees, weeks, and assignments stay stable across runs.
+- Seed data is made idempotent by deleting all rows matching the `kyne-e2e.test` email domain and the two fixture Mondays before upserting the canonical dataset.

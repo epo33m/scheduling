@@ -1,0 +1,1 @@
+Next.js App Router entry points for the Kyne shift-scheduling web app, providing login, manager dashboard/draft/staff pages, and staff request/schedule screens backed by server actions.

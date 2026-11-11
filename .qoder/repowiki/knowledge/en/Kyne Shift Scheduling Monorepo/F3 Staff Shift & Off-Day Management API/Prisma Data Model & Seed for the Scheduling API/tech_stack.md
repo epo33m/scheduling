@@ -1,0 +1,1 @@
+Prisma 7 with the PostgreSQL provider, `@prisma/adapter-pg` to drive the generated PrismaClient over a raw `pg.Pool`, TypeScript-generated client emitted to `src/generated/prisma` in CommonJS module format.

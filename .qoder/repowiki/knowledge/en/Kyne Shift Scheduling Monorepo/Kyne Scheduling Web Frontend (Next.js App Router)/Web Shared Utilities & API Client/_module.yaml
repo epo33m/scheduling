@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: web/shared_lib
+title: Web Shared Utilities & API Client
+scope:
+    - web/lib/
+source_files: []
+depends_on: []
+related_to:
+    - path: api/app_source/auth
+    - path: api/app_source/employee
+    - path: api/app_source/request_management
+    - path: web/app_routes

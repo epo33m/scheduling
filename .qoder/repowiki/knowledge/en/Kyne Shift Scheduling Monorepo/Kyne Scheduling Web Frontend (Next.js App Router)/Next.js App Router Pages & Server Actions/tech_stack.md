@@ -1,0 +1,1 @@
+Next.js App Router (React Server Components + Route Handlers), Supabase Auth (Google OAuth PKCE + password sign-in), CSS Modules per route, TypeScript throughout.

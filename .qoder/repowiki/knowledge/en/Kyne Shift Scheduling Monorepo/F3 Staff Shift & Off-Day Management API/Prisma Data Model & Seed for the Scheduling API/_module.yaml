@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api/prisma_schema
+title: Prisma Data Model & Seed for the Scheduling API
+scope:
+    - api/prisma/
+source_files: []
+depends_on: []
+related_to:
+    - path: api/app_source
